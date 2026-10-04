@@ -28,3 +28,25 @@ Whenever implementing, designing, or refactoring features in this `swift/` Next.
 - **Data & Types**: Derive TypeScript interfaces and mock/database schemas directly from the data structures defined in `../mockup/app.js` and `../docs/features.md`.
 - **Route Structure**: Mirror the routes and views specified in `../docs/swift_site_map.md`.
 - **Reference Over Duplication**: Do NOT duplicate or copy files from `docs/` and `mockup/` into `swift/`; reference them from `../docs` and `../mockup`.
+
+## 3. Mandatory Color Tokens Rule
+**All UI colors in the application MUST strictly be based on the established SWIFT design tokens.**
+
+- **Single Source of Truth for Colors**:
+  - CSS Variables & Tailwind v4 Theme: [`app/globals.css`](file:///c:/Users/Roselle%20Tabuena/workspace/swift/swift/app/globals.css)
+  - TypeScript Constants & Theme Engine: [`lib/tokens.ts`](file:///c:/Users/Roselle%20Tabuena/workspace/swift/swift/lib/tokens.ts)
+- **Zero Hardcoded Colors**:
+  - **NEVER** use arbitrary ad-hoc hex/rgb values (e.g., `#2563eb`, `#111827`, `rgb(...)`) or default non-token Tailwind palette classes (e.g., `text-gray-900`, `bg-blue-600`, `bg-slate-100`).
+  - **ALWAYS** use the semantic design token utility classes or CSS variables:
+    - **Surfaces & Backgrounds**: `bg-bg-base`, `bg-bg-surface`, `bg-bg-card`, `bg-bg-sidebar`, `bg-bg-input`, `bg-bg-hover`, `bg-bg-muted`
+    - **Text Colors**: `text-text-primary`, `text-text-secondary`, `text-text-muted`, `text-text-light`
+    - **Brand & Action**: `bg-primary`, `text-primary`, `border-primary`, `bg-primary-hover`, `bg-primary-light`, `border-primary-border`
+    - **Secondary & Tool**: `bg-secondary`, `text-secondary`, `bg-secondary-hover`
+    - **Status Accents**: `bg-success`/`text-success`, `bg-accent`/`text-accent`, `bg-danger`/`text-danger`, `bg-info`/`text-info` (and their `-light` variants)
+    - **Borders**: `border-border`, `border-border-subtle`, `border-border-focus`
+- **Light & Dark Mode Harmony**:
+  - The default theme is Light Mode.
+  - Relying on semantic tokens guarantees that dark mode (`.dark` / `[data-theme="dark"]`) functions seamlessly without requiring scattered, manual `dark:` utility overrides.
+- **Charts, Canvas & Programmatic Styling**:
+  - When rendering data visualizations, charts, badges, or canvas elements in TypeScript, import tokens from `@/lib/tokens` (`getThemeTokens(mode)`).
+
