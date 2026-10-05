@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BRAND } from "@/lib/tokens";
+import { LogIn, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const tokenChips = [
@@ -28,6 +30,13 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Login Hub</span>
+          </Link>
           <ThemeToggle />
         </div>
       </header>
@@ -50,7 +59,10 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Admin Portal Card */}
-            <div className="bg-bg-surface border border-border rounded-lg p-6 shadow-sm hover:border-primary transition-all group">
+            <Link
+              href="/login"
+              className="bg-bg-surface border border-border rounded-lg p-6 shadow-sm hover:border-primary transition-all group block"
+            >
               <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center font-bold text-sm mb-4">
                 ADM
               </div>
@@ -61,13 +73,16 @@ export default function Home() {
                 Full analytics, warehouse rack & shelf locator, inventory adjustments, POS cashier, MotoMatcher, and profit margins.
               </p>
               <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-xs font-medium text-primary">
-                <span>Access Management</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                <span>Access Management Hub</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </Link>
 
             {/* Staff Portal Card */}
-            <div className="bg-bg-surface border border-border rounded-lg p-6 shadow-sm hover:border-primary transition-all group">
+            <Link
+              href="/login"
+              className="bg-bg-surface border border-border rounded-lg p-6 shadow-sm hover:border-primary transition-all group block"
+            >
               <div className="w-8 h-8 rounded bg-emerald-500/10 text-success flex items-center justify-center font-bold text-sm mb-4">
                 POS
               </div>
@@ -79,9 +94,9 @@ export default function Home() {
               </p>
               <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-xs font-medium text-success">
                 <span>Open Staff Terminal</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Tokens Live Palette */}
