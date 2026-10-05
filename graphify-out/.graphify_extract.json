@@ -1,0 +1,3663 @@
+{
+  "nodes": [
+    {
+      "id": "agents_skills_user_story_scripts_user_story_template",
+      "label": "user-story-template.py",
+      "file_type": "code",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "agents_skills_user_story_scripts_user_story_template_parse_args",
+      "label": "parse_args()",
+      "file_type": "code",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L11",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "namespace",
+      "label": "Namespace",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "agents_skills_user_story_scripts_user_story_template_normalize",
+      "label": "normalize()",
+      "file_type": "code",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L26",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "agents_skills_user_story_scripts_user_story_template_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L32",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "agents_skills_user_story_scripts_user_story_template_rationale_2",
+      "label": "Generate a user story Markdown snippet from CLI inputs. No network access.…",
+      "file_type": "rationale",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_layout",
+      "label": "layout.tsx",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_layout_inter",
+      "label": "inter",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_layout_metadata",
+      "label": "metadata",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_layout_rootlayout",
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L16",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "app_page",
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_page_home",
+      "label": "Home()",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L4",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle",
+      "label": "theme-toggle.tsx",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle_applytheme",
+      "label": "applyTheme()",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L6",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle_subscribe",
+      "label": "subscribe()",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L18",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle_getsnapshot",
+      "label": "getSnapshot()",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L23",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle_getserversnapshot",
+      "label": "getServerSnapshot()",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L28",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "components_theme_toggle_themetoggle",
+      "label": "ThemeToggle()",
+      "file_type": "code",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L32",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "eslint_config",
+      "label": "eslint.config.mjs",
+      "file_type": "code",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "eslint_config_eslintconfig",
+      "label": "eslintConfig",
+      "file_type": "code",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_prisma",
+      "label": "prisma.ts",
+      "file_type": "code",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_prisma_globalforprisma",
+      "label": "globalForPrisma",
+      "file_type": "code",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_prisma_prisma",
+      "label": "prisma",
+      "file_type": "code",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_client",
+      "label": "client.ts",
+      "file_type": "code",
+      "source_file": "lib/supabase/client.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_client_createclient",
+      "label": "createClient()",
+      "file_type": "code",
+      "source_file": "lib/supabase/client.ts",
+      "source_location": "L3",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_middleware",
+      "label": "middleware.ts",
+      "file_type": "code",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_middleware_updatesession",
+      "label": "updateSession()",
+      "file_type": "code",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L4",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_middleware_rationale_30",
+      "label": "IMPORTANT: Do not run any logic between createServerClient and",
+      "file_type": "rationale",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_server",
+      "label": "server.ts",
+      "file_type": "code",
+      "source_file": "lib/supabase/server.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_supabase_server_createclient",
+      "label": "createClient()",
+      "file_type": "code",
+      "source_file": "lib/supabase/server.ts",
+      "source_location": "L4",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens",
+      "label": "tokens.ts",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_brand",
+      "label": "BRAND",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_default_theme",
+      "label": "DEFAULT_THEME",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_thememode",
+      "label": "ThemeMode",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L16",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_colortokens",
+      "label": "ColorTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L18",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_lighttokens",
+      "label": "lightTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L66",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_darktokens",
+      "label": "darkTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L114",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_typographytokens",
+      "label": "typographyTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L162",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_radiitokens",
+      "label": "radiiTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L190",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_transitiontokens",
+      "label": "transitionTokens",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L198",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_tokens_getthemetokens",
+      "label": "getThemeTokens()",
+      "file_type": "code",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L206",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "middleware",
+      "label": "middleware.ts",
+      "file_type": "code",
+      "source_file": "middleware.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "middleware_middleware",
+      "label": "middleware()",
+      "file_type": "code",
+      "source_file": "middleware.ts",
+      "source_location": "L4",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "middleware_config",
+      "label": "config",
+      "file_type": "code",
+      "source_file": "middleware.ts",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "next_config",
+      "label": "next.config.ts",
+      "file_type": "code",
+      "source_file": "next.config.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "next_config_nextconfig",
+      "label": "nextConfig",
+      "file_type": "code",
+      "source_file": "next.config.ts",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "package",
+      "label": "package.json",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_name",
+      "label": "name",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_version",
+      "label": "version",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_private",
+      "label": "private",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_dev",
+      "label": "dev",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_build",
+      "label": "build",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_start",
+      "label": "start",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_lint",
+      "label": "lint",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_postinstall",
+      "label": "postinstall",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies",
+      "label": "dependencies",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_prisma_client",
+      "label": "@prisma/client",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_prisma_client",
+      "label": "@prisma/client",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_supabase_ssr",
+      "label": "@supabase/ssr",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_supabase_ssr",
+      "label": "@supabase/ssr",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_supabase_supabase_js",
+      "label": "@supabase/supabase-js",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_supabase_supabase_js",
+      "label": "@supabase/supabase-js",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_lucide_react",
+      "label": "lucide-react",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_lucide_react",
+      "label": "lucide-react",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_next",
+      "label": "next",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_next",
+      "label": "next",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_react",
+      "label": "react",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_react",
+      "label": "react",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_react_dom",
+      "label": "react-dom",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_react_dom",
+      "label": "react-dom",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies",
+      "label": "devDependencies",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_tailwindcss_postcss",
+      "label": "@tailwindcss/postcss",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_tailwindcss_postcss",
+      "label": "@tailwindcss/postcss",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_types_node",
+      "label": "@types/node",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_types_node",
+      "label": "@types/node",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_types_react",
+      "label": "@types/react",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_types_react",
+      "label": "@types/react",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_types_react_dom",
+      "label": "@types/react-dom",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_types_react_dom",
+      "label": "@types/react-dom",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_eslint",
+      "label": "eslint",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_eslint",
+      "label": "eslint",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_eslint_config_next",
+      "label": "eslint-config-next",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_eslint_config_next",
+      "label": "eslint-config-next",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_prisma",
+      "label": "prisma",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_prisma",
+      "label": "prisma",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_tailwindcss",
+      "label": "tailwindcss",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_tailwindcss",
+      "label": "tailwindcss",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_devdependencies_typescript",
+      "label": "typescript",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "ref_typescript",
+      "label": "typescript",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "postcss_config",
+      "label": "postcss.config.mjs",
+      "file_type": "code",
+      "source_file": "postcss.config.mjs",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "postcss_config_config",
+      "label": "config",
+      "file_type": "code",
+      "source_file": "postcss.config.mjs",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "prisma_config",
+      "label": "prisma.config.ts",
+      "file_type": "code",
+      "source_file": "prisma.config.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig",
+      "label": "tsconfig.json",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_target",
+      "label": "target",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_lib",
+      "label": "lib",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_allowjs",
+      "label": "allowJs",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_skiplibcheck",
+      "label": "skipLibCheck",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_strict",
+      "label": "strict",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_noemit",
+      "label": "noEmit",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_esmoduleinterop",
+      "label": "esModuleInterop",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_module",
+      "label": "module",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_moduleresolution",
+      "label": "moduleResolution",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_resolvejsonmodule",
+      "label": "resolveJsonModule",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_isolatedmodules",
+      "label": "isolatedModules",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_jsx",
+      "label": "jsx",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_incremental",
+      "label": "incremental",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_plugins",
+      "label": "plugins",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_compileroptions_paths",
+      "label": "paths",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_include",
+      "label": "include",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "tsconfig_exclude",
+      "label": "exclude",
+      "file_type": "code",
+      "source_file": "tsconfig.json",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": ".agents/skills/atomic-commit/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\atomic-commit\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/create-pr/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\create-pr\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-breakdown-advisor/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-breakdown-advisor\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/grill-me/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\grill-me\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/grill-me/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\grill-me\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/HTML-REPORT.md",
+      "label": "HTML-REPORT.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\HTML-REPORT.md",
+      "summary": "Documentation / Skill / Rule: HTML-REPORT.md"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/CHANGELOG.md",
+      "label": "CHANGELOG.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\CHANGELOG.md",
+      "summary": "Documentation / Skill / Rule: CHANGELOG.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_contributing.md",
+      "label": "_contributing.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_contributing.md",
+      "summary": "Documentation / Skill / Rule: _contributing.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/advanced-full-text-search.md",
+      "label": "advanced-full-text-search.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\advanced-full-text-search.md",
+      "summary": "Documentation / Skill / Rule: advanced-full-text-search.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/advanced-jsonb-indexing.md",
+      "label": "advanced-jsonb-indexing.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\advanced-jsonb-indexing.md",
+      "summary": "Documentation / Skill / Rule: advanced-jsonb-indexing.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-idle-timeout.md",
+      "label": "conn-idle-timeout.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-idle-timeout.md",
+      "summary": "Documentation / Skill / Rule: conn-idle-timeout.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-limits.md",
+      "label": "conn-limits.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-limits.md",
+      "summary": "Documentation / Skill / Rule: conn-limits.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-pooling.md",
+      "label": "conn-pooling.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-pooling.md",
+      "summary": "Documentation / Skill / Rule: conn-pooling.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-prepared-statements.md",
+      "label": "conn-prepared-statements.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-prepared-statements.md",
+      "summary": "Documentation / Skill / Rule: conn-prepared-statements.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-batch-inserts.md",
+      "label": "data-batch-inserts.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-batch-inserts.md",
+      "summary": "Documentation / Skill / Rule: data-batch-inserts.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-n-plus-one.md",
+      "label": "data-n-plus-one.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-n-plus-one.md",
+      "summary": "Documentation / Skill / Rule: data-n-plus-one.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-pagination.md",
+      "label": "data-pagination.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-pagination.md",
+      "summary": "Documentation / Skill / Rule: data-pagination.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-upsert.md",
+      "label": "data-upsert.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-upsert.md",
+      "summary": "Documentation / Skill / Rule: data-upsert.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-advisory.md",
+      "label": "lock-advisory.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-advisory.md",
+      "summary": "Documentation / Skill / Rule: lock-advisory.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-deadlock-prevention.md",
+      "label": "lock-deadlock-prevention.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-deadlock-prevention.md",
+      "summary": "Documentation / Skill / Rule: lock-deadlock-prevention.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-short-transactions.md",
+      "label": "lock-short-transactions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-short-transactions.md",
+      "summary": "Documentation / Skill / Rule: lock-short-transactions.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-skip-locked.md",
+      "label": "lock-skip-locked.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-skip-locked.md",
+      "summary": "Documentation / Skill / Rule: lock-skip-locked.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-explain-analyze.md",
+      "label": "monitor-explain-analyze.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-explain-analyze.md",
+      "summary": "Documentation / Skill / Rule: monitor-explain-analyze.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-pg-stat-statements.md",
+      "label": "monitor-pg-stat-statements.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-pg-stat-statements.md",
+      "summary": "Documentation / Skill / Rule: monitor-pg-stat-statements.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-vacuum-analyze.md",
+      "label": "monitor-vacuum-analyze.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-vacuum-analyze.md",
+      "summary": "Documentation / Skill / Rule: monitor-vacuum-analyze.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-composite-indexes.md",
+      "label": "query-composite-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-composite-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-composite-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-covering-indexes.md",
+      "label": "query-covering-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-covering-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-covering-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-index-types.md",
+      "label": "query-index-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-index-types.md",
+      "summary": "Documentation / Skill / Rule: query-index-types.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-missing-indexes.md",
+      "label": "query-missing-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-missing-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-missing-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-partial-indexes.md",
+      "label": "query-partial-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-partial-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-partial-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-constraints.md",
+      "label": "schema-constraints.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-constraints.md",
+      "summary": "Documentation / Skill / Rule: schema-constraints.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-data-types.md",
+      "label": "schema-data-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-data-types.md",
+      "summary": "Documentation / Skill / Rule: schema-data-types.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-foreign-key-indexes.md",
+      "label": "schema-foreign-key-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-foreign-key-indexes.md",
+      "summary": "Documentation / Skill / Rule: schema-foreign-key-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-lowercase-identifiers.md",
+      "label": "schema-lowercase-identifiers.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-lowercase-identifiers.md",
+      "summary": "Documentation / Skill / Rule: schema-lowercase-identifiers.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-partitioning.md",
+      "label": "schema-partitioning.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-partitioning.md",
+      "summary": "Documentation / Skill / Rule: schema-partitioning.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-primary-keys.md",
+      "label": "schema-primary-keys.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-primary-keys.md",
+      "summary": "Documentation / Skill / Rule: schema-primary-keys.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-privileges.md",
+      "label": "security-privileges.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-privileges.md",
+      "summary": "Documentation / Skill / Rule: security-privileges.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-rls-basics.md",
+      "label": "security-rls-basics.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-rls-basics.md",
+      "summary": "Documentation / Skill / Rule: security-rls-basics.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-rls-performance.md",
+      "label": "security-rls-performance.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-rls-performance.md",
+      "summary": "Documentation / Skill / Rule: security-rls-performance.md"
+    },
+    {
+      "id": ".agents/skills/supabase/CHANGELOG.md",
+      "label": "CHANGELOG.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\CHANGELOG.md",
+      "summary": "Documentation / Skill / Rule: CHANGELOG.md"
+    },
+    {
+      "id": ".agents/skills/supabase/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/supabase/assets/feedback-issue-template.md",
+      "label": "feedback-issue-template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\assets\\feedback-issue-template.md",
+      "summary": "Documentation / Skill / Rule: feedback-issue-template.md"
+    },
+    {
+      "id": ".agents/skills/supabase/references/skill-feedback.md",
+      "label": "skill-feedback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\references\\skill-feedback.md",
+      "summary": "Documentation / Skill / Rule: skill-feedback.md"
+    },
+    {
+      "id": ".agents/skills/tdd/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/tdd/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/tdd/mocking.md",
+      "label": "mocking.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\mocking.md",
+      "summary": "Documentation / Skill / Rule: mocking.md"
+    },
+    {
+      "id": ".agents/skills/tdd/tests.md",
+      "label": "tests.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\tests.md",
+      "summary": "Documentation / Skill / Rule: tests.md"
+    },
+    {
+      "id": ".agents/skills/user-story/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/user-story/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/user-story/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/user-story/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-effect-event-deps.md",
+      "label": "advanced-effect-event-deps.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-effect-event-deps.md",
+      "summary": "Documentation / Skill / Rule: advanced-effect-event-deps.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-event-handler-refs.md",
+      "label": "advanced-event-handler-refs.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-event-handler-refs.md",
+      "summary": "Documentation / Skill / Rule: advanced-event-handler-refs.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-init-once.md",
+      "label": "advanced-init-once.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-init-once.md",
+      "summary": "Documentation / Skill / Rule: advanced-init-once.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-use-latest.md",
+      "label": "advanced-use-latest.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-use-latest.md",
+      "summary": "Documentation / Skill / Rule: advanced-use-latest.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-api-routes.md",
+      "label": "async-api-routes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-api-routes.md",
+      "summary": "Documentation / Skill / Rule: async-api-routes.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-cheap-condition-before-await.md",
+      "label": "async-cheap-condition-before-await.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-cheap-condition-before-await.md",
+      "summary": "Documentation / Skill / Rule: async-cheap-condition-before-await.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-defer-await.md",
+      "label": "async-defer-await.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-defer-await.md",
+      "summary": "Documentation / Skill / Rule: async-defer-await.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-dependencies.md",
+      "label": "async-dependencies.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-dependencies.md",
+      "summary": "Documentation / Skill / Rule: async-dependencies.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-parallel.md",
+      "label": "async-parallel.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-parallel.md",
+      "summary": "Documentation / Skill / Rule: async-parallel.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-suspense-boundaries.md",
+      "label": "async-suspense-boundaries.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-suspense-boundaries.md",
+      "summary": "Documentation / Skill / Rule: async-suspense-boundaries.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-analyzable-paths.md",
+      "label": "bundle-analyzable-paths.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-analyzable-paths.md",
+      "summary": "Documentation / Skill / Rule: bundle-analyzable-paths.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-barrel-imports.md",
+      "label": "bundle-barrel-imports.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-barrel-imports.md",
+      "summary": "Documentation / Skill / Rule: bundle-barrel-imports.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-conditional.md",
+      "label": "bundle-conditional.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-conditional.md",
+      "summary": "Documentation / Skill / Rule: bundle-conditional.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-defer-third-party.md",
+      "label": "bundle-defer-third-party.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-defer-third-party.md",
+      "summary": "Documentation / Skill / Rule: bundle-defer-third-party.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-dynamic-imports.md",
+      "label": "bundle-dynamic-imports.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-dynamic-imports.md",
+      "summary": "Documentation / Skill / Rule: bundle-dynamic-imports.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-preload.md",
+      "label": "bundle-preload.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-preload.md",
+      "summary": "Documentation / Skill / Rule: bundle-preload.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-event-listeners.md",
+      "label": "client-event-listeners.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-event-listeners.md",
+      "summary": "Documentation / Skill / Rule: client-event-listeners.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-localstorage-schema.md",
+      "label": "client-localstorage-schema.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-localstorage-schema.md",
+      "summary": "Documentation / Skill / Rule: client-localstorage-schema.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-passive-event-listeners.md",
+      "label": "client-passive-event-listeners.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-passive-event-listeners.md",
+      "summary": "Documentation / Skill / Rule: client-passive-event-listeners.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-swr-dedup.md",
+      "label": "client-swr-dedup.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-swr-dedup.md",
+      "summary": "Documentation / Skill / Rule: client-swr-dedup.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-batch-dom-css.md",
+      "label": "js-batch-dom-css.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-batch-dom-css.md",
+      "summary": "Documentation / Skill / Rule: js-batch-dom-css.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-function-results.md",
+      "label": "js-cache-function-results.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-function-results.md",
+      "summary": "Documentation / Skill / Rule: js-cache-function-results.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-property-access.md",
+      "label": "js-cache-property-access.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-property-access.md",
+      "summary": "Documentation / Skill / Rule: js-cache-property-access.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-storage.md",
+      "label": "js-cache-storage.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-storage.md",
+      "summary": "Documentation / Skill / Rule: js-cache-storage.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-combine-iterations.md",
+      "label": "js-combine-iterations.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-combine-iterations.md",
+      "summary": "Documentation / Skill / Rule: js-combine-iterations.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-early-exit.md",
+      "label": "js-early-exit.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-early-exit.md",
+      "summary": "Documentation / Skill / Rule: js-early-exit.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-flatmap-filter.md",
+      "label": "js-flatmap-filter.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-flatmap-filter.md",
+      "summary": "Documentation / Skill / Rule: js-flatmap-filter.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-hoist-regexp.md",
+      "label": "js-hoist-regexp.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-hoist-regexp.md",
+      "summary": "Documentation / Skill / Rule: js-hoist-regexp.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-index-maps.md",
+      "label": "js-index-maps.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-index-maps.md",
+      "summary": "Documentation / Skill / Rule: js-index-maps.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-length-check-first.md",
+      "label": "js-length-check-first.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-length-check-first.md",
+      "summary": "Documentation / Skill / Rule: js-length-check-first.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-min-max-loop.md",
+      "label": "js-min-max-loop.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-min-max-loop.md",
+      "summary": "Documentation / Skill / Rule: js-min-max-loop.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-request-idle-callback.md",
+      "label": "js-request-idle-callback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-request-idle-callback.md",
+      "summary": "Documentation / Skill / Rule: js-request-idle-callback.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-set-map-lookups.md",
+      "label": "js-set-map-lookups.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-set-map-lookups.md",
+      "summary": "Documentation / Skill / Rule: js-set-map-lookups.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-tosorted-immutable.md",
+      "label": "js-tosorted-immutable.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-tosorted-immutable.md",
+      "summary": "Documentation / Skill / Rule: js-tosorted-immutable.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-activity.md",
+      "label": "rendering-activity.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-activity.md",
+      "summary": "Documentation / Skill / Rule: rendering-activity.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-animate-svg-wrapper.md",
+      "label": "rendering-animate-svg-wrapper.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-animate-svg-wrapper.md",
+      "summary": "Documentation / Skill / Rule: rendering-animate-svg-wrapper.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-conditional-render.md",
+      "label": "rendering-conditional-render.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-conditional-render.md",
+      "summary": "Documentation / Skill / Rule: rendering-conditional-render.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-content-visibility.md",
+      "label": "rendering-content-visibility.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-content-visibility.md",
+      "summary": "Documentation / Skill / Rule: rendering-content-visibility.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hoist-jsx.md",
+      "label": "rendering-hoist-jsx.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hoist-jsx.md",
+      "summary": "Documentation / Skill / Rule: rendering-hoist-jsx.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-no-flicker.md",
+      "label": "rendering-hydration-no-flicker.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hydration-no-flicker.md",
+      "summary": "Documentation / Skill / Rule: rendering-hydration-no-flicker.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-suppress-warning.md",
+      "label": "rendering-hydration-suppress-warning.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hydration-suppress-warning.md",
+      "summary": "Documentation / Skill / Rule: rendering-hydration-suppress-warning.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-resource-hints.md",
+      "label": "rendering-resource-hints.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-resource-hints.md",
+      "summary": "Documentation / Skill / Rule: rendering-resource-hints.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-script-defer-async.md",
+      "label": "rendering-script-defer-async.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-script-defer-async.md",
+      "summary": "Documentation / Skill / Rule: rendering-script-defer-async.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-svg-precision.md",
+      "label": "rendering-svg-precision.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-svg-precision.md",
+      "summary": "Documentation / Skill / Rule: rendering-svg-precision.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-usetransition-loading.md",
+      "label": "rendering-usetransition-loading.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-usetransition-loading.md",
+      "summary": "Documentation / Skill / Rule: rendering-usetransition-loading.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-defer-reads.md",
+      "label": "rerender-defer-reads.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-defer-reads.md",
+      "summary": "Documentation / Skill / Rule: rerender-defer-reads.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-dependencies.md",
+      "label": "rerender-dependencies.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-dependencies.md",
+      "summary": "Documentation / Skill / Rule: rerender-dependencies.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state-no-effect.md",
+      "label": "rerender-derived-state-no-effect.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-derived-state-no-effect.md",
+      "summary": "Documentation / Skill / Rule: rerender-derived-state-no-effect.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state.md",
+      "label": "rerender-derived-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-derived-state.md",
+      "summary": "Documentation / Skill / Rule: rerender-derived-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md",
+      "label": "rerender-functional-setstate.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-functional-setstate.md",
+      "summary": "Documentation / Skill / Rule: rerender-functional-setstate.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-lazy-state-init.md",
+      "label": "rerender-lazy-state-init.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-lazy-state-init.md",
+      "summary": "Documentation / Skill / Rule: rerender-lazy-state-init.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-memo-with-default-value.md",
+      "label": "rerender-memo-with-default-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-memo-with-default-value.md",
+      "summary": "Documentation / Skill / Rule: rerender-memo-with-default-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-memo.md",
+      "label": "rerender-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-memo.md",
+      "summary": "Documentation / Skill / Rule: rerender-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-move-effect-to-event.md",
+      "label": "rerender-move-effect-to-event.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-move-effect-to-event.md",
+      "summary": "Documentation / Skill / Rule: rerender-move-effect-to-event.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-no-inline-components.md",
+      "label": "rerender-no-inline-components.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-no-inline-components.md",
+      "summary": "Documentation / Skill / Rule: rerender-no-inline-components.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-simple-expression-in-memo.md",
+      "label": "rerender-simple-expression-in-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-simple-expression-in-memo.md",
+      "summary": "Documentation / Skill / Rule: rerender-simple-expression-in-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-split-combined-hooks.md",
+      "label": "rerender-split-combined-hooks.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-split-combined-hooks.md",
+      "summary": "Documentation / Skill / Rule: rerender-split-combined-hooks.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-transitions.md",
+      "label": "rerender-transitions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-transitions.md",
+      "summary": "Documentation / Skill / Rule: rerender-transitions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-use-deferred-value.md",
+      "label": "rerender-use-deferred-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-use-deferred-value.md",
+      "summary": "Documentation / Skill / Rule: rerender-use-deferred-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-use-ref-transient-values.md",
+      "label": "rerender-use-ref-transient-values.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-use-ref-transient-values.md",
+      "summary": "Documentation / Skill / Rule: rerender-use-ref-transient-values.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-after-nonblocking.md",
+      "label": "server-after-nonblocking.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-after-nonblocking.md",
+      "summary": "Documentation / Skill / Rule: server-after-nonblocking.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-auth-actions.md",
+      "label": "server-auth-actions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-auth-actions.md",
+      "summary": "Documentation / Skill / Rule: server-auth-actions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-cache-lru.md",
+      "label": "server-cache-lru.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-cache-lru.md",
+      "summary": "Documentation / Skill / Rule: server-cache-lru.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-cache-react.md",
+      "label": "server-cache-react.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-cache-react.md",
+      "summary": "Documentation / Skill / Rule: server-cache-react.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-dedup-props.md",
+      "label": "server-dedup-props.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-dedup-props.md",
+      "summary": "Documentation / Skill / Rule: server-dedup-props.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-hoist-static-io.md",
+      "label": "server-hoist-static-io.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-hoist-static-io.md",
+      "summary": "Documentation / Skill / Rule: server-hoist-static-io.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-no-shared-module-state.md",
+      "label": "server-no-shared-module-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-no-shared-module-state.md",
+      "summary": "Documentation / Skill / Rule: server-no-shared-module-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-parallel-fetching.md",
+      "label": "server-parallel-fetching.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-parallel-fetching.md",
+      "summary": "Documentation / Skill / Rule: server-parallel-fetching.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-parallel-nested-fetching.md",
+      "label": "server-parallel-nested-fetching.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-parallel-nested-fetching.md",
+      "summary": "Documentation / Skill / Rule: server-parallel-nested-fetching.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-serialization.md",
+      "label": "server-serialization.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-serialization.md",
+      "summary": "Documentation / Skill / Rule: server-serialization.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-derived-value.md",
+      "label": "animation-derived-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-derived-value.md",
+      "summary": "Documentation / Skill / Rule: animation-derived-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-gesture-detector-press.md",
+      "label": "animation-gesture-detector-press.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-gesture-detector-press.md",
+      "summary": "Documentation / Skill / Rule: animation-gesture-detector-press.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-gpu-properties.md",
+      "label": "animation-gpu-properties.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-gpu-properties.md",
+      "summary": "Documentation / Skill / Rule: animation-gpu-properties.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/design-system-compound-components.md",
+      "label": "design-system-compound-components.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\design-system-compound-components.md",
+      "summary": "Documentation / Skill / Rule: design-system-compound-components.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/fonts-config-plugin.md",
+      "label": "fonts-config-plugin.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\fonts-config-plugin.md",
+      "summary": "Documentation / Skill / Rule: fonts-config-plugin.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/imports-design-system-folder.md",
+      "label": "imports-design-system-folder.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\imports-design-system-folder.md",
+      "summary": "Documentation / Skill / Rule: imports-design-system-folder.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/js-hoist-intl.md",
+      "label": "js-hoist-intl.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\js-hoist-intl.md",
+      "summary": "Documentation / Skill / Rule: js-hoist-intl.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-callbacks.md",
+      "label": "list-performance-callbacks.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-callbacks.md",
+      "summary": "Documentation / Skill / Rule: list-performance-callbacks.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-function-references.md",
+      "label": "list-performance-function-references.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-function-references.md",
+      "summary": "Documentation / Skill / Rule: list-performance-function-references.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-images.md",
+      "label": "list-performance-images.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-images.md",
+      "summary": "Documentation / Skill / Rule: list-performance-images.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-inline-objects.md",
+      "label": "list-performance-inline-objects.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-inline-objects.md",
+      "summary": "Documentation / Skill / Rule: list-performance-inline-objects.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-expensive.md",
+      "label": "list-performance-item-expensive.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-expensive.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-expensive.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-memo.md",
+      "label": "list-performance-item-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-memo.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-types.md",
+      "label": "list-performance-item-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-types.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-types.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-virtualize.md",
+      "label": "list-performance-virtualize.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-virtualize.md",
+      "summary": "Documentation / Skill / Rule: list-performance-virtualize.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/monorepo-native-deps-in-app.md",
+      "label": "monorepo-native-deps-in-app.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\monorepo-native-deps-in-app.md",
+      "summary": "Documentation / Skill / Rule: monorepo-native-deps-in-app.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/monorepo-single-dependency-versions.md",
+      "label": "monorepo-single-dependency-versions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\monorepo-single-dependency-versions.md",
+      "summary": "Documentation / Skill / Rule: monorepo-single-dependency-versions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/navigation-native-navigators.md",
+      "label": "navigation-native-navigators.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\navigation-native-navigators.md",
+      "summary": "Documentation / Skill / Rule: navigation-native-navigators.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-compiler-destructure-functions.md",
+      "label": "react-compiler-destructure-functions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-compiler-destructure-functions.md",
+      "summary": "Documentation / Skill / Rule: react-compiler-destructure-functions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-compiler-reanimated-shared-values.md",
+      "label": "react-compiler-reanimated-shared-values.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-compiler-reanimated-shared-values.md",
+      "summary": "Documentation / Skill / Rule: react-compiler-reanimated-shared-values.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-dispatcher.md",
+      "label": "react-state-dispatcher.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-dispatcher.md",
+      "summary": "Documentation / Skill / Rule: react-state-dispatcher.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-fallback.md",
+      "label": "react-state-fallback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-fallback.md",
+      "summary": "Documentation / Skill / Rule: react-state-fallback.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-minimize.md",
+      "label": "react-state-minimize.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-minimize.md",
+      "summary": "Documentation / Skill / Rule: react-state-minimize.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/rendering-no-falsy-and.md",
+      "label": "rendering-no-falsy-and.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\rendering-no-falsy-and.md",
+      "summary": "Documentation / Skill / Rule: rendering-no-falsy-and.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/rendering-text-in-text-component.md",
+      "label": "rendering-text-in-text-component.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\rendering-text-in-text-component.md",
+      "summary": "Documentation / Skill / Rule: rendering-text-in-text-component.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/scroll-position-no-state.md",
+      "label": "scroll-position-no-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\scroll-position-no-state.md",
+      "summary": "Documentation / Skill / Rule: scroll-position-no-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/state-ground-truth.md",
+      "label": "state-ground-truth.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\state-ground-truth.md",
+      "summary": "Documentation / Skill / Rule: state-ground-truth.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-expo-image.md",
+      "label": "ui-expo-image.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-expo-image.md",
+      "summary": "Documentation / Skill / Rule: ui-expo-image.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-image-gallery.md",
+      "label": "ui-image-gallery.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-image-gallery.md",
+      "summary": "Documentation / Skill / Rule: ui-image-gallery.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-measure-views.md",
+      "label": "ui-measure-views.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-measure-views.md",
+      "summary": "Documentation / Skill / Rule: ui-measure-views.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-menus.md",
+      "label": "ui-menus.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-menus.md",
+      "summary": "Documentation / Skill / Rule: ui-menus.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-native-modals.md",
+      "label": "ui-native-modals.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-native-modals.md",
+      "summary": "Documentation / Skill / Rule: ui-native-modals.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-pressable.md",
+      "label": "ui-pressable.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-pressable.md",
+      "summary": "Documentation / Skill / Rule: ui-pressable.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-safe-area-scroll.md",
+      "label": "ui-safe-area-scroll.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-safe-area-scroll.md",
+      "summary": "Documentation / Skill / Rule: ui-safe-area-scroll.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-scrollview-content-inset.md",
+      "label": "ui-scrollview-content-inset.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-scrollview-content-inset.md",
+      "summary": "Documentation / Skill / Rule: ui-scrollview-content-inset.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-styling.md",
+      "label": "ui-styling.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-styling.md",
+      "summary": "Documentation / Skill / Rule: ui-styling.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/css-recipes.md",
+      "label": "css-recipes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\css-recipes.md",
+      "summary": "Documentation / Skill / Rule: css-recipes.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/implementation.md",
+      "label": "implementation.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\implementation.md",
+      "summary": "Documentation / Skill / Rule: implementation.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/nextjs.md",
+      "label": "nextjs.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\nextjs.md",
+      "summary": "Documentation / Skill / Rule: nextjs.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/patterns.md",
+      "label": "patterns.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\patterns.md",
+      "summary": "Documentation / Skill / Rule: patterns.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/troubleshooting.md",
+      "label": "troubleshooting.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\troubleshooting.md",
+      "summary": "Documentation / Skill / Rule: troubleshooting.md"
+    },
+    {
+      "id": "AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": "CLAUDE.md",
+      "label": "CLAUDE.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\CLAUDE.md",
+      "summary": "Documentation / Skill / Rule: CLAUDE.md"
+    },
+    {
+      "id": "README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": "public/file.svg",
+      "label": "file.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\file.svg",
+      "summary": "Documentation / Skill / Rule: file.svg"
+    },
+    {
+      "id": "public/globe.svg",
+      "label": "globe.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\globe.svg",
+      "summary": "Documentation / Skill / Rule: globe.svg"
+    },
+    {
+      "id": "public/next.svg",
+      "label": "next.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\next.svg",
+      "summary": "Documentation / Skill / Rule: next.svg"
+    },
+    {
+      "id": "public/vercel.svg",
+      "label": "vercel.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\vercel.svg",
+      "summary": "Documentation / Skill / Rule: vercel.svg"
+    },
+    {
+      "id": "public/window.svg",
+      "label": "window.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\window.svg",
+      "summary": "Documentation / Skill / Rule: window.svg"
+    }
+  ],
+  "edges": [
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template",
+      "target": "agents_skills_user_story_scripts_user_story_template_parse_args",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template_parse_args",
+      "target": "namespace",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template",
+      "target": "agents_skills_user_story_scripts_user_story_template_normalize",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template",
+      "target": "agents_skills_user_story_scripts_user_story_template_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template_main",
+      "target": "agents_skills_user_story_scripts_user_story_template_parse_args",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template_main",
+      "target": "agents_skills_user_story_scripts_user_story_template_normalize",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L35",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "agents_skills_user_story_scripts_user_story_template_rationale_2",
+      "target": "agents_skills_user_story_scripts_user_story_template",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": ".agents/skills/user-story/scripts/user-story-template.py",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "type_only": true,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "app_globals",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "app_layout_inter",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "app_layout_metadata",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_layout",
+      "target": "app_layout_rootlayout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_page",
+      "target": "components_theme_toggle",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_page",
+      "target": "components_theme_toggle_themetoggle",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_page",
+      "target": "lib_tokens",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_page",
+      "target": "lib_tokens_brand",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "app_page",
+      "target": "app_page_home",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "ref_react",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "lib_tokens",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "lib_tokens_thememode",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "lib_tokens_default_theme",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "components_theme_toggle_applytheme",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "components_theme_toggle_subscribe",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "components_theme_toggle_getsnapshot",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "components_theme_toggle_getserversnapshot",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle",
+      "target": "components_theme_toggle_themetoggle",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle_themetoggle",
+      "target": "components_theme_toggle_subscribe",
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle_themetoggle",
+      "target": "components_theme_toggle_getsnapshot",
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle_themetoggle",
+      "target": "components_theme_toggle_getserversnapshot",
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "components_theme_toggle_themetoggle",
+      "target": "components_theme_toggle_applytheme",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/theme-toggle.tsx",
+      "source_location": "L39",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "eslint_config",
+      "target": "ref_eslint",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "eslint_config",
+      "target": "ref_eslint_config_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "eslint_config",
+      "target": "ref_eslint_config_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "eslint_config",
+      "target": "eslint_config_eslintconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "eslint.config.mjs",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_prisma",
+      "target": "ref_prisma_client",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_prisma",
+      "target": "lib_prisma_globalforprisma",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_prisma",
+      "target": "lib_prisma_prisma",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/prisma.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_client",
+      "target": "ref_supabase_ssr",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/client.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_client",
+      "target": "lib_supabase_client_createclient",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/client.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_middleware",
+      "target": "ref_supabase_ssr",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_middleware",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_middleware",
+      "target": "lib_supabase_middleware_updatesession",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_middleware_rationale_30",
+      "target": "lib_supabase_middleware",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/middleware.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_server",
+      "target": "ref_supabase_ssr",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/server.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_server",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/server.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_supabase_server",
+      "target": "lib_supabase_server_createclient",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/supabase/server.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_brand",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_default_theme",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_thememode",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_colortokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_lighttokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_darktokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_typographytokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L162",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_radiitokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L190",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_transitiontokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L198",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "lib_tokens",
+      "target": "lib_tokens_getthemetokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/tokens.ts",
+      "source_location": "L206",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware",
+      "target": "lib_supabase_middleware",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware",
+      "target": "lib_supabase_middleware_updatesession",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware",
+      "target": "middleware_middleware",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware",
+      "target": "middleware_config",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "next_config",
+      "target": "ref_next",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "next.config.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "type_only": true,
+      "_origin": "ast"
+    },
+    {
+      "source": "next_config",
+      "target": "next_config_nextconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "next.config.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_name",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_version",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_private",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_scripts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_dev",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_build",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_start",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_lint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_postinstall",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_dependencies",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_prisma_client",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_prisma_client",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_supabase_ssr",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_supabase_ssr",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_supabase_supabase_js",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_supabase_supabase_js",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_lucide_react",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_lucide_react",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_next",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_next",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_react",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_react",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_react_dom",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_react_dom",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "package_devdependencies",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_tailwindcss_postcss",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_tailwindcss_postcss",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_types_node",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_types_node",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_types_react",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_types_react",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L24",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_types_react_dom",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_types_react_dom",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L25",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_eslint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_eslint",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L26",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_eslint_config_next",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L27",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_eslint_config_next",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L27",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_prisma",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_prisma",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L28",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_tailwindcss",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_tailwindcss",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L29",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "package_devdependencies",
+      "target": "package_devdependencies_typescript",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "package",
+      "target": "ref_typescript",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L30",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast"
+    },
+    {
+      "source": "postcss_config",
+      "target": "postcss_config_config",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postcss.config.mjs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "prisma_config",
+      "target": "ref_dotenv",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "prisma.config.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "prisma_config",
+      "target": "ref_prisma",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "prisma.config.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig",
+      "target": "tsconfig_compileroptions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_target",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_lib",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_allowjs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_skiplibcheck",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_strict",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_noemit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_esmoduleinterop",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_module",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_moduleresolution",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_resolvejsonmodule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_isolatedmodules",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_jsx",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_incremental",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_plugins",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig_compileroptions",
+      "target": "tsconfig_compileroptions_paths",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig",
+      "target": "tsconfig_include",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tsconfig",
+      "target": "tsconfig_exclude",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.json",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "middleware_middleware",
+      "target": "lib_supabase_middleware_updatesession",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "middleware.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

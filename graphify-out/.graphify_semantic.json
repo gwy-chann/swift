@@ -1,0 +1,1380 @@
+{
+  "nodes": [
+    {
+      "id": ".agents/skills/atomic-commit/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\atomic-commit\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/create-pr/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\create-pr\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-breakdown-advisor/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-breakdown-advisor\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/epic-hypothesis/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\epic-hypothesis\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/grill-me/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\grill-me\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/grill-me/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\grill-me\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/HTML-REPORT.md",
+      "label": "HTML-REPORT.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\HTML-REPORT.md",
+      "summary": "Documentation / Skill / Rule: HTML-REPORT.md"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/improve-codebase-architecture/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\improve-codebase-architecture\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/roadmap-planning/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\roadmap-planning\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/CHANGELOG.md",
+      "label": "CHANGELOG.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\CHANGELOG.md",
+      "summary": "Documentation / Skill / Rule: CHANGELOG.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_contributing.md",
+      "label": "_contributing.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_contributing.md",
+      "summary": "Documentation / Skill / Rule: _contributing.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/advanced-full-text-search.md",
+      "label": "advanced-full-text-search.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\advanced-full-text-search.md",
+      "summary": "Documentation / Skill / Rule: advanced-full-text-search.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/advanced-jsonb-indexing.md",
+      "label": "advanced-jsonb-indexing.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\advanced-jsonb-indexing.md",
+      "summary": "Documentation / Skill / Rule: advanced-jsonb-indexing.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-idle-timeout.md",
+      "label": "conn-idle-timeout.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-idle-timeout.md",
+      "summary": "Documentation / Skill / Rule: conn-idle-timeout.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-limits.md",
+      "label": "conn-limits.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-limits.md",
+      "summary": "Documentation / Skill / Rule: conn-limits.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-pooling.md",
+      "label": "conn-pooling.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-pooling.md",
+      "summary": "Documentation / Skill / Rule: conn-pooling.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/conn-prepared-statements.md",
+      "label": "conn-prepared-statements.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\conn-prepared-statements.md",
+      "summary": "Documentation / Skill / Rule: conn-prepared-statements.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-batch-inserts.md",
+      "label": "data-batch-inserts.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-batch-inserts.md",
+      "summary": "Documentation / Skill / Rule: data-batch-inserts.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-n-plus-one.md",
+      "label": "data-n-plus-one.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-n-plus-one.md",
+      "summary": "Documentation / Skill / Rule: data-n-plus-one.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-pagination.md",
+      "label": "data-pagination.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-pagination.md",
+      "summary": "Documentation / Skill / Rule: data-pagination.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/data-upsert.md",
+      "label": "data-upsert.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\data-upsert.md",
+      "summary": "Documentation / Skill / Rule: data-upsert.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-advisory.md",
+      "label": "lock-advisory.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-advisory.md",
+      "summary": "Documentation / Skill / Rule: lock-advisory.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-deadlock-prevention.md",
+      "label": "lock-deadlock-prevention.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-deadlock-prevention.md",
+      "summary": "Documentation / Skill / Rule: lock-deadlock-prevention.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-short-transactions.md",
+      "label": "lock-short-transactions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-short-transactions.md",
+      "summary": "Documentation / Skill / Rule: lock-short-transactions.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/lock-skip-locked.md",
+      "label": "lock-skip-locked.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\lock-skip-locked.md",
+      "summary": "Documentation / Skill / Rule: lock-skip-locked.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-explain-analyze.md",
+      "label": "monitor-explain-analyze.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-explain-analyze.md",
+      "summary": "Documentation / Skill / Rule: monitor-explain-analyze.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-pg-stat-statements.md",
+      "label": "monitor-pg-stat-statements.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-pg-stat-statements.md",
+      "summary": "Documentation / Skill / Rule: monitor-pg-stat-statements.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/monitor-vacuum-analyze.md",
+      "label": "monitor-vacuum-analyze.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\monitor-vacuum-analyze.md",
+      "summary": "Documentation / Skill / Rule: monitor-vacuum-analyze.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-composite-indexes.md",
+      "label": "query-composite-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-composite-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-composite-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-covering-indexes.md",
+      "label": "query-covering-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-covering-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-covering-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-index-types.md",
+      "label": "query-index-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-index-types.md",
+      "summary": "Documentation / Skill / Rule: query-index-types.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-missing-indexes.md",
+      "label": "query-missing-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-missing-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-missing-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/query-partial-indexes.md",
+      "label": "query-partial-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\query-partial-indexes.md",
+      "summary": "Documentation / Skill / Rule: query-partial-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-constraints.md",
+      "label": "schema-constraints.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-constraints.md",
+      "summary": "Documentation / Skill / Rule: schema-constraints.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-data-types.md",
+      "label": "schema-data-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-data-types.md",
+      "summary": "Documentation / Skill / Rule: schema-data-types.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-foreign-key-indexes.md",
+      "label": "schema-foreign-key-indexes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-foreign-key-indexes.md",
+      "summary": "Documentation / Skill / Rule: schema-foreign-key-indexes.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-lowercase-identifiers.md",
+      "label": "schema-lowercase-identifiers.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-lowercase-identifiers.md",
+      "summary": "Documentation / Skill / Rule: schema-lowercase-identifiers.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-partitioning.md",
+      "label": "schema-partitioning.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-partitioning.md",
+      "summary": "Documentation / Skill / Rule: schema-partitioning.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/schema-primary-keys.md",
+      "label": "schema-primary-keys.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\schema-primary-keys.md",
+      "summary": "Documentation / Skill / Rule: schema-primary-keys.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-privileges.md",
+      "label": "security-privileges.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-privileges.md",
+      "summary": "Documentation / Skill / Rule: security-privileges.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-rls-basics.md",
+      "label": "security-rls-basics.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-rls-basics.md",
+      "summary": "Documentation / Skill / Rule: security-rls-basics.md"
+    },
+    {
+      "id": ".agents/skills/supabase-postgres-best-practices/references/security-rls-performance.md",
+      "label": "security-rls-performance.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase-postgres-best-practices\\references\\security-rls-performance.md",
+      "summary": "Documentation / Skill / Rule: security-rls-performance.md"
+    },
+    {
+      "id": ".agents/skills/supabase/CHANGELOG.md",
+      "label": "CHANGELOG.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\CHANGELOG.md",
+      "summary": "Documentation / Skill / Rule: CHANGELOG.md"
+    },
+    {
+      "id": ".agents/skills/supabase/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/supabase/assets/feedback-issue-template.md",
+      "label": "feedback-issue-template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\assets\\feedback-issue-template.md",
+      "summary": "Documentation / Skill / Rule: feedback-issue-template.md"
+    },
+    {
+      "id": ".agents/skills/supabase/references/skill-feedback.md",
+      "label": "skill-feedback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\supabase\\references\\skill-feedback.md",
+      "summary": "Documentation / Skill / Rule: skill-feedback.md"
+    },
+    {
+      "id": ".agents/skills/tdd/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/tdd/agents/openai.yaml",
+      "label": "openai.yaml",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\agents\\openai.yaml",
+      "summary": "Documentation / Skill / Rule: openai.yaml"
+    },
+    {
+      "id": ".agents/skills/tdd/mocking.md",
+      "label": "mocking.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\mocking.md",
+      "summary": "Documentation / Skill / Rule: mocking.md"
+    },
+    {
+      "id": ".agents/skills/tdd/tests.md",
+      "label": "tests.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\tdd\\tests.md",
+      "summary": "Documentation / Skill / Rule: tests.md"
+    },
+    {
+      "id": ".agents/skills/user-story/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/user-story/examples/sample-industrial.md",
+      "label": "sample-industrial.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\examples\\sample-industrial.md",
+      "summary": "Documentation / Skill / Rule: sample-industrial.md"
+    },
+    {
+      "id": ".agents/skills/user-story/examples/sample.md",
+      "label": "sample.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\examples\\sample.md",
+      "summary": "Documentation / Skill / Rule: sample.md"
+    },
+    {
+      "id": ".agents/skills/user-story/template.md",
+      "label": "template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\user-story\\template.md",
+      "summary": "Documentation / Skill / Rule: template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-effect-event-deps.md",
+      "label": "advanced-effect-event-deps.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-effect-event-deps.md",
+      "summary": "Documentation / Skill / Rule: advanced-effect-event-deps.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-event-handler-refs.md",
+      "label": "advanced-event-handler-refs.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-event-handler-refs.md",
+      "summary": "Documentation / Skill / Rule: advanced-event-handler-refs.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-init-once.md",
+      "label": "advanced-init-once.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-init-once.md",
+      "summary": "Documentation / Skill / Rule: advanced-init-once.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/advanced-use-latest.md",
+      "label": "advanced-use-latest.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\advanced-use-latest.md",
+      "summary": "Documentation / Skill / Rule: advanced-use-latest.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-api-routes.md",
+      "label": "async-api-routes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-api-routes.md",
+      "summary": "Documentation / Skill / Rule: async-api-routes.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-cheap-condition-before-await.md",
+      "label": "async-cheap-condition-before-await.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-cheap-condition-before-await.md",
+      "summary": "Documentation / Skill / Rule: async-cheap-condition-before-await.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-defer-await.md",
+      "label": "async-defer-await.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-defer-await.md",
+      "summary": "Documentation / Skill / Rule: async-defer-await.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-dependencies.md",
+      "label": "async-dependencies.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-dependencies.md",
+      "summary": "Documentation / Skill / Rule: async-dependencies.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-parallel.md",
+      "label": "async-parallel.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-parallel.md",
+      "summary": "Documentation / Skill / Rule: async-parallel.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/async-suspense-boundaries.md",
+      "label": "async-suspense-boundaries.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\async-suspense-boundaries.md",
+      "summary": "Documentation / Skill / Rule: async-suspense-boundaries.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-analyzable-paths.md",
+      "label": "bundle-analyzable-paths.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-analyzable-paths.md",
+      "summary": "Documentation / Skill / Rule: bundle-analyzable-paths.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-barrel-imports.md",
+      "label": "bundle-barrel-imports.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-barrel-imports.md",
+      "summary": "Documentation / Skill / Rule: bundle-barrel-imports.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-conditional.md",
+      "label": "bundle-conditional.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-conditional.md",
+      "summary": "Documentation / Skill / Rule: bundle-conditional.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-defer-third-party.md",
+      "label": "bundle-defer-third-party.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-defer-third-party.md",
+      "summary": "Documentation / Skill / Rule: bundle-defer-third-party.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-dynamic-imports.md",
+      "label": "bundle-dynamic-imports.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-dynamic-imports.md",
+      "summary": "Documentation / Skill / Rule: bundle-dynamic-imports.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/bundle-preload.md",
+      "label": "bundle-preload.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\bundle-preload.md",
+      "summary": "Documentation / Skill / Rule: bundle-preload.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-event-listeners.md",
+      "label": "client-event-listeners.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-event-listeners.md",
+      "summary": "Documentation / Skill / Rule: client-event-listeners.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-localstorage-schema.md",
+      "label": "client-localstorage-schema.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-localstorage-schema.md",
+      "summary": "Documentation / Skill / Rule: client-localstorage-schema.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-passive-event-listeners.md",
+      "label": "client-passive-event-listeners.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-passive-event-listeners.md",
+      "summary": "Documentation / Skill / Rule: client-passive-event-listeners.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/client-swr-dedup.md",
+      "label": "client-swr-dedup.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\client-swr-dedup.md",
+      "summary": "Documentation / Skill / Rule: client-swr-dedup.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-batch-dom-css.md",
+      "label": "js-batch-dom-css.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-batch-dom-css.md",
+      "summary": "Documentation / Skill / Rule: js-batch-dom-css.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-function-results.md",
+      "label": "js-cache-function-results.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-function-results.md",
+      "summary": "Documentation / Skill / Rule: js-cache-function-results.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-property-access.md",
+      "label": "js-cache-property-access.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-property-access.md",
+      "summary": "Documentation / Skill / Rule: js-cache-property-access.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-cache-storage.md",
+      "label": "js-cache-storage.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-cache-storage.md",
+      "summary": "Documentation / Skill / Rule: js-cache-storage.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-combine-iterations.md",
+      "label": "js-combine-iterations.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-combine-iterations.md",
+      "summary": "Documentation / Skill / Rule: js-combine-iterations.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-early-exit.md",
+      "label": "js-early-exit.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-early-exit.md",
+      "summary": "Documentation / Skill / Rule: js-early-exit.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-flatmap-filter.md",
+      "label": "js-flatmap-filter.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-flatmap-filter.md",
+      "summary": "Documentation / Skill / Rule: js-flatmap-filter.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-hoist-regexp.md",
+      "label": "js-hoist-regexp.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-hoist-regexp.md",
+      "summary": "Documentation / Skill / Rule: js-hoist-regexp.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-index-maps.md",
+      "label": "js-index-maps.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-index-maps.md",
+      "summary": "Documentation / Skill / Rule: js-index-maps.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-length-check-first.md",
+      "label": "js-length-check-first.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-length-check-first.md",
+      "summary": "Documentation / Skill / Rule: js-length-check-first.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-min-max-loop.md",
+      "label": "js-min-max-loop.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-min-max-loop.md",
+      "summary": "Documentation / Skill / Rule: js-min-max-loop.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-request-idle-callback.md",
+      "label": "js-request-idle-callback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-request-idle-callback.md",
+      "summary": "Documentation / Skill / Rule: js-request-idle-callback.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-set-map-lookups.md",
+      "label": "js-set-map-lookups.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-set-map-lookups.md",
+      "summary": "Documentation / Skill / Rule: js-set-map-lookups.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/js-tosorted-immutable.md",
+      "label": "js-tosorted-immutable.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\js-tosorted-immutable.md",
+      "summary": "Documentation / Skill / Rule: js-tosorted-immutable.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-activity.md",
+      "label": "rendering-activity.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-activity.md",
+      "summary": "Documentation / Skill / Rule: rendering-activity.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-animate-svg-wrapper.md",
+      "label": "rendering-animate-svg-wrapper.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-animate-svg-wrapper.md",
+      "summary": "Documentation / Skill / Rule: rendering-animate-svg-wrapper.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-conditional-render.md",
+      "label": "rendering-conditional-render.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-conditional-render.md",
+      "summary": "Documentation / Skill / Rule: rendering-conditional-render.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-content-visibility.md",
+      "label": "rendering-content-visibility.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-content-visibility.md",
+      "summary": "Documentation / Skill / Rule: rendering-content-visibility.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hoist-jsx.md",
+      "label": "rendering-hoist-jsx.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hoist-jsx.md",
+      "summary": "Documentation / Skill / Rule: rendering-hoist-jsx.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-no-flicker.md",
+      "label": "rendering-hydration-no-flicker.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hydration-no-flicker.md",
+      "summary": "Documentation / Skill / Rule: rendering-hydration-no-flicker.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-suppress-warning.md",
+      "label": "rendering-hydration-suppress-warning.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-hydration-suppress-warning.md",
+      "summary": "Documentation / Skill / Rule: rendering-hydration-suppress-warning.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-resource-hints.md",
+      "label": "rendering-resource-hints.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-resource-hints.md",
+      "summary": "Documentation / Skill / Rule: rendering-resource-hints.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-script-defer-async.md",
+      "label": "rendering-script-defer-async.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-script-defer-async.md",
+      "summary": "Documentation / Skill / Rule: rendering-script-defer-async.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-svg-precision.md",
+      "label": "rendering-svg-precision.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-svg-precision.md",
+      "summary": "Documentation / Skill / Rule: rendering-svg-precision.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rendering-usetransition-loading.md",
+      "label": "rendering-usetransition-loading.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rendering-usetransition-loading.md",
+      "summary": "Documentation / Skill / Rule: rendering-usetransition-loading.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-defer-reads.md",
+      "label": "rerender-defer-reads.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-defer-reads.md",
+      "summary": "Documentation / Skill / Rule: rerender-defer-reads.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-dependencies.md",
+      "label": "rerender-dependencies.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-dependencies.md",
+      "summary": "Documentation / Skill / Rule: rerender-dependencies.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state-no-effect.md",
+      "label": "rerender-derived-state-no-effect.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-derived-state-no-effect.md",
+      "summary": "Documentation / Skill / Rule: rerender-derived-state-no-effect.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state.md",
+      "label": "rerender-derived-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-derived-state.md",
+      "summary": "Documentation / Skill / Rule: rerender-derived-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md",
+      "label": "rerender-functional-setstate.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-functional-setstate.md",
+      "summary": "Documentation / Skill / Rule: rerender-functional-setstate.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-lazy-state-init.md",
+      "label": "rerender-lazy-state-init.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-lazy-state-init.md",
+      "summary": "Documentation / Skill / Rule: rerender-lazy-state-init.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-memo-with-default-value.md",
+      "label": "rerender-memo-with-default-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-memo-with-default-value.md",
+      "summary": "Documentation / Skill / Rule: rerender-memo-with-default-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-memo.md",
+      "label": "rerender-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-memo.md",
+      "summary": "Documentation / Skill / Rule: rerender-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-move-effect-to-event.md",
+      "label": "rerender-move-effect-to-event.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-move-effect-to-event.md",
+      "summary": "Documentation / Skill / Rule: rerender-move-effect-to-event.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-no-inline-components.md",
+      "label": "rerender-no-inline-components.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-no-inline-components.md",
+      "summary": "Documentation / Skill / Rule: rerender-no-inline-components.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-simple-expression-in-memo.md",
+      "label": "rerender-simple-expression-in-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-simple-expression-in-memo.md",
+      "summary": "Documentation / Skill / Rule: rerender-simple-expression-in-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-split-combined-hooks.md",
+      "label": "rerender-split-combined-hooks.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-split-combined-hooks.md",
+      "summary": "Documentation / Skill / Rule: rerender-split-combined-hooks.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-transitions.md",
+      "label": "rerender-transitions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-transitions.md",
+      "summary": "Documentation / Skill / Rule: rerender-transitions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-use-deferred-value.md",
+      "label": "rerender-use-deferred-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-use-deferred-value.md",
+      "summary": "Documentation / Skill / Rule: rerender-use-deferred-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/rerender-use-ref-transient-values.md",
+      "label": "rerender-use-ref-transient-values.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\rerender-use-ref-transient-values.md",
+      "summary": "Documentation / Skill / Rule: rerender-use-ref-transient-values.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-after-nonblocking.md",
+      "label": "server-after-nonblocking.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-after-nonblocking.md",
+      "summary": "Documentation / Skill / Rule: server-after-nonblocking.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-auth-actions.md",
+      "label": "server-auth-actions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-auth-actions.md",
+      "summary": "Documentation / Skill / Rule: server-auth-actions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-cache-lru.md",
+      "label": "server-cache-lru.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-cache-lru.md",
+      "summary": "Documentation / Skill / Rule: server-cache-lru.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-cache-react.md",
+      "label": "server-cache-react.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-cache-react.md",
+      "summary": "Documentation / Skill / Rule: server-cache-react.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-dedup-props.md",
+      "label": "server-dedup-props.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-dedup-props.md",
+      "summary": "Documentation / Skill / Rule: server-dedup-props.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-hoist-static-io.md",
+      "label": "server-hoist-static-io.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-hoist-static-io.md",
+      "summary": "Documentation / Skill / Rule: server-hoist-static-io.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-no-shared-module-state.md",
+      "label": "server-no-shared-module-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-no-shared-module-state.md",
+      "summary": "Documentation / Skill / Rule: server-no-shared-module-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-parallel-fetching.md",
+      "label": "server-parallel-fetching.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-parallel-fetching.md",
+      "summary": "Documentation / Skill / Rule: server-parallel-fetching.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-parallel-nested-fetching.md",
+      "label": "server-parallel-nested-fetching.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-parallel-nested-fetching.md",
+      "summary": "Documentation / Skill / Rule: server-parallel-nested-fetching.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-best-practices/rules/server-serialization.md",
+      "label": "server-serialization.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-best-practices\\rules\\server-serialization.md",
+      "summary": "Documentation / Skill / Rule: server-serialization.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/_sections.md",
+      "label": "_sections.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\_sections.md",
+      "summary": "Documentation / Skill / Rule: _sections.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/_template.md",
+      "label": "_template.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\_template.md",
+      "summary": "Documentation / Skill / Rule: _template.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-derived-value.md",
+      "label": "animation-derived-value.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-derived-value.md",
+      "summary": "Documentation / Skill / Rule: animation-derived-value.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-gesture-detector-press.md",
+      "label": "animation-gesture-detector-press.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-gesture-detector-press.md",
+      "summary": "Documentation / Skill / Rule: animation-gesture-detector-press.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/animation-gpu-properties.md",
+      "label": "animation-gpu-properties.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\animation-gpu-properties.md",
+      "summary": "Documentation / Skill / Rule: animation-gpu-properties.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/design-system-compound-components.md",
+      "label": "design-system-compound-components.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\design-system-compound-components.md",
+      "summary": "Documentation / Skill / Rule: design-system-compound-components.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/fonts-config-plugin.md",
+      "label": "fonts-config-plugin.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\fonts-config-plugin.md",
+      "summary": "Documentation / Skill / Rule: fonts-config-plugin.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/imports-design-system-folder.md",
+      "label": "imports-design-system-folder.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\imports-design-system-folder.md",
+      "summary": "Documentation / Skill / Rule: imports-design-system-folder.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/js-hoist-intl.md",
+      "label": "js-hoist-intl.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\js-hoist-intl.md",
+      "summary": "Documentation / Skill / Rule: js-hoist-intl.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-callbacks.md",
+      "label": "list-performance-callbacks.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-callbacks.md",
+      "summary": "Documentation / Skill / Rule: list-performance-callbacks.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-function-references.md",
+      "label": "list-performance-function-references.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-function-references.md",
+      "summary": "Documentation / Skill / Rule: list-performance-function-references.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-images.md",
+      "label": "list-performance-images.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-images.md",
+      "summary": "Documentation / Skill / Rule: list-performance-images.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-inline-objects.md",
+      "label": "list-performance-inline-objects.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-inline-objects.md",
+      "summary": "Documentation / Skill / Rule: list-performance-inline-objects.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-expensive.md",
+      "label": "list-performance-item-expensive.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-expensive.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-expensive.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-memo.md",
+      "label": "list-performance-item-memo.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-memo.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-memo.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-item-types.md",
+      "label": "list-performance-item-types.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-item-types.md",
+      "summary": "Documentation / Skill / Rule: list-performance-item-types.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/list-performance-virtualize.md",
+      "label": "list-performance-virtualize.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\list-performance-virtualize.md",
+      "summary": "Documentation / Skill / Rule: list-performance-virtualize.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/monorepo-native-deps-in-app.md",
+      "label": "monorepo-native-deps-in-app.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\monorepo-native-deps-in-app.md",
+      "summary": "Documentation / Skill / Rule: monorepo-native-deps-in-app.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/monorepo-single-dependency-versions.md",
+      "label": "monorepo-single-dependency-versions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\monorepo-single-dependency-versions.md",
+      "summary": "Documentation / Skill / Rule: monorepo-single-dependency-versions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/navigation-native-navigators.md",
+      "label": "navigation-native-navigators.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\navigation-native-navigators.md",
+      "summary": "Documentation / Skill / Rule: navigation-native-navigators.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-compiler-destructure-functions.md",
+      "label": "react-compiler-destructure-functions.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-compiler-destructure-functions.md",
+      "summary": "Documentation / Skill / Rule: react-compiler-destructure-functions.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-compiler-reanimated-shared-values.md",
+      "label": "react-compiler-reanimated-shared-values.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-compiler-reanimated-shared-values.md",
+      "summary": "Documentation / Skill / Rule: react-compiler-reanimated-shared-values.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-dispatcher.md",
+      "label": "react-state-dispatcher.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-dispatcher.md",
+      "summary": "Documentation / Skill / Rule: react-state-dispatcher.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-fallback.md",
+      "label": "react-state-fallback.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-fallback.md",
+      "summary": "Documentation / Skill / Rule: react-state-fallback.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/react-state-minimize.md",
+      "label": "react-state-minimize.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\react-state-minimize.md",
+      "summary": "Documentation / Skill / Rule: react-state-minimize.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/rendering-no-falsy-and.md",
+      "label": "rendering-no-falsy-and.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\rendering-no-falsy-and.md",
+      "summary": "Documentation / Skill / Rule: rendering-no-falsy-and.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/rendering-text-in-text-component.md",
+      "label": "rendering-text-in-text-component.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\rendering-text-in-text-component.md",
+      "summary": "Documentation / Skill / Rule: rendering-text-in-text-component.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/scroll-position-no-state.md",
+      "label": "scroll-position-no-state.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\scroll-position-no-state.md",
+      "summary": "Documentation / Skill / Rule: scroll-position-no-state.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/state-ground-truth.md",
+      "label": "state-ground-truth.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\state-ground-truth.md",
+      "summary": "Documentation / Skill / Rule: state-ground-truth.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-expo-image.md",
+      "label": "ui-expo-image.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-expo-image.md",
+      "summary": "Documentation / Skill / Rule: ui-expo-image.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-image-gallery.md",
+      "label": "ui-image-gallery.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-image-gallery.md",
+      "summary": "Documentation / Skill / Rule: ui-image-gallery.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-measure-views.md",
+      "label": "ui-measure-views.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-measure-views.md",
+      "summary": "Documentation / Skill / Rule: ui-measure-views.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-menus.md",
+      "label": "ui-menus.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-menus.md",
+      "summary": "Documentation / Skill / Rule: ui-menus.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-native-modals.md",
+      "label": "ui-native-modals.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-native-modals.md",
+      "summary": "Documentation / Skill / Rule: ui-native-modals.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-pressable.md",
+      "label": "ui-pressable.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-pressable.md",
+      "summary": "Documentation / Skill / Rule: ui-pressable.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-safe-area-scroll.md",
+      "label": "ui-safe-area-scroll.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-safe-area-scroll.md",
+      "summary": "Documentation / Skill / Rule: ui-safe-area-scroll.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-scrollview-content-inset.md",
+      "label": "ui-scrollview-content-inset.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-scrollview-content-inset.md",
+      "summary": "Documentation / Skill / Rule: ui-scrollview-content-inset.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-native-skills/rules/ui-styling.md",
+      "label": "ui-styling.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-native-skills\\rules\\ui-styling.md",
+      "summary": "Documentation / Skill / Rule: ui-styling.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/SKILL.md",
+      "label": "SKILL.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\SKILL.md",
+      "summary": "Documentation / Skill / Rule: SKILL.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/css-recipes.md",
+      "label": "css-recipes.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\css-recipes.md",
+      "summary": "Documentation / Skill / Rule: css-recipes.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/implementation.md",
+      "label": "implementation.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\implementation.md",
+      "summary": "Documentation / Skill / Rule: implementation.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/nextjs.md",
+      "label": "nextjs.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\nextjs.md",
+      "summary": "Documentation / Skill / Rule: nextjs.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/patterns.md",
+      "label": "patterns.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\patterns.md",
+      "summary": "Documentation / Skill / Rule: patterns.md"
+    },
+    {
+      "id": ".agents/skills/vercel-react-view-transitions/references/troubleshooting.md",
+      "label": "troubleshooting.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\.agents\\skills\\vercel-react-view-transitions\\references\\troubleshooting.md",
+      "summary": "Documentation / Skill / Rule: troubleshooting.md"
+    },
+    {
+      "id": "AGENTS.md",
+      "label": "AGENTS.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\AGENTS.md",
+      "summary": "Documentation / Skill / Rule: AGENTS.md"
+    },
+    {
+      "id": "CLAUDE.md",
+      "label": "CLAUDE.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\CLAUDE.md",
+      "summary": "Documentation / Skill / Rule: CLAUDE.md"
+    },
+    {
+      "id": "README.md",
+      "label": "README.md",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\README.md",
+      "summary": "Documentation / Skill / Rule: README.md"
+    },
+    {
+      "id": "public/file.svg",
+      "label": "file.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\file.svg",
+      "summary": "Documentation / Skill / Rule: file.svg"
+    },
+    {
+      "id": "public/globe.svg",
+      "label": "globe.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\globe.svg",
+      "summary": "Documentation / Skill / Rule: globe.svg"
+    },
+    {
+      "id": "public/next.svg",
+      "label": "next.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\next.svg",
+      "summary": "Documentation / Skill / Rule: next.svg"
+    },
+    {
+      "id": "public/vercel.svg",
+      "label": "vercel.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\vercel.svg",
+      "summary": "Documentation / Skill / Rule: vercel.svg"
+    },
+    {
+      "id": "public/window.svg",
+      "label": "window.svg",
+      "type": "document",
+      "source_file": "C:\\Users\\Roselle Tabuena\\workspace\\swift\\swift\\public\\window.svg",
+      "summary": "Documentation / Skill / Rule: window.svg"
+    }
+  ],
+  "edges": [],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
