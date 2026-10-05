@@ -1,50 +1,58 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: Unversioned Template → 1.0.0 (Initial Ratification)
+- List of modified principles:
+  - [PRINCIPLE_1_NAME] → I. Semantic Design Tokens & Zero Hardcoded Colors (NON-NEGOTIABLE)
+  - [PRINCIPLE_2_NAME] → II. Single Source of Truth & Specification Fidelity
+  - [PRINCIPLE_3_NAME] → III. Type-Safe Data Architecture & Domain Integrity
+  - [PRINCIPLE_4_NAME] → IV. Test-First Quality & Contract Verification
+  - [PRINCIPLE_5_NAME] → V. Server-First Performance & Accessibility Standards
+- Added sections:
+  - Technical Constraints & Stack Standards
+  - Development Workflow & Quality Gates
+- Removed sections: None
+- Follow-up TODOs: None
+-->
+
+# SWIFT Project Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Semantic Design Tokens & Zero Hardcoded Colors (NON-NEGOTIABLE)
+All user interface elements MUST strictly consume the semantic design tokens established in `app/globals.css` and `lib/tokens.ts`. Hardcoded hex, RGB, HSL values and arbitrary default Tailwind palette classes (e.g., `text-gray-900`, `bg-blue-600`) are strictly forbidden. Dark and light mode compatibility MUST function automatically through CSS variable token inheritance without scattered manual utility overrides. Canvas, charts, and programmatic visualizations MUST import token definitions from `@/lib/tokens`.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Single Source of Truth & Specification Fidelity
+Implementations MUST strictly adhere to the authoritative project specifications and UI mockups. Routes and sub-modules MUST mirror `../docs/swift_site_map.md`. Business logic, pricing tiers (retail vs. wholesale), labor rates, motorcycle fitment compatibility matrices, and inventory workflows MUST conform to `../docs/features.md`. Visual layouts, interaction states, and component hierarchy MUST replicate or elevate the reference designs in `../mockup/`. Workspace code MUST reference canonical external assets rather than duplicating them.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Type-Safe Data Architecture & Domain Integrity
+Data models, schema definitions, and API contracts MUST maintain strict end-to-end TypeScript safety. Database interactions via Prisma and Supabase (PostgreSQL, SSR auth, RLS) MUST strictly validate schemas, relationships, and transaction integrity. Core domain entities—such as motorcycle parts compatibility, multi-tier pricing, inventory adjustments, and service work orders—MUST be explicitly typed with zero tolerance for `any` types.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Test-First Quality & Contract Verification
+Critical business calculations (fitment matching, invoice totals, wholesale discount application, labor charge rules, and inventory decrement logic) MUST be covered by automated unit and integration tests. Pull requests modifying shared contracts or database models MUST verify backward compatibility and include regression test coverage before merging.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Server-First Performance & Accessibility Standards
+The application MUST follow modern Next.js App Router architectural standards, leveraging Server Components by default and confining `"use client"` boundaries strictly to interactive leaves. All interactive components and workflows MUST satisfy WCAG AA accessibility standards, including semantic HTML structure, keyboard navigation, descriptive ARIA attributes, and accessible contrast ratios across both Admin and Staff portals.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technical Constraints & Stack Standards
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- **Framework**: Next.js (App Router) with React 19, TypeScript 5, and Tailwind CSS v4.
+- **Database & Auth**: PostgreSQL managed via Prisma ORM and Supabase (SSR client, Row Level Security, session management).
+- **Portal Isolation**: Strict boundary separation between Admin Portal (analytics, inventory management, supplier relations, employee administration) and Staff Portal (Fast-Lane POS, shelf locator, barcode checker, punch clock).
+- **Iconography & Visuals**: Standardized on `lucide-react` icons and curated asset pipelines; no placeholder text or broken imagery.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow & Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- **Atomic Commits**: Code modifications MUST be structured into atomic, single-purpose commits adhering to Conventional Commits format, linked to relevant Jira issue keys when applicable.
+- **Verification Gates**: Every branch MUST pass static analysis (`npm run lint`), TypeScript verification (`tsc --noEmit`), and Prisma schema validation (`npx prisma validate`) prior to PR creation or merging.
+- **Review Compliance**: Pull requests MUST be checked against the core principles outlined in this Constitution, specifically verifying design token usage, route adherence, and domain rule accuracy.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This Constitution represents the supreme architectural and quality standard for the SWIFT project and supersedes any unratified ad-hoc practices. All pull requests, code reviews, and architectural changes MUST verify compliance with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments to this Constitution require documentation of rationale, consensus approval, and a semantic version update:
+- **MAJOR** version increments: Backward-incompatible governance changes, principle removals, or fundamental architectural redefinitions.
+- **MINOR** version increments: Addition of new principles, sections, or materially expanded operational guidelines.
+- **PATCH** version increments: Non-semantic refinements, typographical fixes, or wording clarifications.
+
+**Version**: 1.0.0 | **Ratified**: 2026-10-06 | **Last Amended**: 2026-10-06
