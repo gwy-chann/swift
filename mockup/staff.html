@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIFT - Staff Shop Floor & POS Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Staff Sidebar -->
+        <aside class="app-sidebar" style="width: 230px;">
+            <div class="sidebar-brand">
+                <div class="brand-title">SWIFT</div>
+                <span class="portal-tag" style="background: var(--secondary); color: #fff;">STAFF</span>
+            </div>
+
+            <nav class="sidebar-menu sidebar-nav">
+                <div class="menu-category">Shop Floor Operations</div>
+                <div class="menu-item active" data-view="view-staff-pos">
+                    Fast-Lane POS
+                </div>
+                <div class="menu-item" data-view="view-staff-search">
+                    Stock & Shelf Finder
+                </div>
+                <div class="menu-item" data-view="view-staff-compat">
+                    Model Fitment Search
+                </div>
+                <div class="menu-item" data-view="view-staff-pricecheck">
+                    Item Code Price Check
+                </div>
+                <div class="menu-item" data-view="view-staff-clock">
+                    Punch Clock
+                    <span class="badge badge-success menu-badge">ON SHIFT</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-row">
+                    <div class="user-avatar" style="background: var(--info);">MM</div>
+                    <div class="user-meta">
+                        <div class="user-name">Mike Morales</div>
+                        <div class="user-role">Cashier / Floor Staff</div>
+                    </div>
+                </div>
+                <a href="index.html" class="sidebar-logout-btn">Log Out Account</a>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Topbar -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <h2 class="topbar-title" id="currentViewTitle">Fast-Lane POS</h2>
+                </div>
+                <div class="topbar-actions">
+                    <div class="quick-indicator">
+                        <span style="color: var(--success); font-weight: bold;">Active Shift:</span>
+                        <strong id="shiftTimerDisplay" class="text-mono">04:12:30</strong>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openSwitchPortalModal('admin')">
+                        Admin Portal Access
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Content Viewport -->
+            <div class="app-content">
+
+                <!-- 1. STAFF FAST-LANE POS VIEW (Default Active) -->
+                <section id="view-staff-pos" class="view-section active">
+                    <div class="pos-container">
+                        <!-- Left Pane: Catalog & Fast Entry -->
+                        <div class="pos-catalog-pane">
+                            <div class="pos-catalog-header">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3>Fast-Lane Checkout</h3>
+                                    <input type="text" id="posItemSearchInput" placeholder="Scan Barcode / Item Code & hit [ENTER]..." style="width: 320px; border-color: var(--primary);" autofocus>
+                                </div>
+                                <div class="pos-category-tabs">
+                                    <div class="category-pill active" data-cat="ALL">All Fast Items</div>
+                                    <div class="category-pill" data-cat="SERVICES">Add Labor / Bay Service</div>
+                                    <div class="category-pill" data-cat="Brakes">Brakes</div>
+                                    <div class="category-pill" data-cat="Drivetrain">Drivetrain</div>
+                                    <div class="category-pill" data-cat="Fluids">Fluids</div>
+                                    <div class="category-pill" data-cat="Ignition">Ignition</div>
+                                </div>
+                            </div>
+                            <div class="pos-catalog-content">
+                                <div class="pos-items-grid" id="posCatalogGrid">
+                                    <!-- Dynamic Cards from app.js -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Pane: Active Transaction Cart -->
+                        <div class="pos-cart-pane">
+                            <div class="pos-cart-header">
+                                <div>
+                                    <div class="fw-bold">Current Ticket</div>
+                                    <div class="text-sm text-muted">Ticket #TX-1043</div>
+                                </div>
+                                <div class="pos-pricing-mode">
+                                    <div class="pricing-tab active" data-mode="retail" onclick="setPricingMode('retail')">Retail</div>
+                                    <div class="pricing-tab" data-mode="wholesale" onclick="setPricingMode('wholesale')">Wholesale</div>
+                                </div>
+                            </div>
+
+                            <div class="pos-cart-items" id="posCartItemsList">
+                                <!-- Dynamic Cart Items from app.js -->
+                            </div>
+
+                            <div class="pos-cart-summary">
+                                <div class="summary-line">
+                                    <span>Subtotal</span>
+                                    <span id="posSubtotal" class="fw-bold text-mono">₱0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Discount (SC / VIP)</span>
+                                    <span id="posDiscount" class="text-danger text-mono">-₱0.00</span>
+                                </div>
+                                <div class="pos-discount-select">
+                                    <div class="discount-chip active" onclick="setDiscountRate(0, this)">0% Standard</div>
+                                    <div class="discount-chip" onclick="setDiscountRate(0.05, this)">5% VIP</div>
+                                    <div class="discount-chip" onclick="setDiscountRate(0.20, this)">20% SC/PWD</div>
+                                </div>
+                                <div class="summary-total-line">
+                                    <span>TOTAL DUE</span>
+                                    <span id="posTotalDue" class="text-success text-mono">₱0.00</span>
+                                </div>
+                                <button id="posCheckoutBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.75rem;" onclick="openReceiptModal()">
+                                    COMPLETE SALE (F12)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. STAFF STOCK & SHELF FINDER VIEW -->
+                <section id="view-staff-search" class="view-section">
+                    <div class="filter-bar">
+                        <input type="text" class="search-input" placeholder="Search Part, Model, or SKU for instant shelf location..." oninput="renderStaffStockTable(this.value)">
+                        <select onchange="renderStaffStockTable('', this.value)">
+                            <option value="ALL">All Categories (Parts & Accessories)</option>
+                            <option value="Brakes">Brakes</option>
+                            <option value="Drivetrain">Drivetrain</option>
+                            <option value="Fluids">Fluids</option>
+                            <option value="Tires">Tires</option>
+                        </select>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">Warehouse Stock & Physical Location Navigator</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Part / Accessory Name</th>
+                                        <th>Target Model</th>
+                                        <th>Physical Shelf Location</th>
+                                        <th>Available Stock</th>
+                                        <th>Retail Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffStockTableBody">
+                                    <!-- Populated via script -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. STAFF QUICK COMPATIBILITY LOOKUP VIEW -->
+                <section id="view-staff-compat" class="view-section">
+                    <div class="motomatcher-search-box">
+                        <h3>Floor Compatibility & Fitment Assistant</h3>
+                        <p class="text-sm text-muted">Select a customer's motorcycle model to quickly verify compatible parts and performance upgrades.</p>
+                        
+                        <div class="model-selection-grid">
+                            <div class="model-card active" data-model="Yamaha NMAX 155">
+                                <div class="brand">Yamaha</div>
+                                <div class="name">NMAX 155</div>
+                            </div>
+                            <div class="model-card" data-model="Honda Click 125i/150i">
+                                <div class="brand">Honda</div>
+                                <div class="name">Click 125i / 150i</div>
+                            </div>
+                            <div class="model-card" data-model="Suzuki Raider 150 Fi">
+                                <div class="brand">Suzuki</div>
+                                <div class="name">Raider 150 Fi</div>
+                            </div>
+                            <div class="model-card" data-model="Honda ADV 160">
+                                <div class="brand">Honda</div>
+                                <div class="name">ADV 160</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="matrix-comparison-grid">
+                        <div>
+                            <div class="matrix-column-header header-oem">
+                                <span>OEM Standard Replacement Parts</span>
+                            </div>
+                            <div id="motoMatcherOemList" style="margin-top: 0.75rem;">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+                        <div>
+                            <div class="matrix-column-header header-aftermarket">
+                                <span>Performance / Alternative Upgrades</span>
+                            </div>
+                            <div id="motoMatcherAftermarketList" style="margin-top: 0.75rem;">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. ITEM CODE & BASED PRICE CHECK SIMULATOR -->
+                <section id="view-staff-pricecheck" class="view-section">
+                    <div class="price-check-scanner">
+                        <h3>Instant Barcode & Price Lookup Scanner</h3>
+                        <p class="text-sm text-muted">Type SKU or scan barcode to view wholesale vs retail price breakdown and margin percentage.</p>
+                        
+                        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                            <input type="text" id="priceScanInput" placeholder="Enter SKU (e.g. YAM-NMAX-BL01, HON-CLK-CVTB)..." style="flex: 1; font-size: 1rem;" oninput="runPriceScanLookup(this.value)">
+                            <button class="btn btn-primary" onclick="runPriceScanLookup(document.getElementById('priceScanInput').value)">Check Price</button>
+                        </div>
+
+                        <div id="priceScanResultBox" class="price-check-result-card" style="display: none;">
+                            <!-- Dynamic from app.js -->
+                        </div>
+                    </div>
+
+                    <div class="panel-card" style="margin-top: 1.5rem;">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">Base Product Price Schedule (Wholesale vs Retail)</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Description</th>
+                                        <th>Wholesale Price</th>
+                                        <th>Retail Price</th>
+                                        <th>Gross Markup</th>
+                                        <th>Shelf Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-mono fw-bold">YAM-NMAX-BL01</td>
+                                        <td>OEM Front Brake Pads - NMAX</td>
+                                        <td class="text-warning fw-bold">₱380.00</td>
+                                        <td class="text-success fw-bold">₱450.00</td>
+                                        <td>60.7%</td>
+                                        <td>Rack A-01 / Shelf 2</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-mono fw-bold">RCB-NMAX-BP02</td>
+                                        <td>RCB S-Series Ceramic Brake Pads</td>
+                                        <td class="text-warning fw-bold">₱480.00</td>
+                                        <td class="text-success fw-bold">₱580.00</td>
+                                        <td>65.7%</td>
+                                        <td>Rack A-01 / Shelf 3</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-mono fw-bold">HON-CLK-CVTB</td>
+                                        <td>OEM Drive Belt (Gates Bando) - Click</td>
+                                        <td class="text-warning fw-bold">₱720.00</td>
+                                        <td class="text-success fw-bold">₱850.00</td>
+                                        <td>63.5%</td>
+                                        <td>Rack B-04 / Shelf 1</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-mono fw-bold">MOT-3100-10W40</td>
+                                        <td>Motul 3100 Gold 4T 10W40 (1L)</td>
+                                        <td class="text-warning fw-bold">₱330.00</td>
+                                        <td class="text-success fw-bold">₱390.00</td>
+                                        <td>50.0%</td>
+                                        <td>Aisle 1 / Shelf 1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. STAFF TIME LOGGING (PUNCH CLOCK) VIEW -->
+                <section id="view-staff-clock" class="view-section">
+                    <div class="staff-clock-panel">
+                        <div class="text-muted text-sm fw-bold">TERMINAL DIGITAL TIME CLOCK</div>
+                        <div id="liveClockDisplay" class="clock-display">08:14:30 AM</div>
+                        <div class="punch-status-badge badge-success">CURRENT STATUS: ON SHIFT</div>
+
+                        <div class="punch-actions">
+                            <button class="btn btn-success btn-lg" onclick="toggleTimePunch('in')">
+                                TIME IN (SHIFT START)
+                            </button>
+                            <button class="btn btn-danger btn-lg" onclick="toggleTimePunch('out')">
+                                TIME OUT (SHIFT END)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">My Attendance & Shift Log History</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Staff Name</th>
+                                        <th>Time-In</th>
+                                        <th>Time-Out</th>
+                                        <th>Shift Duration</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold">2026-09-28 (Today)</td>
+                                        <td>Mike Morales</td>
+                                        <td class="text-mono">08:00:15 AM</td>
+                                        <td class="text-mono text-warning">-- Active Shift --</td>
+                                        <td class="fw-bold text-mono">04h 12m</td>
+                                        <td><span class="badge badge-success">On Shift</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">2026-09-27</td>
+                                        <td>Mike Morales</td>
+                                        <td class="text-mono">08:02:10 AM</td>
+                                        <td class="text-mono">05:01:45 PM</td>
+                                        <td class="fw-bold text-mono">08h 59m</td>
+                                        <td><span class="badge badge-neutral">Completed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">2026-09-26</td>
+                                        <td>Mike Morales</td>
+                                        <td class="text-mono">07:55:00 AM</td>
+                                        <td class="text-mono">05:00:20 PM</td>
+                                        <td class="fw-bold text-mono">09h 05m</td>
+                                        <td><span class="badge badge-neutral">Completed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: Thermal Receipt Preview -->
+    <div id="receiptModal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Printable Thermal Receipt</h3>
+                <button class="modal-close-btn" onclick="closeModal('receiptModal')">✕</button>
+            </div>
+            <div class="modal-body" style="background: #e5e7eb; padding: 1.5rem 1rem;">
+                <div id="thermalReceiptContainer">
+                    <!-- Thermal Receipt Rendered Here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('receiptModal')">Close</button>
+                <button class="btn btn-success" onclick="completeCheckoutAndClear()">Print Receipt & Finish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Switch Portal Security Verification -->
+    <div id="switchPortalModal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3>Administrator Authorization Required</h3>
+                <button class="modal-close-btn" onclick="closeModal('switchPortalModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-secondary mb-3">
+                    Administrative credentials are required to access management analytics, inventory adjustments, and system settings.
+                </p>
+
+                <div class="form-group">
+                    <label id="switchPortalLabel">Target Account</label>
+                    <input type="text" id="switchUsernameInput" value="admin@swift.local" readonly style="background: var(--bg-card); color: var(--text-secondary);">
+                </div>
+
+                <div class="form-group">
+                    <label>Enter Master Admin Password</label>
+                    <input type="password" id="switchPasswordInput" placeholder="Enter Admin Password..." autofocus style="width: 100%;">
+                    <div id="switchAuthError" class="text-danger text-sm" style="display: none; margin-top: 0.35rem; font-weight: 600;">
+                        Invalid administrator password.
+                    </div>
+                </div>
+
+                <div class="demo-credentials-box" style="margin-top: 1rem;">
+                    <div class="title">Demo Admin Credential:</div>
+                    <div class="text-sm text-muted">Admin Password: <strong class="text-primary">admin123</strong> (or click Autofill)</div>
+                    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.4rem;" onclick="document.getElementById('switchPasswordInput').value = 'admin123'">
+                        Autofill Admin Password
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('switchPortalModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="validateAndSwitchPortal()">Verify & Access Admin Portal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function renderStaffStockTable(kw = '', cat = 'ALL') {
+            const tbody = document.getElementById('staffStockTableBody');
+            if (!tbody) return;
+            let items = SWIFT_DB.inventory;
+            if (cat !== 'ALL') items = items.filter(i => i.category === cat);
+            if (kw.trim()) {
+                const k = kw.toLowerCase();
+                items = items.filter(i => i.name.toLowerCase().includes(k) || i.sku.toLowerCase().includes(k) || i.location.toLowerCase().includes(k));
+            }
+            tbody.innerHTML = items.map(i => `
+                <tr>
+                    <td class="text-mono fw-bold">${i.sku}</td>
+                    <td>
+                        <div class="fw-bold">${i.name}</div>
+                        <div class="text-muted text-sm">${i.brand}</div>
+                    </td>
+                    <td><span class="badge badge-neutral">${i.model}</span></td>
+                    <td><span class="shelf-location-tag">${i.location}</span></td>
+                    <td><span class="badge ${i.stock <= i.minThreshold ? 'badge-danger' : 'badge-success'}">${i.stock} Units</span></td>
+                    <td class="text-mono fw-bold text-success">₱${i.retail.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStaffStockTable();
+        });
+    </script>
+</body>
+</html>

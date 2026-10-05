@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIFT - Admin Management Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-title">SWIFT</div>
+                <span class="portal-tag">ADMIN</span>
+            </div>
+
+            <nav class="sidebar-menu sidebar-nav">
+                <div class="menu-category">Store Intelligence</div>
+                <div class="menu-item active" data-view="view-dashboard">
+                    Admin Dashboard
+                </div>
+                <div class="menu-item" data-view="view-inventory">
+                    Inventory & Stock
+                    <span class="badge badge-danger menu-badge">3 Low</span>
+                </div>
+                <div class="menu-item" data-view="view-pos">
+                    Point of Sale (POS)
+                </div>
+                <div class="menu-item" data-view="view-motomatcher">
+                    MotoMatcher Search
+                </div>
+                <div class="menu-item" data-view="view-reports">
+                    Reports & Analytics
+                </div>
+
+                <div class="menu-category">Administration</div>
+                <div class="menu-item" data-view="view-users">
+                    User Management
+                </div>
+                <div class="menu-item" data-view="view-pricing">
+                    Pricing & Labor Rates
+                </div>
+                <div class="menu-item" data-view="view-settings">
+                    Settings & Audit Logs
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-row">
+                    <div class="user-avatar">CR</div>
+                    <div class="user-meta">
+                        <div class="user-name">Carlos Rodriguez</div>
+                        <div class="user-role">System Admin</div>
+                    </div>
+                </div>
+                <a href="index.html" class="sidebar-logout-btn">Log Out Account</a>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Topbar -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <h2 class="topbar-title" id="currentViewTitle">Admin Dashboard</h2>
+                </div>
+                <div class="topbar-actions">
+                    <div class="quick-indicator">
+                        <span style="color: var(--success); font-weight: bold;">[ONLINE]</span> Terminal #01
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openSwitchPortalModal('staff')">
+                        Switch to Staff Portal
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Content Viewport -->
+            <div class="app-content">
+
+                <!-- 1. ADMIN DASHBOARD VIEW -->
+                <section id="view-dashboard" class="view-section active">
+                    <!-- 4 KPI Cards -->
+                    <div class="stats-grid-4">
+                        <div class="stat-card-solid">
+                            <div class="stat-label">
+                                <span>Gross Revenue</span>
+                                <span class="badge badge-neutral">Today</span>
+                            </div>
+                            <div class="stat-number">₱45,230.00</div>
+                            <div class="stat-subtext text-success">+14.2% vs yesterday</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">
+                                <span>Work Orders Queue</span>
+                                <span class="badge badge-neutral">Service Bay</span>
+                            </div>
+                            <div class="stat-number">8 Active</div>
+                            <div class="stat-subtext text-warning">3 Pending Parts Assembly</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">
+                                <span>Net Profit Margin</span>
+                                <span class="badge badge-neutral">This Month</span>
+                            </div>
+                            <div class="stat-number">34.8%</div>
+                            <div class="stat-subtext text-success">₱182,400.00 Gross Profit</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">
+                                <span>Critical Low Stock</span>
+                                <span class="badge badge-danger">Action Req</span>
+                            </div>
+                            <div class="stat-number text-danger">3 SKUs</div>
+                            <div class="stat-subtext">Below threshold limit</div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Grid: Revenue Comparison & Work Order Queue -->
+                    <div class="dashboard-grid">
+                        <!-- Revenue Comparison Chart -->
+                        <div class="panel-card">
+                            <div class="panel-card-header">
+                                <div class="panel-card-title">
+                                    7-Day Revenue Comparison (Parts Sales vs Labor Services)
+                                </div>
+                                <span class="badge badge-neutral">Sept 22 - 28, 2026</span>
+                            </div>
+                            <div class="panel-card-body">
+                                <div class="chart-container">
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 60%;" data-val="₱28.5k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 35%;" data-val="₱12.0k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 75%;" data-val="₱34.0k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 40%;" data-val="₱15.5k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 50%;" data-val="₱22.1k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 30%;" data-val="₱10.2k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 85%;" data-val="₱41.0k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 55%;" data-val="₱21.4k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 90%;" data-val="₱44.5k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 60%;" data-val="₱24.0k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 95%;" data-val="₱48.0k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 70%;" data-val="₱29.5k"></div>
+                                    </div>
+                                    <div class="chart-bar-group">
+                                        <div class="chart-bar bar-parts" style="height: 80%;" data-val="₱38.2k"></div>
+                                        <div class="chart-bar bar-labor" style="height: 50%;" data-val="₱19.0k"></div>
+                                    </div>
+                                </div>
+                                <div class="chart-x-labels">
+                                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun (Today)</span>
+                                </div>
+                                <div class="chart-legend">
+                                    <div class="legend-item"><div class="legend-dot bar-parts"></div> Motorcycle Parts Sales</div>
+                                    <div class="legend-item"><div class="legend-dot bar-labor"></div> Repair Bay Labor Services</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Service Bay Queue -->
+                        <div class="panel-card">
+                            <div class="panel-card-header">
+                                <div class="panel-card-title">
+                                    Service Bay Status
+                                </div>
+                                <span class="badge badge-success">4 Bays Active</span>
+                            </div>
+                            <div class="panel-card-body" style="padding: 0;">
+                                <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Bay 1 (Quick Bay)</strong>
+                                        <span class="badge badge-warning">In Progress</span>
+                                    </div>
+                                    <div class="text-sm text-muted">Yamaha NMAX • Oil Change + Brake Pads</div>
+                                    <div class="text-sm text-secondary">Mechanic: Dante Reyes (~10 mins left)</div>
+                                </div>
+                                <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Bay 2 (Scooter Bay)</strong>
+                                        <span class="badge badge-warning">In Progress</span>
+                                    </div>
+                                    <div class="text-sm text-muted">Honda Click 150i • Full CVT Overhaul</div>
+                                    <div class="text-sm text-secondary">Mechanic: Alex Lim (~25 mins left)</div>
+                                </div>
+                                <div style="padding: 0.85rem 1.25rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong>Bay 3 (Mechanical Bay)</strong>
+                                        <span class="badge badge-neutral">Queued</span>
+                                    </div>
+                                    <div class="text-sm text-muted">Suzuki Raider 150 Fi • Clutch Replacement</div>
+                                    <div class="text-sm text-secondary">Waiting for Bay clearance</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. INVENTORY & STOCK MANAGEMENT VIEW -->
+                <section id="view-inventory" class="view-section">
+                    <div class="filter-bar">
+                        <input type="text" class="search-input" id="inventorySearchInput" placeholder="Search by SKU, Part Name, Model, or Shelf Location..." oninput="renderInventoryTable(this.value, document.getElementById('invCategoryFilter').value)">
+                        <select id="invCategoryFilter" onchange="renderInventoryTable(document.getElementById('inventorySearchInput').value, this.value)">
+                            <option value="ALL">All Categories</option>
+                            <option value="Brakes">Brakes</option>
+                            <option value="Drivetrain">Drivetrain</option>
+                            <option value="Fluids">Fluids & Oils</option>
+                            <option value="Ignition">Ignition</option>
+                            <option value="Engine">Engine & Clutch</option>
+                            <option value="Tires">Tires</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="renderInventoryTable('', 'ALL'); document.getElementById('inventorySearchInput').value='';">Reset Filters</button>
+                        <button class="btn btn-primary" onclick="openAddProductModal()">+ New Product</button>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">
+                                Warehouse Parts Master List
+                            </div>
+                            <span class="badge badge-neutral">Physical Warehouse Aisle 1-4</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU / Code</th>
+                                        <th>Product Name & Compatibility</th>
+                                        <th>Category</th>
+                                        <th>Rack / Shelf Location</th>
+                                        <th>Stock Quantity</th>
+                                        <th>Retail Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody">
+                                    <!-- Dynamic rows from app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. POINT OF SALE (POS) VIEW -->
+                <section id="view-pos" class="view-section">
+                    <div class="pos-container">
+                        <!-- Left Pane: Product & Service Catalog -->
+                        <div class="pos-catalog-pane">
+                            <div class="pos-catalog-header">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3>Catalog Quick Selection</h3>
+                                    <input type="text" id="posItemSearchInput" placeholder="Scan SKU / Barcode & hit [ENTER]..." style="width: 280px;">
+                                </div>
+                                <div class="pos-category-tabs">
+                                    <div class="category-pill active" data-cat="ALL">All Products</div>
+                                    <div class="category-pill" data-cat="SERVICES">Labor Services</div>
+                                    <div class="category-pill" data-cat="Brakes">Brakes</div>
+                                    <div class="category-pill" data-cat="Drivetrain">Drivetrain</div>
+                                    <div class="category-pill" data-cat="Fluids">Fluids</div>
+                                    <div class="category-pill" data-cat="Ignition">Ignition</div>
+                                    <div class="category-pill" data-cat="Engine">Engine</div>
+                                    <div class="category-pill" data-cat="Tires">Tires</div>
+                                </div>
+                            </div>
+                            <div class="pos-catalog-content">
+                                <div class="pos-items-grid" id="posCatalogGrid">
+                                    <!-- Dynamic Cards from app.js -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Pane: Active Transaction Cart -->
+                        <div class="pos-cart-pane">
+                            <div class="pos-cart-header">
+                                <div>
+                                    <div class="fw-bold">Active Transaction</div>
+                                    <div class="text-sm text-muted">Ticket #TX-1043</div>
+                                </div>
+                                <div class="pos-pricing-mode">
+                                    <div class="pricing-tab active" data-mode="retail" onclick="setPricingMode('retail')">Retail</div>
+                                    <div class="pricing-tab" data-mode="wholesale" onclick="setPricingMode('wholesale')">Wholesale</div>
+                                </div>
+                            </div>
+
+                            <div class="pos-cart-items" id="posCartItemsList">
+                                <!-- Dynamic Cart Items from app.js -->
+                            </div>
+
+                            <div class="pos-cart-summary">
+                                <div class="summary-line">
+                                    <span>Subtotal</span>
+                                    <span id="posSubtotal" class="fw-bold text-mono">₱0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Discounts</span>
+                                    <span id="posDiscount" class="text-danger text-mono">-₱0.00</span>
+                                </div>
+                                <div class="pos-discount-select">
+                                    <div class="discount-chip active" onclick="setDiscountRate(0, this)">0% Standard</div>
+                                    <div class="discount-chip" onclick="setDiscountRate(0.05, this)">5% VIP</div>
+                                    <div class="discount-chip" onclick="setDiscountRate(0.20, this)">20% SC / PWD</div>
+                                </div>
+                                <div class="summary-total-line">
+                                    <span>TOTAL DUE</span>
+                                    <span id="posTotalDue" class="text-success text-mono">₱0.00</span>
+                                </div>
+                                <button id="posCheckoutBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.75rem;" onclick="openReceiptModal()">
+                                    PAY NOW (F12)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. MOTOMATCHER COMPATIBILITY VIEW -->
+                <section id="view-motomatcher" class="view-section">
+                    <div class="motomatcher-search-box">
+                        <h3>Select Motorcycle Make & Model</h3>
+                        <p class="text-sm text-muted">Directly compare OEM standard replacement parts against performance aftermarket alternatives.</p>
+                        
+                        <div class="model-selection-grid">
+                            <div class="model-card active" data-model="Yamaha NMAX 155">
+                                <div class="brand">Yamaha</div>
+                                <div class="name">NMAX 155 (V1 / V2)</div>
+                            </div>
+                            <div class="model-card" data-model="Honda Click 125i/150i">
+                                <div class="brand">Honda</div>
+                                <div class="name">Click 125i / 150i</div>
+                            </div>
+                            <div class="model-card" data-model="Suzuki Raider 150 Fi">
+                                <div class="brand">Suzuki</div>
+                                <div class="name">Raider 150 Fi</div>
+                            </div>
+                            <div class="model-card" data-model="Honda ADV 160">
+                                <div class="brand">Honda</div>
+                                <div class="name">ADV 160 / PCX 160</div>
+                            </div>
+                            <div class="model-card" data-model="Yamaha Aerox 155">
+                                <div class="brand">Yamaha</div>
+                                <div class="name">Aerox 155 (V1 / V2)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="matrix-comparison-grid">
+                        <!-- OEM Column -->
+                        <div>
+                            <div class="matrix-column-header header-oem">
+                                <span>OEM Standard Factory Parts</span>
+                                <span>Original Spec</span>
+                            </div>
+                            <div id="motoMatcherOemList" style="margin-top: 0.75rem;">
+                                <!-- Dynamic from app.js -->
+                            </div>
+                        </div>
+
+                        <!-- Aftermarket Column -->
+                        <div>
+                            <div class="matrix-column-header header-aftermarket">
+                                <span>Performance / Alternative Aftermarket</span>
+                                <span>Upgrade Spec</span>
+                            </div>
+                            <div id="motoMatcherAftermarketList" style="margin-top: 0.75rem;">
+                                <!-- Dynamic from app.js -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. REPORTS & PROFIT ANALYTICS VIEW -->
+                <section id="view-reports" class="view-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                        <div class="filter-bar" style="margin-bottom: 0;">
+                            <button class="btn btn-primary btn-sm">Daily Sales</button>
+                            <button class="btn btn-secondary btn-sm">Weekly Sales</button>
+                            <button class="btn btn-secondary btn-sm">Monthly Sales</button>
+                        </div>
+                        <button class="btn btn-secondary" onclick="alert('Exporting detailed Profit & Revenue CSV report...')">Export CSV / Print</button>
+                    </div>
+
+                    <div class="stats-grid-4">
+                        <div class="stat-card-solid">
+                            <div class="stat-label">Gross Sales Revenue</div>
+                            <div class="stat-number" id="reportGrossRevenue">₱45,230.00</div>
+                            <div class="stat-subtext">Across 38 Completed Invoices</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">Cost of Goods (COGS)</div>
+                            <div class="stat-number" id="reportCogs">₱29,400.00</div>
+                            <div class="stat-subtext">Direct wholesale inventory cost</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">Net Profit Margin</div>
+                            <div class="stat-number text-success" id="reportNetProfit">₱15,830.00</div>
+                            <div class="stat-subtext">Net after labor and parts cost</div>
+                        </div>
+                        <div class="stat-card-solid">
+                            <div class="stat-label">Profit Margin %</div>
+                            <div class="stat-number" id="reportMargin">35.0%</div>
+                            <div class="stat-subtext text-success">Within target range (>30%)</div>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">Category Revenue & Margin Breakdown</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Units Sold</th>
+                                        <th>Gross Revenue</th>
+                                        <th>COGS</th>
+                                        <th>Net Profit</th>
+                                        <th>Margin</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold">Fluids & Engine Oils</td>
+                                        <td>24</td>
+                                        <td>₱9,360.00</td>
+                                        <td>₱6,240.00</td>
+                                        <td class="text-success fw-bold">₱3,120.00</td>
+                                        <td>33.3%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Drivetrain & Belts</td>
+                                        <td>8</td>
+                                        <td>₱7,650.00</td>
+                                        <td>₱4,680.00</td>
+                                        <td class="text-success fw-bold">₱2,970.00</td>
+                                        <td>38.8%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Labor / Service Bay</td>
+                                        <td>14 Jobs</td>
+                                        <td>₱6,800.00</td>
+                                        <td>₱1,200.00</td>
+                                        <td class="text-success fw-bold">₱5,600.00</td>
+                                        <td>82.3%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Tires & Tubeless</td>
+                                        <td>6</td>
+                                        <td>₱11,400.00</td>
+                                        <td>₱8,100.00</td>
+                                        <td class="text-success fw-bold">₱3,300.00</td>
+                                        <td>28.9%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. USER MANAGEMENT VIEW -->
+                <section id="view-users" class="view-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                        <h3>Active System Accounts & Role Enforcement</h3>
+                        <button class="btn btn-primary" onclick="alert('Opening Add User Modal...')">+ Add Staff User</button>
+                    </div>
+                    <div class="panel-card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Full Name</th>
+                                        <th>Login / Email</th>
+                                        <th>System Role</th>
+                                        <th>Status</th>
+                                        <th>Assigned Permissions</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Dynamic from app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. PRICING & LABOR RATES VIEW -->
+                <section id="view-pricing" class="view-section">
+                    <div class="dashboard-grid">
+                        <!-- Global Markup Rules -->
+                        <div class="panel-card">
+                            <div class="panel-card-header">
+                                <div class="panel-card-title">Global Parts Markup Rules</div>
+                            </div>
+                            <div class="panel-card-body">
+                                <div class="form-group">
+                                    <label>Standard Retail Markup (%)</label>
+                                    <input type="number" value="35" style="width: 100%;">
+                                    <span class="text-sm text-muted">Applied to standard OEM replacement parts.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Wholesale / Reseller Markup (%)</label>
+                                    <input type="number" value="18" style="width: 100%;">
+                                    <span class="text-sm text-muted">Applied when POS pricing mode is toggled to Wholesale.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>Performance Aftermarket Markup (%)</label>
+                                    <input type="number" value="40" style="width: 100%;">
+                                    <span class="text-sm text-muted">Applied to racing & performance upgrades (RCB, Uma, etc.).</span>
+                                </div>
+                                <button class="btn btn-primary" onclick="alert('Global pricing rules saved!')">Save Markup Rules</button>
+                            </div>
+                        </div>
+
+                        <!-- Flat-rate Labor Schedule -->
+                        <div class="panel-card">
+                            <div class="panel-card-header">
+                                <div class="panel-card-title">Flat-Rate Labor Schedule Matrix</div>
+                            </div>
+                            <div class="panel-card-body" style="padding: 0;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Service</th>
+                                            <th>Est. Time</th>
+                                            <th>Flat Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Oil & Gear Oil Change</td>
+                                            <td>15m</td>
+                                            <td class="fw-bold">₱100.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>CVT Cleaning & Regrease</td>
+                                            <td>45m</td>
+                                            <td class="fw-bold">₱350.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Tire Mounting & Sealing</td>
+                                            <td>20m</td>
+                                            <td class="fw-bold">₱150.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>FI Throttle Body Reset</td>
+                                            <td>60m</td>
+                                            <td class="fw-bold">₱650.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Front Shock Re-oil</td>
+                                            <td>90m</td>
+                                            <td class="fw-bold">₱800.00</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. ACCOUNT SETTINGS & AUDIT LOGS VIEW -->
+                <section id="view-settings" class="view-section">
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">Stock Adjustment Audit Trail</div>
+                            <span class="badge badge-neutral">Immutable Records</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>SKU</th>
+                                        <th>Type</th>
+                                        <th>Change</th>
+                                        <th>Reason / Reference</th>
+                                        <th>Authorized By</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockAdjLogsBody">
+                                    <!-- Dynamic from app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel-card">
+                        <div class="panel-card-header">
+                            <div class="panel-card-title">System Activity & Security Logs</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>User Account</th>
+                                        <th>Action Taken</th>
+                                        <th>Terminal IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditLogsBody">
+                                    <!-- Dynamic from app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: Add New Product Form -->
+    <div id="addProductModal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3>Add New Inventory Product</h3>
+                <button class="modal-close-btn" onclick="closeModal('addProductModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm" onsubmit="event.preventDefault(); handleAddNewProduct();">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdSku">SKU / Item Code *</label>
+                            <input type="text" id="newProdSku" placeholder="e.g. RCB-AER-BP01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdCategory">Category *</label>
+                            <select id="newProdCategory" required>
+                                <option value="Brakes">Brakes</option>
+                                <option value="Drivetrain">Drivetrain</option>
+                                <option value="Fluids">Fluids & Oils</option>
+                                <option value="Ignition">Ignition</option>
+                                <option value="Engine">Engine & Clutch</option>
+                                <option value="Tires">Tires</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newProdName">Product / Part Description *</label>
+                        <input type="text" id="newProdName" placeholder="e.g. RCB Ceramic Brake Pads Front" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdBrand">Brand / Manufacturer *</label>
+                            <input type="text" id="newProdBrand" placeholder="e.g. Racing Boy" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdModel">Target Motorcycle Model *</label>
+                            <select id="newProdModel" required>
+                                <option value="Yamaha NMAX 155">Yamaha NMAX 155</option>
+                                <option value="Yamaha Aerox 155">Yamaha Aerox 155</option>
+                                <option value="Honda Click 125i/150i">Honda Click 125i/150i</option>
+                                <option value="Honda ADV 160">Honda ADV 160</option>
+                                <option value="Suzuki Raider 150 Fi">Suzuki Raider 150 Fi</option>
+                                <option value="Universal">Universal Fitment</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdLocation">Shelf Location *</label>
+                            <input type="text" id="newProdLocation" placeholder="e.g. Rack A-02 / Shelf 1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdType">Part Specification *</label>
+                            <select id="newProdType">
+                                <option value="aftermarket">Performance / Aftermarket</option>
+                                <option value="oem">OEM Standard Replacement</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdStock">Initial Stock Qty *</label>
+                            <input type="number" id="newProdStock" min="0" value="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdMinThreshold">Low Stock Alert Level *</label>
+                            <input type="number" id="newProdMinThreshold" min="1" value="5" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdCost">Unit Cost (₱) *</label>
+                            <input type="number" id="newProdCost" min="0" step="0.01" placeholder="300.00" required oninput="autoCalculatePrices()">
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdWholesale">Wholesale Price (₱) *</label>
+                            <input type="number" id="newProdWholesale" min="0" step="0.01" placeholder="354.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdRetail">Retail Price (₱) *</label>
+                            <input type="number" id="newProdRetail" min="0" step="0.01" placeholder="405.00" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="handleAddNewProduct()">Save & Register Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Stock Adjustment -->
+    <div id="stockAdjustModal" class="modal-backdrop">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>Stock Adjustment Form</h3>
+                <button class="modal-close-btn" onclick="closeModal('stockAdjustModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                    <div class="text-sm text-muted">Target SKU: <strong id="modalAdjustSku" class="text-mono text-primary"></strong></div>
+                    <div id="modalAdjustName" class="fw-bold" style="font-size: 1rem; margin-top: 2px;"></div>
+                    <div class="text-sm" style="margin-top: 4px;">Current Stock: <strong id="modalAdjustCurrentStock"></strong></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Adjustment Type</label>
+                    <select id="adjustTypeSelect" style="width: 100%;">
+                        <option value="Restock">Restock Inbound (Delivery Received)</option>
+                        <option value="Damaged Goods">Damaged Goods / Scrap</option>
+                        <option value="Audit Adjustment">Physical Audit Count Reconciliation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantity to Adjust</label>
+                    <input type="number" id="adjustQtyInput" min="1" value="1" style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>Reason / PO Number Reference</label>
+                    <input type="text" id="adjustReasonInput" placeholder="e.g. PO-4091 or Shelf Audit" style="width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('stockAdjustModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitStockAdjustment()">Apply & Log Adjustment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Thermal Receipt Preview -->
+    <div id="receiptModal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Printable Thermal Receipt</h3>
+                <button class="modal-close-btn" onclick="closeModal('receiptModal')">✕</button>
+            </div>
+            <div class="modal-body" style="background: #e5e7eb; padding: 1.5rem 1rem;">
+                <div id="thermalReceiptContainer">
+                    <!-- Thermal Receipt Rendered Here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('receiptModal')">Close</button>
+                <button class="btn btn-success" onclick="completeCheckoutAndClear()">Print Receipt & Finish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Switch Portal Security Verification -->
+    <div id="switchPortalModal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3>Portal Authorization Required</h3>
+                <button class="modal-close-btn" onclick="closeModal('switchPortalModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-secondary mb-3">
+                    Switching between portals requires verified credentials to prevent unauthorized access.
+                </p>
+
+                <div class="form-group">
+                    <label id="switchPortalLabel">Target Account</label>
+                    <input type="text" id="switchUsernameInput" value="cashier@swift.local" readonly style="background: var(--bg-card); color: var(--text-secondary);">
+                </div>
+
+                <div class="form-group">
+                    <label>Enter Password / Staff PIN</label>
+                    <input type="password" id="switchPasswordInput" placeholder="Enter PIN or Password..." autofocus style="width: 100%;">
+                    <div id="switchAuthError" class="text-danger text-sm" style="display: none; margin-top: 0.35rem; font-weight: 600;">
+                        Invalid credentials. Please enter the correct password/PIN.
+                    </div>
+                </div>
+
+                <div class="demo-credentials-box" style="margin-top: 1rem;">
+                    <div class="title">Demo Credential:</div>
+                    <div class="text-sm text-muted">Staff Password / PIN: <strong class="text-primary">1234</strong> (or click Autofill)</div>
+                    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.4rem;" onclick="document.getElementById('switchPasswordInput').value = '1234'">
+                        Autofill Valid PIN
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('switchPortalModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="validateAndSwitchPortal()">Verify & Switch Portal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

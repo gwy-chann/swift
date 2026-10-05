@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIFT - Authentication Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <span>SWIFT</span>
+            </div>
+            <p class="auth-subtitle">Motorcycle Parts & Repair Shop Management System</p>
+        </div>
+
+        <div class="auth-card">
+            <!-- Role Selector -->
+            <div class="role-switcher">
+                <div class="role-tab active" id="tabAdmin" onclick="selectRole('admin')">Admin Portal</div>
+                <div class="role-tab" id="tabStaff" onclick="selectRole('staff')">Staff Portal</div>
+            </div>
+
+            <form id="authForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="authUsername">Username or Email</label>
+                    <input type="text" id="authUsername" value="admin@swift.local" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" value="••••••••••••" required autocomplete="current-password">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; font-size: 0.8rem;">
+                    <label style="margin: 0; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; text-transform: none;">
+                        <input type="checkbox" checked> Remember this terminal
+                    </label>
+                    <a href="#" class="text-muted" onclick="alert('Please contact System Administrator to reset your master credentials.')">Forgot PIN?</a>
+                </div>
+
+                <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-lg" style="width: 100%;">
+                    Access Admin Portal
+                </button>
+            </form>
+
+            <div class="demo-credentials-box">
+                <div class="title">Demo System Accounts:</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                    <span><strong>Admin:</strong> admin@swift.local</span>
+                    <button class="btn btn-secondary btn-sm" onclick="fillCredentials('admin@swift.local', 'admin')">Use Admin</button>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Staff:</strong> cashier@swift.local</span>
+                    <button class="btn btn-secondary btn-sm" onclick="fillCredentials('cashier@swift.local', 'staff')">Use Staff</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedRole = 'admin';
+
+        function selectRole(role) {
+            selectedRole = role;
+            document.getElementById('tabAdmin').classList.toggle('active', role === 'admin');
+            document.getElementById('tabStaff').classList.toggle('active', role === 'staff');
+            
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const usernameInput = document.getElementById('authUsername');
+
+            if (role === 'admin') {
+                submitBtn.textContent = 'Access Admin Portal';
+                submitBtn.className = 'btn btn-primary btn-lg';
+                usernameInput.value = 'admin@swift.local';
+            } else {
+                submitBtn.textContent = 'Access Staff Fast-Lane POS';
+                submitBtn.className = 'btn btn-secondary btn-lg';
+                submitBtn.style.backgroundColor = 'var(--secondary)';
+                usernameInput.value = 'cashier@swift.local';
+            }
+        }
+
+        function fillCredentials(email, role) {
+            document.getElementById('authUsername').value = email;
+            selectRole(role);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            if (selectedRole === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'staff.html';
+            }
+        }
+    </script>
+</body>
+</html>
