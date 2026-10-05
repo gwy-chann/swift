@@ -99,6 +99,13 @@ export async function authenticateUserAction(
       maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
     });
 
+    cookieStore.set("swift-user-name", name, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
+    });
+
     return {
       success: true,
       redirectTo: targetRedirect,
@@ -112,4 +119,25 @@ export async function authenticateUserAction(
       code: "NETWORK_ERROR",
     };
   }
+}
+
+/**
+ * Terminates user session, clears cookies, and returns login redirect target
+ */
+export async function logoutAction(): Promise<{ success: boolean; redirectTo: string }> {
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Graceful fallback if Supabase is offline
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.delete("swift-session-role");
+  cookieStore.delete("swift-user-name");
+
+  return {
+    success: true,
+    redirectTo: "/login",
+  };
 }
