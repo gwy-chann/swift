@@ -1,67 +1,80 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
-import { ThemeMode, DEFAULT_THEME } from "@/lib/tokens";
+import { useSyncExternalStore, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
+import { ThemeMode } from "@/lib/tokens";
+import {
+  subscribeTheme,
+  getThemeSnapshot,
+  getServerThemeSnapshot,
+  setStoredTheme,
+  applyDocumentTheme,
+  getStoredTheme,
+} from "@/lib/theme";
 
-function applyTheme(mode: ThemeMode) {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  if (mode === "dark") {
-    root.classList.add("dark");
-    root.setAttribute("data-theme", "dark");
-  } else {
-    root.classList.remove("dark");
-    root.setAttribute("data-theme", "light");
-  }
+export interface ThemeToggleProps {
+  className?: string;
+  variant?: "button" | "icon-only";
 }
 
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
+export function ThemeToggle({
+  className = "",
+  variant = "button",
+}: ThemeToggleProps) {
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot
+  );
 
-function getSnapshot(): ThemeMode {
-  const saved = localStorage.getItem("swift-theme");
-  return saved === "dark" ? "dark" : DEFAULT_THEME;
-}
-
-function getServerSnapshot(): ThemeMode {
-  return DEFAULT_THEME;
-}
-
-export function ThemeToggle({ className = "" }: { className?: string }) {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  // Sync initial theme to document root on mount without calling setState
+  // Ensure DOM is in sync on initial mount
   useEffect(() => {
-    const saved = localStorage.getItem("swift-theme") as ThemeMode | null;
-    if (saved === "dark") {
-      applyTheme("dark");
-    }
+    const current = getStoredTheme();
+    applyDocumentTheme(current);
   }, []);
 
-  const toggleTheme = () => {
+  const handleToggle = () => {
     const next: ThemeMode = theme === "light" ? "dark" : "light";
-    localStorage.setItem("swift-theme", next);
-    applyTheme(next);
-    window.dispatchEvent(new Event("storage"));
+    setStoredTheme(next);
   };
+
+  const isLight = theme === "light";
+  const label = isLight ? "Switch to Dark Mode" : "Switch to Light Mode";
+
+  if (variant === "icon-only") {
+    return (
+      <button
+        type="button"
+        onClick={handleToggle}
+        aria-label={label}
+        title={label}
+        className={`inline-flex items-center justify-center p-2 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
+      >
+        {isLight ? (
+          <Sun className="w-4 h-4 text-accent" />
+        ) : (
+          <Moon className="w-4 h-4 text-primary" />
+        )}
+      </button>
+    );
+  }
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      aria-label="Toggle Theme"
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-xs font-medium shadow-sm cursor-pointer ${className}`}
+      onClick={handleToggle}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-xs font-medium shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
     >
-      {theme === "light" ? (
+      {isLight ? (
         <>
-          <span className="text-amber-500">☀️</span>
+          <Sun className="w-3.5 h-3.5 text-accent" />
           <span>Light Mode</span>
         </>
       ) : (
         <>
-          <span className="text-blue-400">🌙</span>
+          <Moon className="w-3.5 h-3.5 text-primary" />
           <span>Dark Mode</span>
         </>
       )}

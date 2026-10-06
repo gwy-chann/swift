@@ -1,6 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { AuthCard } from "@/components/auth/auth-card";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Wrench } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+    <main className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-4 sm:p-6 select-none relative">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <ThemeToggle />
+      </div>
+
       {/* Brand Header */}
       <header className="text-center mb-8">
         <div className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg bg-primary text-white shadow-md mb-3">
