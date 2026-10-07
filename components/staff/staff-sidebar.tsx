@@ -94,7 +94,7 @@ export function StaffSidebar({ onItemClick, className = "" }: StaffSidebarProps)
           type="button"
           disabled={isLoggingOut}
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-semibold text-text-light/80 hover:text-white bg-white/5 hover:bg-danger/20 hover:text-danger hover:border-danger/30 border border-white/10 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded text-xs font-semibold text-text-light/80 bg-white/5 hover:bg-danger/20 hover:text-danger hover:border-danger/30 border border-white/10 transition-colors cursor-pointer"
         >
           {isLoggingOut ? (
             <>

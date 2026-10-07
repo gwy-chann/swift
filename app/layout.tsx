@@ -28,7 +28,10 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className="min-h-full flex flex-col bg-bg-base text-text-primary">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-bg-base text-text-primary"
+      >
         {children}
       </body>
     </html>
