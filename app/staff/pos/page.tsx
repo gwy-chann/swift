@@ -3,6 +3,12 @@
 import React, { useState } from "react";
 import { Zap, Search, ShoppingCart, CheckCircle2 } from "lucide-react";
 
+function getCategoryLabel(category: string): string {
+  if (category === "ALL") return "All Fast Items";
+  if (category === "SERVICES") return "Add Labor / Bay Service";
+  return category;
+}
+
 export default function StaffPosPage() {
   const [pricingMode, setPricingMode] = useState<"retail" | "wholesale">("retail");
   const [activeCategory, setActiveCategory] = useState("ALL");
@@ -46,7 +52,6 @@ export default function StaffPosPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Scan Barcode / SKU & hit [ENTER]..."
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-text-primary placeholder:text-text-muted outline-hidden"
-                autoFocus
               />
             </div>
           </div>
@@ -64,7 +69,7 @@ export default function StaffPosPage() {
                     : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
                 }`}
               >
-                {cat === "ALL" ? "All Fast Items" : cat === "SERVICES" ? "Add Labor / Bay Service" : cat}
+                {getCategoryLabel(cat)}
               </button>
             ))}
           </div>

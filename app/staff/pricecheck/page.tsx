@@ -25,7 +25,6 @@ export default function StaffPriceCheckPage() {
             onChange={(e) => setSkuInput(e.target.value)}
             placeholder="Scan barcode or type SKU..."
             className="w-full text-center py-3 px-4 bg-bg-input border-2 border-primary focus:ring-4 focus:ring-primary/20 rounded-xl font-mono text-base font-bold text-text-primary outline-hidden"
-            autoFocus
           />
         </div>
       </div>
