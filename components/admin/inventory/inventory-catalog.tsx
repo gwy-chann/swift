@@ -7,17 +7,22 @@ import {
   calculateCatalogStats,
   StockFilterOption
 } from '@/lib/inventory/catalog-filter';
+import { Product } from '@/lib/types/product';
+import { AdjustmentType } from '@/lib/inventory/stock-adjustment';
 import { InventoryStatsCards } from './inventory-stats-cards';
 import { CatalogFilterBar } from './catalog-filter-bar';
 import { CatalogTable } from './catalog-table';
 import { CatalogEmptyState } from './catalog-empty-state';
+import { StockAdjustmentModal } from './stock-adjustment-modal';
 
 export function InventoryCatalog() {
-  const { products } = useInventoryStore();
+  const { products, adjustStock } = useInventoryStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [stockFilter, setStockFilter] = useState<StockFilterOption>('all');
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
 
   // Compute unique categories from current product catalog
   const categories = useMemo(() => {
@@ -51,11 +56,31 @@ export function InventoryCatalog() {
   };
 
   const handleAdjustStock = (sku: string) => {
-    // Hook for stock adjustment modal (to be wired in SIAA-15)
-    // Providing immediate user feedback and console tracing
-    if (typeof window !== 'undefined') {
-      console.log(`[Inventory] Requested stock adjustment for SKU: ${sku}`);
+    const target = products.find((p) => p.sku === sku);
+    if (target) {
+      setAdjustingProduct(target);
+      setIsAdjustModalOpen(true);
     }
+  };
+
+  const handleConfirmAdjustment = ({
+    sku,
+    type,
+    delta,
+    reason
+  }: {
+    sku: string;
+    type: AdjustmentType;
+    delta: number;
+    reason: string;
+  }) => {
+    adjustStock({
+      sku,
+      type,
+      units: delta,
+      reason,
+      user: 'Inventory Supervisor (Admin)'
+    });
   };
 
   return (
@@ -89,6 +114,17 @@ export function InventoryCatalog() {
           searchQuery={searchQuery}
         />
       )}
+
+      {/* Stock Adjustment Modal */}
+      <StockAdjustmentModal
+        isOpen={isAdjustModalOpen}
+        product={adjustingProduct}
+        onClose={() => {
+          setIsAdjustModalOpen(false);
+          setAdjustingProduct(null);
+        }}
+        onSubmit={handleConfirmAdjustment}
+      />
     </div>
   );
 }
