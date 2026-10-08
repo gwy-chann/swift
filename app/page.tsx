@@ -14,7 +14,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-bg-base flex flex-col justify-between p-6 md:p-12">
+    <main suppressHydrationWarning className="min-h-screen bg-bg-base flex flex-col justify-between p-6 md:p-12">
       {/* Top Header */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between pb-6 border-b border-border">
         <div className="flex items-center gap-3">
