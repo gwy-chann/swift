@@ -57,6 +57,7 @@
 ## ✅ Pre-Merge Checklist
 
 - [ ] **Jira Linked**: Title and description reference the correct `SWIFT-XXX` ticket.
+- [ ] **Rebased**: Branch is cleanly rebased onto the latest target branch (`main` or `develop`) with no merge commits.
 - [ ] **Typecheck**: `npx tsc --noEmit` passes with 0 errors.
 - [ ] **Linting**: `npm run lint` passes without warnings/errors.
 - [ ] **Tests**: `npm test` passes (or new tests added).
