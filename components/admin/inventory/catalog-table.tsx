@@ -8,10 +8,10 @@ interface CatalogTableProps {
   onAdjustStock?: (sku: string) => void;
 }
 
-export function CatalogTable({ products, onAdjustStock }: CatalogTableProps) {
+export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableProps>) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-bg-card shadow-xs">
-      <table className="w-full text-left border-collapse min-w-[850px]">
+      <table className="w-full text-left border-collapse min-w-212.5">
         <thead>
           <tr className="bg-bg-muted/70 border-b border-border text-[11px] font-bold uppercase tracking-wider text-text-secondary">
             <th className="px-4 py-3.5">SKU</th>

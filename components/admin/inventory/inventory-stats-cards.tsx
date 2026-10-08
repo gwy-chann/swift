@@ -7,7 +7,7 @@ interface InventoryStatsCardsProps {
   stats: CatalogStats;
 }
 
-export function InventoryStatsCards({ stats }: InventoryStatsCardsProps) {
+export function InventoryStatsCards({ stats }: Readonly<InventoryStatsCardsProps>) {
   const cards = [
     {
       title: 'Total Active SKUs',

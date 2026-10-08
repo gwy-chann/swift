@@ -26,7 +26,7 @@ export function CatalogFilterBar({
   onResetFilters,
   totalCount,
   filteredCount
-}: CatalogFilterBarProps) {
+}: Readonly<CatalogFilterBarProps>) {
   const isFiltered =
     searchQuery.trim().length > 0 ||
     (selectedCategory !== 'All' && selectedCategory !== 'All Categories') ||
