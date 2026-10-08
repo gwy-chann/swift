@@ -2,13 +2,13 @@
 name: create-pr
 description: >-
   Guides the end-to-end workflow for creating high-quality Pull Requests (PRs),
-  including Jira-linked title and description standards, pre-flight verification,
+  including mandatory base branch rebase, Jira-linked title and description standards, pre-flight verification,
   Graphify architectural impact analysis, structured PR templates, and GitHub CLI (gh) automation.
 ---
 
 # Pull Request (PR) Creation Skill
 
-This skill defines the mandatory standards, templates, and workflows for preparing, describing, and opening clean, review-ready Pull Requests linked to Jira tickets.
+This skill defines the mandatory standards, templates, and workflows for preparing, describing, rebasing, and opening clean, review-ready Pull Requests linked to Jira tickets. All PR branches must strictly be rebased onto the target base branch (`main` or `develop`) prior to opening or updating.
 
 ---
 
@@ -109,6 +109,7 @@ A concise 2–3 sentence overview of what this PR accomplishes, the business or 
 ## ✅ Pre-Merge Checklist
 
 - [ ] **Jira Linked**: Title and description reference the correct `SWIFT-XXX` ticket.
+- [ ] **Rebased**: Branch is cleanly rebased onto the latest target branch (`main` or `develop`) with no merge commits.
 - [ ] **Typecheck**: `npx tsc --noEmit` passes with 0 errors.
 - [ ] **Linting**: `npm run lint` passes without warnings/errors.
 - [ ] **Tests**: `npm test` passes (or new tests added).
@@ -123,11 +124,21 @@ A concise 2–3 sentence overview of what this PR accomplishes, the business or 
 
 Before running `gh pr create`:
 
-### 1. Branch Sync & Status Check
-Ensure your branch is up-to-date with `main` or `develop`:
+### 1. Mandatory Branch Rebase (Never Merge)
+Always rebase your branch directly onto the latest target branch (`origin/main` or `origin/develop`). **Never use `git merge`** to update feature branches from upstream — maintain a clean, linear git history with zero merge commits:
+
 ```bash
+# Fetch latest remote changes
 git fetch origin
-git merge origin/main   # or git rebase origin/main
+
+# Rebase onto the base target branch (e.g. main)
+git rebase origin/main
+
+# If conflicts arise:
+# 1. Resolve conflicts in the affected files
+# 2. Stage resolved files: git add <files>
+# 3. Continue rebase: git rebase --continue
+# (Do NOT run git commit or git merge)
 ```
 
 ### 2. Code Quality & Type Safety Checks
@@ -166,8 +177,9 @@ git diff origin/main..HEAD
 ## 🚀 Opening the PR with GitHub CLI (`gh`)
 
 ### 1. Push Branch
+Push the rebased branch to remote. If the branch was previously pushed or rebased against upstream, use `--force-with-lease` to safely update remote history:
 ```bash
-git push -u origin <branch-name>
+git push -u origin <branch-name> --force-with-lease
 ```
 
 ### 2. Create the PR Using Template

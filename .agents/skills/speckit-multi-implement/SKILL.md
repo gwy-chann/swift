@@ -157,16 +157,18 @@ Upon completion, return a structured report with:
 ### Step 5: Verification Gate & Pull Request (PR) Creation
 
 Once the subagent successfully completes `speckit-workflow`:
-1. **Pre-Flight Verification Check** (within the worktree):
+1. **Mandatory Rebase & Pre-Flight Verification** (within the worktree):
    ```bash
    cd .worktrees/<JIRA-KEY>
+   git fetch origin
+   git rebase origin/main
    npm run typecheck
    npm run lint
    npm test
    ```
 2. **Push Branch to Upstream**:
    ```bash
-   git push -u origin <branch-name>
+   git push -u origin <branch-name> --force-with-lease
    ```
 3. **Create Pull Request (`create-pr` skill)**:
    - PR Title format: `<type>(<scope>): [<JIRA-KEY>] <concise imperative description>`
