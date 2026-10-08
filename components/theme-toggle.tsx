@@ -20,7 +20,7 @@ export interface ThemeToggleProps {
 export function ThemeToggle({
   className = "",
   variant = "button",
-}: ThemeToggleProps) {
+}: Readonly<ThemeToggleProps>) {
   const theme = useSyncExternalStore(
     subscribeTheme,
     getThemeSnapshot,

@@ -10,7 +10,7 @@ interface StaffLayoutShellProps {
   children: React.ReactNode;
 }
 
-export function StaffLayoutShell({ children }: StaffLayoutShellProps) {
+export function StaffLayoutShell({ children }: Readonly<StaffLayoutShellProps>) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdminSwitchOpen, setIsAdminSwitchOpen] = useState(false);
 

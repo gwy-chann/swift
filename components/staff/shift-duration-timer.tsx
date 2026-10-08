@@ -9,10 +9,19 @@ interface ShiftDurationTimerProps {
 
 const emptySubscribe = () => () => {};
 
+function formatTime(totalSeconds: number): string {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+}
+
 export function ShiftDurationTimer({
   initialSeconds = 15150, // 04:12:30 default base
   className = "",
-}: ShiftDurationTimerProps) {
+}: Readonly<ShiftDurationTimerProps>) {
   const isClient = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -28,15 +37,6 @@ export function ShiftDurationTimer({
 
     return () => clearInterval(interval);
   }, []);
-
-  function formatTime(totalSeconds: number): string {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-  }
 
   return (
     <div className={`flex items-center gap-1.5 text-xs ${className}`}>

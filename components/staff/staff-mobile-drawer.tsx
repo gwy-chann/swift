@@ -9,7 +9,7 @@ interface StaffMobileDrawerProps {
   onClose: () => void;
 }
 
-export function StaffMobileDrawer({ isOpen, onClose }: StaffMobileDrawerProps) {
+export function StaffMobileDrawer({ isOpen, onClose }: Readonly<StaffMobileDrawerProps>) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {

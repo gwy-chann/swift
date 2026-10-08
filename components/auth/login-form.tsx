@@ -26,14 +26,14 @@ export function LoginForm({
   setPassword,
   rememberTerminal,
   setRememberTerminal,
-}: LoginFormProps) {
+}: Readonly<LoginFormProps>) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const portalConfig = PORTAL_CONFIG[selectedRole];
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrorMessage(null);
 

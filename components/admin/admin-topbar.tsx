@@ -10,7 +10,7 @@ interface AdminTopbarProps {
   onOpenMobileMenu?: () => void;
 }
 
-export function AdminTopbar({ onOpenMobileMenu }: AdminTopbarProps) {
+export function AdminTopbar({ onOpenMobileMenu }: Readonly<AdminTopbarProps>) {
   const pathname = usePathname();
   const router = useRouter();
   const title = getAdminViewTitle(pathname);

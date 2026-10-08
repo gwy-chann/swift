@@ -12,7 +12,7 @@ interface StaffTopbarProps {
   onOpenAdminSwitch: () => void;
 }
 
-export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProps) {
+export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: Readonly<StaffTopbarProps>) {
   const pathname = usePathname();
   const currentTitle = getStaffViewTitle(pathname);
 
