@@ -1,4 +1,5 @@
 import type { Product } from '../types/product';
+import { isShelfLocationAssigned } from './shelf-location.ts';
 
 export type StockFilterOption = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
 
@@ -45,13 +46,17 @@ export function filterCatalogProducts(
   return products.filter((product) => {
     // 1. Text Query Matching across multiple product attributes
     if (query) {
+      const isUnassignedSearch = query === 'unassigned' || query === 'unassigned bay';
+      const isProductUnassigned = !isShelfLocationAssigned(product.location);
+
       const matchesQuery =
+        (isUnassignedSearch && isProductUnassigned) ||
         product.sku.toLowerCase().includes(query) ||
         product.name.toLowerCase().includes(query) ||
         product.brand.toLowerCase().includes(query) ||
         product.model.toLowerCase().includes(query) ||
         product.category.toLowerCase().includes(query) ||
-        product.location.toLowerCase().includes(query);
+        (product.location && product.location.toLowerCase().includes(query));
 
       if (!matchesQuery) return false;
     }
