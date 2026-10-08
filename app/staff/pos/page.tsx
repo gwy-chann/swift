@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Zap, Search, ShoppingCart, CheckCircle2 } from "lucide-react";
 
 function getCategoryLabel(category: string): string {
@@ -13,6 +13,11 @@ export default function StaffPosPage() {
   const [pricingMode, setPricingMode] = useState<"retail" | "wholesale">("retail");
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
 
   const categories = ["ALL", "SERVICES", "Brakes", "Drivetrain", "Fluids", "Ignition"];
 
@@ -47,6 +52,7 @@ export default function StaffPosPage() {
             <div className="relative sm:w-80">
               <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

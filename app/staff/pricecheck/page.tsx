@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Barcode } from "lucide-react";
 
 export default function StaffPriceCheckPage() {
   const [skuInput, setSkuInput] = useState("FL-MOT-10W40");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
@@ -20,6 +25,7 @@ export default function StaffPriceCheckPage() {
 
         <div className="relative max-w-md mx-auto">
           <input
+            ref={inputRef}
             type="text"
             value={skuInput}
             onChange={(e) => setSkuInput(e.target.value)}
