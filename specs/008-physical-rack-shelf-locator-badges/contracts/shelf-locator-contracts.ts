@@ -1,15 +1,15 @@
 /**
- * TypeScript Contracts for Shelf Locator Mapping & Badges (SIAA-14)
+ * TypeScript Contracts for Shelf Locator Mapping & Navigation Badges (SIAA-14)
  */
 
 export interface ParsedShelfLocation {
   /**
-   * True if location string is valid non-empty assignment.
+   * True if location string represents a valid physical assignment.
    */
   isAssigned: boolean;
 
   /**
-   * Raw or normalized zone/rack prefix (e.g. "Rack A-01", "Aisle 1", "Tire Rack 2").
+   * Zone, aisle, or rack descriptor (e.g. "Rack A-01", "Aisle 1", "Tire Rack 2").
    */
   zoneOrRack: string;
 
@@ -25,7 +25,23 @@ export interface ParsedShelfLocation {
 }
 
 export interface ShelfLocationTagProps {
+  /**
+   * Raw location string from product record (e.g. "Rack A-01 / Shelf 2" or "").
+   */
   location?: string | null;
+
+  /**
+   * Optional custom class name overrides.
+   */
   className?: string;
+
+  /**
+   * Optional flag to show or hide the location/alert icon (default: true).
+   */
   showIcon?: boolean;
 }
+
+/**
+ * Pure parser contract for converting raw location strings into structured domain objects.
+ */
+export type ParseShelfLocationFn = (location?: string | null) => ParsedShelfLocation;
