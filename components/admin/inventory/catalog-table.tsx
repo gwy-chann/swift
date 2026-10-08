@@ -1,7 +1,8 @@
 import React from 'react';
-import { MapPin, SlidersHorizontal, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { SlidersHorizontal, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { Product } from '@/lib/types/product';
 import { formatPeso, getStockHealthStatus } from '@/lib/inventory/catalog-filter';
+import { ShelfLocationTag } from '@/components/inventory/shelf-location-tag';
 
 interface CatalogTableProps {
   products: Product[];
@@ -73,10 +74,7 @@ export function CatalogTable({ products, onAdjustStock }: CatalogTableProps) {
 
                 {/* Shelf Locator Tag */}
                 <td className="px-4 py-3.5 align-middle">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-secondary-light text-secondary border border-secondary/20">
-                    <MapPin className="w-3 h-3 text-secondary shrink-0" />
-                    <span>{product.location}</span>
-                  </span>
+                  <ShelfLocationTag location={product.location} />
                 </td>
 
                 {/* Stock Level & Badge */}
