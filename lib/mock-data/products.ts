@@ -168,5 +168,19 @@ export const MOCK_PRODUCTS: Product[] = [
     oem: true,
     model: 'Yamaha NMAX 155',
     brand: 'IRC Tire'
+  },
+  {
+    sku: 'GEN-UNASSIGNED-BRG',
+    name: 'Universal Wheel Ball Bearing (6201-2RS)',
+    category: 'Accessories',
+    stock: 12,
+    minThreshold: 5,
+    location: '',
+    cost: 45,
+    wholesale: 75,
+    retail: 110,
+    oem: false,
+    model: 'Universal',
+    brand: 'Generic Bearings'
   }
 ];
