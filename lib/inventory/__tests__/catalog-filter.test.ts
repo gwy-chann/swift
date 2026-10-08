@@ -140,6 +140,39 @@ describe('catalog-filter engine', () => {
       assert.equal(combined[0].sku, 'YAM-NMAX-BL01');
     });
 
+    it('filters accurately by shelf and rack locations (Scenario 2)', () => {
+      const rackResults = filterCatalogProducts(SAMPLE_PRODUCTS, { query: 'Rack A-01' });
+      assert.equal(rackResults.length, 2);
+
+      const shelfResults = filterCatalogProducts(SAMPLE_PRODUCTS, { query: 'Shelf 2' });
+      assert.equal(shelfResults.length, 1);
+      assert.equal(shelfResults[0].sku, 'YAM-NMAX-BL01');
+    });
+
+    it('filters unassigned bay products when searching unassigned (Scenario 3)', () => {
+      const productsWithUnassigned: Product[] = [
+        ...SAMPLE_PRODUCTS,
+        {
+          sku: 'UNASSIGNED-01',
+          name: 'Loose Bearing Set',
+          category: 'Engine',
+          stock: 5,
+          minThreshold: 2,
+          location: '',
+          cost: 100,
+          wholesale: 150,
+          retail: 200,
+          oem: false,
+          model: 'Universal',
+          brand: 'Generic'
+        }
+      ];
+
+      const results = filterCatalogProducts(productsWithUnassigned, { query: 'unassigned' });
+      assert.equal(results.length, 1);
+      assert.equal(results[0].sku, 'UNASSIGNED-01');
+    });
+
     it('returns empty array when no product matches query', () => {
       const none = filterCatalogProducts(SAMPLE_PRODUCTS, { query: 'non-existent-xyz' });
       assert.equal(none.length, 0);
