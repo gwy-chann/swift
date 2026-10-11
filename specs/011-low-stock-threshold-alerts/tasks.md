@@ -8,7 +8,7 @@
 
 **Purpose**: Establish contract definitions and TypeScript interfaces for threshold alerts and inventory aggregation.
 
-- [ ] T001 Export contracts and type definitions for stock threshold status, catalog stats, and filter criteria in `lib/inventory/catalog-filter.ts` and `specs/011-low-stock-threshold-alerts/contracts/threshold-alerts-contracts.ts`
+- [x] T001 Export contracts and type definitions for stock threshold status, catalog stats, and filter criteria in `lib/inventory/catalog-filter.ts` and `specs/011-low-stock-threshold-alerts/contracts/threshold-alerts-contracts.ts`
 
 ---
 
@@ -18,8 +18,8 @@
 
 **⚠️ CRITICAL**: Foundational calculations must be verified before user story components are wired.
 
-- [ ] T002 [P] Update unit tests in `lib/inventory/__tests__/catalog-filter.test.ts` to assert `totalUnitsOnHand`, low-stock threshold detection (`stock <= minThreshold`), and `lowStockOnly` filtering
-- [ ] T003 Implement `getStockHealthStatus`, updated `calculateCatalogStats` (computing `totalUnitsOnHand`), and quick-filter predicate logic in `lib/inventory/catalog-filter.ts`
+- [x] T002 [P] Update unit tests in `lib/inventory/__tests__/catalog-filter.test.ts` to assert `totalUnitsOnHand`, low-stock threshold detection (`stock <= minThreshold`), and `lowStockOnly` filtering
+- [x] T003 Implement `getStockHealthStatus`, updated `calculateCatalogStats` (computing `totalUnitsOnHand`), and quick-filter predicate logic in `lib/inventory/catalog-filter.ts`
 
 **Checkpoint**: Core calculation and filter engine verified passing with unit tests.
 
@@ -33,8 +33,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T004 [P] [US1] Create reusable `<StockBadge>` component with high-contrast SWIFT design tokens and accessible ARIA attributes in `components/inventory/stock-badge.tsx`
-- [ ] T005 [US1] Integrate `<StockBadge>` into the parts catalog table rows in `components/admin/inventory/catalog-table.tsx`
+- [x] T004 [P] [US1] Create reusable `<StockBadge>` component with high-contrast SWIFT design tokens and accessible ARIA attributes in `components/inventory/stock-badge.tsx`
+- [x] T005 [US1] Integrate `<StockBadge>` into the parts catalog table rows in `components/admin/inventory/catalog-table.tsx`
 
 **Checkpoint**: User Story 1 complete — all catalog items display dynamic, accessible stock status badges.
 
@@ -48,8 +48,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Update `components/admin/inventory/inventory-stats-cards.tsx` to render the 4 canonical operational health cards (Total SKUs, Total Units on Hand, Critical Low Stock, Total Valuation)
-- [ ] T007 [US2] Wire live aggregated catalog stats into `InventoryStatsCards` within `components/admin/inventory/inventory-catalog.tsx`
+- [x] T006 [US2] Update `components/admin/inventory/inventory-stats-cards.tsx` to render the 4 canonical operational health cards (Total SKUs, Total Units on Hand, Critical Low Stock, Total Valuation)
+- [x] T007 [US2] Wire live aggregated catalog stats into `InventoryStatsCards` within `components/admin/inventory/inventory-catalog.tsx`
 
 **Checkpoint**: User Stories 1 and 2 functional — catalog badging and summary metric cards operate in real-time.
 
@@ -63,8 +63,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] Add "Low Stock Alerts" quick-filter toggle button with alert badge count to `components/admin/inventory/catalog-filter-bar.tsx`
-- [ ] T009 [US3] Connect `lowStockOnly` quick-filter state and compose filter predicates in `components/admin/inventory/inventory-catalog.tsx`
+- [x] T008 [US3] Add "Low Stock Alerts" quick-filter toggle button with alert badge count to `components/admin/inventory/catalog-filter-bar.tsx`
+- [x] T009 [US3] Connect `lowStockOnly` quick-filter state and compose filter predicates in `components/admin/inventory/inventory-catalog.tsx`
 
 **Checkpoint**: User Stories 1, 2, and 3 functional — streamlined reorder workflow is operational.
 
@@ -78,8 +78,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T010 [P] [US4] Create manager override modal/confirmation helper for out-of-stock POS items in `components/staff/pos/manager-override-modal.tsx`
-- [ ] T011 [US4] Integrate `<StockBadge>`, out-of-stock add prevention, and manager override logic into `app/staff/pos/page.tsx`
+- [x] T010 [P] [US4] Create manager override modal/confirmation helper for out-of-stock POS items in `components/staff/pos/manager-override-modal.tsx`
+- [x] T011 [US4] Integrate `<StockBadge>`, out-of-stock add prevention, and manager override logic into `app/staff/pos/page.tsx`
 
 **Checkpoint**: All 4 user stories complete across Admin and Staff portals.
 
@@ -89,9 +89,9 @@
 
 **Purpose**: Token audit, linting, type-checking, and end-to-end quickstart validation.
 
-- [ ] T012 [P] Verify zero hardcoded colors and token compliance against `@/lib/tokens.ts` across all modified components
-- [ ] T013 Run automated unit tests (`npm test`), TypeScript verification (`npx tsc --noEmit`), and linting (`npm run lint`)
-- [ ] T014 Execute interactive walkthrough following `specs/011-low-stock-threshold-alerts/quickstart.md`
+- [x] T012 [P] Verify zero hardcoded colors and token compliance against `@/lib/tokens.ts` across all modified components
+- [x] T013 Run automated unit tests (`npm test`), TypeScript verification (`npx tsc --noEmit`), and linting (`npm run lint`)
+- [x] T014 Execute interactive walkthrough following `specs/011-low-stock-threshold-alerts/quickstart.md`
 
 ---
 
