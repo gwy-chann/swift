@@ -26,7 +26,7 @@ export function LoginForm({
   setPassword,
   rememberTerminal,
   setRememberTerminal,
-}: LoginFormProps) {
+}: Readonly<LoginFormProps>) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

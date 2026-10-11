@@ -7,7 +7,17 @@ interface InventoryStatsCardsProps {
   stats: CatalogStats;
 }
 
-export function InventoryStatsCards({ stats }: InventoryStatsCardsProps) {
+function getBadgeStyle(badgeVariant?: string): string {
+  if (badgeVariant === 'danger') {
+    return 'bg-danger-light text-danger border border-danger/30';
+  }
+  if (badgeVariant === 'success') {
+    return 'bg-success-light text-success border border-success/30';
+  }
+  return 'bg-bg-muted text-text-secondary border border-border-subtle';
+}
+
+export function InventoryStatsCards({ stats }: Readonly<InventoryStatsCardsProps>) {
   const cards = [
     {
       title: 'Total Active SKUs',
@@ -69,13 +79,9 @@ export function InventoryStatsCards({ stats }: InventoryStatsCardsProps) {
                 </span>
               </div>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                  card.badgeVariant === 'danger'
-                    ? 'bg-danger-light text-danger border border-danger/30'
-                    : card.badgeVariant === 'success'
-                    ? 'bg-success-light text-success border border-success/30'
-                    : 'bg-bg-muted text-text-secondary border border-border-subtle'
-                }`}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getBadgeStyle(
+                  card.badgeVariant
+                )}`}
               >
                 {card.badge}
               </span>

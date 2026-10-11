@@ -14,7 +14,7 @@ export function StockBadge({
   minThreshold,
   compact = false,
   className = ''
-}: StockBadgeProps) {
+}: Readonly<StockBadgeProps>) {
   const healthStatus: StockHealthStatus = getStockHealthStatus({ stock, minThreshold });
 
   if (healthStatus === 'out_of_stock') {

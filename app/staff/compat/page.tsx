@@ -13,11 +13,15 @@ export default function StaffCompatPage() {
 
   useEffect(() => {
     let isMounted = true;
-    getProductsAction().then((fetched) => {
-      if (isMounted && fetched.length > 0) {
-        hydrateProducts(fetched);
-      }
-    });
+    getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load products for compatibility check:", error);
+      });
     return () => {
       isMounted = false;
     };
@@ -28,11 +32,11 @@ export default function StaffCompatPage() {
       const modelMatch =
         p.model === model ||
         p.model === "Universal" ||
-        (p.model && p.model.toLowerCase().includes(model.toLowerCase()));
+        (p.model?.toLowerCase().includes(model.toLowerCase()));
 
       const categoryMatch =
         systemCategory === "ALL" ||
-        (p.category && p.category.toLowerCase() === systemCategory.toLowerCase());
+        (p.category?.toLowerCase() === systemCategory.toLowerCase());
 
       return modelMatch && categoryMatch;
     });
