@@ -3,6 +3,7 @@
 import React from 'react';
 import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
+import { DISCOUNT_TIERS } from '@/lib/pos/discount-matrix';
 import type { CartItem, Product } from '@/lib/types';
 
 export interface HybridCartPaneProps {
@@ -24,9 +25,10 @@ export function HybridCartPane({
     items,
     pricingMode,
     discountRate,
+    discountType,
     totals,
     setPricingMode,
-    setDiscountRate,
+    setDiscountTier,
     updateQuantity,
     removeItem
   } = useCartStore();
@@ -220,26 +222,31 @@ export function HybridCartPane({
           <span className="font-mono font-bold">-₱{totals.discountAmount.toFixed(2)}</span>
         </div>
 
-        {/* Discount Rate Selector */}
+        {/* Standardized Customer Discount Matrix Chips (SIAA-20) */}
         <div className="flex items-center gap-1.5 pt-1">
-          {[
-            { label: '0% Standard', rate: 0 },
-            { label: '5% VIP', rate: 0.05 },
-            { label: '20% SC/PWD', rate: 0.20 }
-          ].map((d) => (
-            <button
-              key={d.label}
-              type="button"
-              onClick={() => setDiscountRate(d.rate)}
-              className={`flex-1 py-1 px-2 rounded text-[10px] font-bold text-center border transition-colors cursor-pointer ${
-                discountRate === d.rate
-                  ? 'bg-primary text-text-light border-primary shadow-xs'
-                  : 'bg-bg-base hover:bg-bg-hover text-text-muted border-border'
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
+          {DISCOUNT_TIERS.map((tier) => {
+            const isActive =
+              tier.id === 'none'
+                ? discountRate === 0 || discountType === 'none'
+                : discountType === tier.id || Math.abs(discountRate - tier.rate) < 0.001;
+
+            return (
+              <button
+                key={tier.id}
+                type="button"
+                onClick={() => setDiscountTier(tier.id)}
+                title={tier.description}
+                aria-pressed={isActive}
+                className={`flex-1 py-1 px-1 rounded text-[10px] font-bold text-center border transition-all cursor-pointer select-none ${
+                  isActive
+                    ? 'border-accent text-accent bg-accent-light shadow-2xs'
+                    : 'bg-bg-base hover:bg-bg-hover text-text-secondary border-border'
+                }`}
+              >
+                {tier.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Total Due */}
