@@ -13,7 +13,7 @@ interface StaffSidebarProps {
   className?: string;
 }
 
-export function StaffSidebar({ onItemClick, className = "" }: StaffSidebarProps) {
+export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSidebarProps>) {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -25,7 +25,7 @@ export function StaffSidebar({ onItemClick, className = "" }: StaffSidebarProps)
       router.push(result.redirectTo);
     } catch (err) {
       console.error("Logout error:", err);
-      router.push("/login");
+      router.push("/");
     }
   }
 

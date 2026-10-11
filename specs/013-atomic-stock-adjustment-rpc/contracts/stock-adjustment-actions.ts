@@ -11,8 +11,7 @@ export type StockAdjustmentType =
   | 'Audit Adjustment'
   | 'Shrinkage'
   | 'Store Transfer'
-  | 'Return / Exchange'
-  | string;
+  | 'Return / Exchange';
 
 export interface AdjustStockPayload {
   sku: string;

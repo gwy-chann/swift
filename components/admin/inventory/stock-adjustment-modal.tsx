@@ -79,8 +79,8 @@ export function StockAdjustmentModal({
     return null;
   }
 
-  const parsedQty = parseInt(quantityInput, 10);
-  const validQty = !isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 0;
+  const parsedQty = Number.parseInt(quantityInput, 10);
+  const validQty = !Number.isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 0;
 
   let currentMode: 'add' | 'deduct' = 'deduct';
   if (adjustmentType === 'Audit Adjustment') {
@@ -110,11 +110,15 @@ export function StockAdjustmentModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="stock-adjustment-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        handleClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-in fade-in duration-200"
     >
       <div className="relative w-full max-w-lg rounded-xl border border-border bg-bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
@@ -322,6 +326,6 @@ export function StockAdjustmentModal({
           </form>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

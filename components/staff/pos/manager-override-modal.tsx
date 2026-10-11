@@ -16,7 +16,7 @@ export function ManagerOverrideModal({
   product,
   onClose,
   onAuthorize
-}: ManagerOverrideModalProps) {
+}: Readonly<ManagerOverrideModalProps>) {
   const [managerPin, setManagerPin] = useState('');
   const [reason, setReason] = useState('Customer urgent request - supplier stock arriving');
   const [error, setError] = useState('');

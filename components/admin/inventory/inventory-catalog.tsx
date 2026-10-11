@@ -188,8 +188,7 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
     <div className="space-y-6 animate-fadeIn">
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div
-          role="status"
+        <output
           className={`p-3.5 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all animate-fadeIn ${
             toastMessage.type === 'success'
               ? 'bg-success-light text-success border-success/30'
@@ -212,7 +211,7 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
           >
             ✕
           </button>
-        </div>
+        </output>
       )}
 
       {/* 4 Summary KPI Cards */}

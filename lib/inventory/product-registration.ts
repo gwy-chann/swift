@@ -75,7 +75,7 @@ function validateNumericConstraints(
 
   if (
     typeof input.stock !== 'number' ||
-    isNaN(input.stock) ||
+    Number.isNaN(input.stock) ||
     input.stock < 0 ||
     !Number.isInteger(input.stock)
   ) {
@@ -84,7 +84,7 @@ function validateNumericConstraints(
 
   if (
     typeof input.minThreshold !== 'number' ||
-    isNaN(input.minThreshold) ||
+    Number.isNaN(input.minThreshold) ||
     input.minThreshold < 1 ||
     !Number.isInteger(input.minThreshold)
   ) {

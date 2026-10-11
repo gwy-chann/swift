@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import{ useState, useEffect, useMemo } from "react";
 import { Barcode, SearchX } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
@@ -21,11 +21,15 @@ export default function StaffPriceCheckPage() {
 
   useEffect(() => {
     let isMounted = true;
-    getProductsAction().then((fetched) => {
-      if (isMounted && fetched.length > 0) {
-        hydrateProducts(fetched);
-      }
-    });
+    getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load products for price check:", error);
+      });
     return () => {
       isMounted = false;
     };
