@@ -140,7 +140,7 @@ export function GlobalMarkupCard({
           <div className="p-3 bg-success-light border border-success/30 rounded-lg flex items-center gap-2.5 text-xs text-success font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>
-              Global pricing markup rules saved and broadcast to all POS and Inventory terminals!
+              Global pricing rules saved! Successfully broadcast to all POS and Inventory terminals.
             </span>
           </div>
         )}

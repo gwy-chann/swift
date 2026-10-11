@@ -43,14 +43,29 @@ const MOTORCYCLE_MODELS = [
   'Universal Fitment'
 ];
 
-function getRetailMarkupNote(manualOverride: boolean, isOem: boolean): string {
+function getRetailMarkupNote(
+  manualOverride: boolean,
+  isOem: boolean,
+  rules?: Partial<PricingRules>
+): string {
   if (manualOverride) {
     return 'Manual override';
   }
-  if (isOem) {
-    return 'Auto (+35%)';
+  const pct = isOem
+    ? (rules?.retailMarkup ?? 35)
+    : (rules?.aftermarketMarkup ?? 40);
+  return `Auto (+${pct}%)`;
+}
+
+function getWholesaleMarkupNote(
+  manualOverride: boolean,
+  rules?: Partial<PricingRules>
+): string {
+  if (manualOverride) {
+    return 'Manual override';
   }
-  return 'Auto (+40%)';
+  const pct = rules?.wholesaleMarkup ?? 18;
+  return `Auto (+${pct}%)`;
 }
 
 function useProductRegistrationForm({
@@ -246,8 +261,8 @@ function useProductRegistrationForm({
       minThreshold: parsedMinThreshold,
       location: location.trim(),
       cost: parsedCost,
-      wholesale: parsedWholesale || (parsedCost * 1.18),
-      retail: parsedRetail || (specType === 'oem' ? parsedCost * 1.35 : parsedCost * 1.40),
+      wholesale: parsedWholesale || (parsedCost * (1 + (pricingRules?.wholesaleMarkup ?? 18) / 100)),
+      retail: parsedRetail || (parsedCost * (1 + (specType === 'oem' ? (pricingRules?.retailMarkup ?? 35) : (pricingRules?.aftermarketMarkup ?? 40)) / 100)),
       oem: specType === 'oem',
       model: model.trim(),
       brand: brand.trim()
@@ -304,7 +319,7 @@ function useProductRegistrationForm({
 }
 
 export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
-  const { isOpen, onClose } = props;
+  const { isOpen, onClose, pricingRules } = props;
   const {
     sku,
     name,
@@ -639,7 +654,7 @@ export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
                 Pricing & Automated Markups
               </span>
               <span className="text-[11px] text-text-muted">
-                Wholesale: +18% | Retail: {specType === 'oem' ? '+35% (OEM)' : '+40% (Aftermarket)'}
+                Wholesale: +{pricingRules?.wholesaleMarkup ?? 18}% | Retail: +{specType === 'oem' ? (pricingRules?.retailMarkup ?? 35) : (pricingRules?.aftermarketMarkup ?? 40)}% ({specType === 'oem' ? 'OEM' : 'Aftermarket'})
               </span>
             </div>
 
@@ -688,7 +703,7 @@ export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
                   required
                 />
                 <span className="text-[10px] text-text-muted mt-0.5 block">
-                  {manualWholesaleOverride ? 'Manual override' : 'Auto (+18%)'}
+                  {getWholesaleMarkupNote(manualWholesaleOverride, pricingRules)}
                 </span>
               </div>
 
@@ -711,7 +726,7 @@ export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
                   required
                 />
                 <span className="text-[10px] text-text-muted mt-0.5 block">
-                  {getRetailMarkupNote(manualRetailOverride, specType === 'oem')}
+                  {getRetailMarkupNote(manualRetailOverride, specType === 'oem', pricingRules)}
                 </span>
               </div>
             </div>
