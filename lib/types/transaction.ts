@@ -1,7 +1,7 @@
 import type { CartItem, PricingMode } from './cart.ts';
 
 export type TransactionPaymentMethod = 'Cash' | 'GCash' | 'Card' | 'Maya' | string;
-export type TransactionDiscountType = 'none' | 'senior' | 'pwd' | 'vip' | string;
+export type TransactionDiscountType = 'none' | 'senior' | 'pwd' | 'senior_pwd' | 'vip' | 'fleet' | string;
 export type TransactionItemType = 'part' | 'service';
 
 export interface DbTransactionItem {
