@@ -1,4 +1,4 @@
-import { LaborService } from '@/lib/types/service';
+import type { LaborService } from '../types/service.ts';
 
 export const MOCK_SERVICES: LaborService[] = [
   {
