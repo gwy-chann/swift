@@ -8,6 +8,31 @@ import {
   getDiscountTierByRate
 } from '../discount-matrix.ts';
 import type { CartItem } from '../../types/cart.ts';
+import type { Product } from '../../types/product.ts';
+
+function assertClose(actual: number, expected: number, delta = 0.0001) {
+  assert.ok(
+    Math.abs(actual - expected) <= delta,
+    `Expected ${actual} to be close to ${expected} within ${delta}`
+  );
+}
+
+function createTestProduct(
+  overrides: Partial<Product> & { sku: string; retail: number; wholesale: number }
+): Product {
+  return {
+    name: 'Test Product',
+    brand: 'Generic',
+    category: 'Fluids',
+    stock: 10,
+    minThreshold: 2,
+    location: 'Aisle 1 / Shelf 1',
+    cost: 100,
+    oem: false,
+    model: 'Universal',
+    ...overrides
+  };
+}
 
 describe('Customer Discount Matrix Engine (SIAA-20)', () => {
   beforeEach(() => {
@@ -19,19 +44,19 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       assert.strictEqual(DISCOUNT_TIERS.length, 4);
 
       const noneTier = getDiscountTierById('none');
-      assert.strictEqual(noneTier.rate, 0.0);
+      assertClose(noneTier.rate, 0.0);
       assert.strictEqual(noneTier.type, 'none');
 
       const fleetTier = getDiscountTierById('fleet');
-      assert.strictEqual(fleetTier.rate, 0.05);
+      assertClose(fleetTier.rate, 0.05);
       assert.strictEqual(fleetTier.type, 'commercial');
 
       const vipTier = getDiscountTierById('vip');
-      assert.strictEqual(vipTier.rate, 0.1);
+      assertClose(vipTier.rate, 0.1);
       assert.strictEqual(vipTier.type, 'commercial');
 
       const scTier = getDiscountTierById('senior_pwd');
-      assert.strictEqual(scTier.rate, 0.2);
+      assertClose(scTier.rate, 0.2);
       assert.strictEqual(scTier.type, 'statutory');
     });
 
@@ -58,7 +83,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
 
       const totals = calculateCartTotals(items, 0.2, 'senior_pwd');
       assert.strictEqual(totals.subtotal, 1000);
-      assert.strictEqual(totals.discountRate, 0.2);
+      assertClose(totals.discountRate, 0.2);
       assert.strictEqual(totals.discountAmount, 200);
       assert.strictEqual(totals.total, 800);
       assert.strictEqual(totals.discountType, 'senior_pwd');
@@ -101,24 +126,25 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
 
       // 33.33 * 0.20 = 6.666 -> rounds to 6.67
       const totals = calculateCartTotals(items, 0.2, 'senior_pwd');
-      assert.strictEqual(totals.subtotal, 33.33);
-      assert.strictEqual(totals.discountAmount, 6.67);
-      assert.strictEqual(totals.total, 26.66);
+      assertClose(totals.subtotal, 33.33);
+      assertClose(totals.discountAmount, 6.67);
+      assertClose(totals.total, 26.66);
     });
   });
 
   describe('Reactive CartStore Discount State Machine', () => {
     it('Scenario 1: applying senior_pwd 20% discount chip updates totals in cartStore', () => {
       // Seed cart with items
-      cartStore.addPart({
-        sku: 'TEST-SKU-1',
-        name: 'Brake Disc',
-        brand: 'Brembo',
-        category: 'Brakes',
-        stock: 10,
-        retail: 1000,
-        wholesale: 850
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-1',
+          name: 'Brake Disc',
+          category: 'Brakes',
+          stock: 10,
+          retail: 1000,
+          wholesale: 850
+        })
+      );
 
       assert.strictEqual(cartStore.getState().totals.subtotal, 1000);
 
@@ -127,21 +153,22 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
 
       const state = cartStore.getState();
       assert.strictEqual(state.discountType, 'senior_pwd');
-      assert.strictEqual(state.discountRate, 0.2);
+      assertClose(state.discountRate, 0.2);
       assert.strictEqual(state.totals.discountAmount, 200);
       assert.strictEqual(state.totals.total, 800);
     });
 
     it('Scenario 2: applying VIP 10% and Fleet 5% chips updates cartStore', () => {
-      cartStore.addPart({
-        sku: 'TEST-SKU-2',
-        name: 'Chain & Sprocket',
-        brand: 'DID',
-        category: 'Drive',
-        stock: 5,
-        retail: 2000,
-        wholesale: 1700
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-2',
+          name: 'Chain & Sprocket',
+          category: 'Drivetrain',
+          stock: 5,
+          retail: 2000,
+          wholesale: 1700
+        })
+      );
 
       // VIP 10%
       cartStore.setDiscountTier('vip');
@@ -157,15 +184,16 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
     });
 
     it('Scenario 3: enforces mutual exclusivity and prevents discount stacking', () => {
-      cartStore.addPart({
-        sku: 'TEST-SKU-3',
-        name: 'LED Headlight',
-        brand: 'Osram',
-        category: 'Lighting',
-        stock: 5,
-        retail: 1000,
-        wholesale: 800
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-3',
+          name: 'LED Headlight',
+          category: 'Electrical',
+          stock: 5,
+          retail: 1000,
+          wholesale: 800
+        })
+      );
 
       // Select 20%
       cartStore.setDiscountTier('senior_pwd');
@@ -180,15 +208,16 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
     });
 
     it('Scenario 3: toggle-off and none resets discount to 0% Standard', () => {
-      cartStore.addPart({
-        sku: 'TEST-SKU-4',
-        name: 'Synthetic Oil',
-        brand: 'Motul',
-        category: 'Oils',
-        stock: 10,
-        retail: 500,
-        wholesale: 400
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-4',
+          name: 'Synthetic Oil',
+          category: 'Fluids',
+          stock: 10,
+          retail: 500,
+          wholesale: 400
+        })
+      );
 
       // Select 20%
       cartStore.setDiscountTier('senior_pwd');
@@ -198,7 +227,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       // Re-clicking active tier toggles it off
       cartStore.setDiscountTier('senior_pwd');
       assert.strictEqual(cartStore.getState().discountType, 'none');
-      assert.strictEqual(cartStore.getState().discountRate, 0);
+      assertClose(cartStore.getState().discountRate, 0.0);
       assert.strictEqual(cartStore.getState().totals.discountAmount, 0);
       assert.strictEqual(cartStore.getState().totals.total, 500);
 
@@ -211,15 +240,16 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
     });
 
     it('recalculates discount amount dynamically when items are added or quantities modified', () => {
-      cartStore.addPart({
-        sku: 'TEST-SKU-5',
-        name: 'Air Filter',
-        brand: 'Honda',
-        category: 'Maintenance',
-        stock: 10,
-        retail: 300,
-        wholesale: 250
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-5',
+          name: 'Air Filter',
+          category: 'Engine',
+          stock: 10,
+          retail: 300,
+          wholesale: 250
+        })
+      );
 
       cartStore.setDiscountTier('senior_pwd'); // 20%
       assert.strictEqual(cartStore.getState().totals.subtotal, 300);
@@ -231,7 +261,8 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
         code: 'SRV-01',
         name: 'Oil Change',
         rate: 100,
-        category: 'Maintenance'
+        bay: 'Bay 1 / Quick Bay',
+        duration: '15 mins'
       });
 
       // New subtotal: ₱400 -> Discount 20% of 400 = ₱80 -> Total = ₱320
@@ -241,15 +272,16 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
     });
 
     it('Scenario 4: stamps discount_type and discount_rate into checkout transaction payload', () => {
-      cartStore.addPart({
-        sku: 'TEST-SKU-6',
-        name: 'Tire 90/80-14',
-        brand: 'Pirelli',
-        category: 'Tires',
-        stock: 4,
-        retail: 1500,
-        wholesale: 1300
-      });
+      cartStore.addPart(
+        createTestProduct({
+          sku: 'TEST-SKU-6',
+          name: 'Tire 90/80-14',
+          category: 'Tires',
+          stock: 4,
+          retail: 1500,
+          wholesale: 1300
+        })
+      );
 
       cartStore.setDiscountTier('senior_pwd');
 
@@ -262,7 +294,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       assert.ok(tx);
       assert.strictEqual(tx.subtotal, 1500);
       assert.strictEqual(tx.discountType, 'senior_pwd');
-      assert.strictEqual(tx.discountRate, 0.2);
+      assertClose(tx.discountRate, 0.2);
       assert.strictEqual(tx.discountAmount, 300);
       assert.strictEqual(tx.total, 1200);
       assert.strictEqual(tx.cashTendered, 1500);
@@ -271,7 +303,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       // Cart should be reset to empty with 0% discount
       assert.strictEqual(cartStore.getState().items.length, 0);
       assert.strictEqual(cartStore.getState().discountType, 'none');
-      assert.strictEqual(cartStore.getState().discountRate, 0);
+      assertClose(cartStore.getState().discountRate, 0.0);
     });
   });
 });

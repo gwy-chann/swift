@@ -42,6 +42,7 @@ export interface Transaction {
   items: CartItem[];
   pricingMode: PricingMode;
   subtotal: number;
+  discountType?: TransactionDiscountType;
   discountRate: number; // 0, 0.05, 0.20
   discountAmount: number;
   total: number;
