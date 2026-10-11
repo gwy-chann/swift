@@ -76,9 +76,10 @@ export function useInventoryRealtime(
             }
 
             if (payload.new && typeof payload.new.sku === 'string') {
+              const oldRecord = payload.old as Record<string, unknown> | undefined;
               const previousStock =
-                payload.old && typeof payload.old.stock === 'number'
-                  ? payload.old.stock
+                oldRecord && typeof oldRecord.stock === 'number'
+                  ? (oldRecord.stock as number)
                   : undefined;
 
               const mappedProduct = mapRealtimeDbProductToProduct(
