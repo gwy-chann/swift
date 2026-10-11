@@ -9,7 +9,6 @@ import type {
   ServiceCartItem,
   Product,
   LaborService,
-  Transaction,
   TransactionPaymentMethod,
   ThermalReceiptData,
   CheckoutPayload
@@ -30,6 +29,7 @@ export interface CartStoreState {
   discountType: DiscountTierId;
   totals: CartTotals;
   isProcessingCheckout: boolean;
+  isPaymentModalOpen: boolean;
   isReceiptModalOpen: boolean;
   activeReceiptData: ThermalReceiptData | null;
   lastCheckoutError: string | null;
@@ -74,6 +74,7 @@ class CartStore {
       discountType,
       totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate, discountType),
       isProcessingCheckout: false,
+      isPaymentModalOpen: false,
       isReceiptModalOpen: false,
       activeReceiptData: null,
       lastCheckoutError: null
@@ -278,6 +279,18 @@ class CartStore {
     });
   };
 
+  public openPaymentModal = (): void => {
+    this.updateState({
+      isPaymentModalOpen: true
+    });
+  };
+
+  public closePaymentModal = (): void => {
+    this.updateState({
+      isPaymentModalOpen: false
+    });
+  };
+
   public setPricingMode = (mode: PricingMode): void => {
     if (this.state.pricingMode === mode) return;
 
@@ -459,6 +472,7 @@ class CartStore {
         discountRate: 0,
         discountType: 'none',
         isProcessingCheckout: false,
+        isPaymentModalOpen: false,
         isReceiptModalOpen: true,
         activeReceiptData: receiptData,
         lastCheckoutError: null
@@ -514,6 +528,8 @@ export function useCartStore(): CartStoreState & {
   setDiscountRate: typeof cartStore.setDiscountRate;
   setDiscountTier: typeof cartStore.setDiscountTier;
   checkout: typeof cartStore.checkout;
+  openPaymentModal: typeof cartStore.openPaymentModal;
+  closePaymentModal: typeof cartStore.closePaymentModal;
   openReceiptModal: typeof cartStore.openReceiptModal;
   closeReceiptModal: typeof cartStore.closeReceiptModal;
 } {
@@ -534,6 +550,8 @@ export function useCartStore(): CartStoreState & {
     setDiscountRate: cartStore.setDiscountRate,
     setDiscountTier: cartStore.setDiscountTier,
     checkout: cartStore.checkout,
+    openPaymentModal: cartStore.openPaymentModal,
+    closePaymentModal: cartStore.closePaymentModal,
     openReceiptModal: cartStore.openReceiptModal,
     closeReceiptModal: cartStore.closeReceiptModal
   };

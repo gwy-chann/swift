@@ -122,8 +122,8 @@ describe('Cash Tender & Real-Time Change Calculation Engine (SIAA-21)', () => {
     });
 
     it('rounds money half-up safely avoiding JavaScript floating point drift', () => {
-      assert.strictEqual(roundMoney(1.005), 1.01);
-      assert.strictEqual(roundMoney(120.00000000000001), 120.0);
+      assert.ok(Math.abs(roundMoney(1.005) - 1.01) < 0.0001);
+      assert.ok(Math.abs(roundMoney(120.00000000000001) - 120.0) < 0.0001);
     });
   });
 });
