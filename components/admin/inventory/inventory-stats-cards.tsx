@@ -13,46 +13,42 @@ export function InventoryStatsCards({ stats }: InventoryStatsCardsProps) {
       title: 'Total Active SKUs',
       badge: 'Catalog',
       badgeVariant: 'neutral' as const,
-      value: stats.totalSkus.toString(),
+      value: stats.totalSkus.toLocaleString(),
       subtext: `${stats.categoriesCount} distinct categories`,
       icon: Boxes,
       iconColor: 'text-primary'
     },
     {
-      title: 'Restock Warnings',
-      badge: stats.lowStockCount > 0 ? 'Urgent' : 'Optimal',
-      badgeVariant: stats.lowStockCount > 0 ? ('danger' as const) : ('success' as const),
-      value: stats.lowStockCount.toString(),
-      valueColor: stats.lowStockCount > 0 ? 'text-danger' : 'text-success',
-      subtext:
-        stats.lowStockCount > 0
-          ? `${stats.lowStockCount} items at or below threshold`
-          : 'All items above minimum threshold',
-      subtextColor: stats.lowStockCount > 0 ? 'text-danger' : 'text-success',
-      icon: AlertTriangle,
-      iconColor: stats.lowStockCount > 0 ? 'text-danger' : 'text-success'
+      title: 'Total Units on Hand',
+      badge: 'Units',
+      badgeVariant: 'neutral' as const,
+      value: (stats.totalUnitsOnHand ?? 0).toLocaleString(),
+      subtext: 'Cumulative physical on-hand units',
+      icon: Layers,
+      iconColor: 'text-primary'
     },
     {
-      title: 'Total Retail Valuation',
-      badge: 'On-Hand',
+      title: 'Critical Low Stock',
+      badge: (stats.criticalLowStockCount ?? stats.lowStockCount) > 0 ? 'Urgent' : 'Optimal',
+      badgeVariant: (stats.criticalLowStockCount ?? stats.lowStockCount) > 0 ? ('danger' as const) : ('success' as const),
+      value: (stats.criticalLowStockCount ?? stats.lowStockCount).toString(),
+      valueColor: (stats.criticalLowStockCount ?? stats.lowStockCount) > 0 ? 'text-danger' : 'text-success',
+      subtext:
+        (stats.criticalLowStockCount ?? stats.lowStockCount) > 0
+          ? `${stats.criticalLowStockCount ?? stats.lowStockCount} items at or below threshold`
+          : 'All items above minimum threshold',
+      subtextColor: (stats.criticalLowStockCount ?? stats.lowStockCount) > 0 ? 'text-danger' : 'text-success',
+      icon: AlertTriangle,
+      iconColor: (stats.criticalLowStockCount ?? stats.lowStockCount) > 0 ? 'text-danger' : 'text-success'
+    },
+    {
+      title: 'Total Inventory Valuation',
+      badge: 'Valuation',
       badgeVariant: 'neutral' as const,
       value: formatPeso(stats.totalValuation),
       subtext: 'Accumulated retail floor stock',
       icon: PesoIcon,
       iconColor: 'text-success'
-    },
-    {
-      title: 'Stock Health',
-      badge: stats.outOfStockCount > 0 ? 'Depleted' : 'Healthy',
-      badgeVariant: stats.outOfStockCount > 0 ? ('danger' as const) : ('neutral' as const),
-      value: stats.outOfStockCount > 0 ? `${stats.outOfStockCount} OOS` : '100% In Stock',
-      valueColor: stats.outOfStockCount > 0 ? 'text-danger' : 'text-text-primary',
-      subtext:
-        stats.outOfStockCount > 0
-          ? 'Requires immediate purchase order'
-          : 'Zero stockouts detected',
-      icon: Layers,
-      iconColor: stats.outOfStockCount > 0 ? 'text-danger' : 'text-text-muted'
     }
   ];
 

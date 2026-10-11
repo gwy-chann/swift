@@ -1,8 +1,9 @@
 import React from 'react';
-import { SlidersHorizontal, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Product } from '@/lib/types/product';
-import { formatPeso, getStockHealthStatus } from '@/lib/inventory/catalog-filter';
+import { formatPeso } from '@/lib/inventory/catalog-filter';
 import { ShelfLocationTag } from '@/components/inventory/shelf-location-tag';
+import { StockBadge } from '@/components/inventory/stock-badge';
 
 interface CatalogTableProps {
   products: Product[];
@@ -26,8 +27,6 @@ export function CatalogTable({ products, onAdjustStock }: CatalogTableProps) {
         </thead>
         <tbody className="divide-y divide-border-subtle">
           {products.map((product) => {
-            const healthStatus = getStockHealthStatus(product);
-
             return (
               <tr
                 key={product.sku}
@@ -79,28 +78,7 @@ export function CatalogTable({ products, onAdjustStock }: CatalogTableProps) {
 
                 {/* Stock Level & Badge */}
                 <td className="px-4 py-3.5 align-middle">
-                  <div className="flex items-center gap-2">
-                    {healthStatus === 'healthy' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-md bg-success-light text-success border border-success/30">
-                        <CheckCircle2 className="w-3 h-3 shrink-0" />
-                        <span>{product.stock} Units</span>
-                      </span>
-                    )}
-
-                    {healthStatus === 'low' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-md bg-danger-light text-danger border border-danger/30">
-                        <AlertTriangle className="w-3 h-3 shrink-0" />
-                        <span>{product.stock} Left (Min: {product.minThreshold})</span>
-                      </span>
-                    )}
-
-                    {healthStatus === 'out_of_stock' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-md bg-danger text-text-light">
-                        <AlertOctagon className="w-3 h-3 shrink-0" />
-                        <span>0 Out of Stock</span>
-                      </span>
-                    )}
-                  </div>
+                  <StockBadge stock={product.stock} minThreshold={product.minThreshold} />
                 </td>
 
                 {/* Retail Price in Philippine Pesos */}

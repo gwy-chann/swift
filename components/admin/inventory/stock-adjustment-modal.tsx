@@ -41,29 +41,37 @@ export function StockAdjustmentModal({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const resetForm = React.useCallback(() => {
+    setAdjustmentType('Restock Inbound');
+    setQuantityInput('1');
+    setReasonInput('');
+    setAuditMode('deduct');
+  }, []);
+
+  const handleClose = React.useCallback(() => {
+    resetForm();
+    onClose();
+  }, [onClose, resetForm]);
+
   useEffect(() => {
     if (isOpen) {
-      setAdjustmentType('Restock Inbound');
-      setQuantityInput('1');
-      setReasonInput('');
-      setAuditMode('deduct');
       // Imperative focus to avoid jsx autoFocus warnings
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
     }
-  }, [isOpen, product]);
+  }, [isOpen]);
 
   // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen || !product) {
     return null;
@@ -96,7 +104,7 @@ export function StockAdjustmentModal({
       delta,
       reason: reasonInput.trim() || `${adjustmentType} manual stock adjustment`
     });
-    onClose();
+    handleClose();
   };
 
   return (

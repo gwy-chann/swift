@@ -4,6 +4,8 @@ import {
   filterCatalogProducts,
   calculateCatalogStats,
   getStockHealthStatus,
+  getStockBadgeLabel,
+  isProductLowStock,
   formatPeso
 } from '../catalog-filter.ts';
 import type { Product } from '../../types/product';
@@ -180,14 +182,52 @@ describe('catalog-filter engine', () => {
   });
 
   describe('calculateCatalogStats', () => {
-    it('accurately computes summary metrics', () => {
+    it('accurately computes summary metrics including totalUnitsOnHand and criticalLowStockCount', () => {
       const stats = calculateCatalogStats(SAMPLE_PRODUCTS);
       assert.equal(stats.totalSkus, 4);
+      // Total units: 2 + 14 + 28 + 0 = 44
+      assert.equal(stats.totalUnitsOnHand, 44);
       assert.equal(stats.lowStockCount, 1);
       assert.equal(stats.outOfStockCount, 1);
+      // Critical low stock (stock <= minThreshold): YAM-NMAX-BL01 (2 <= 5) and HON-CLK-CVTB (0 <= 8) = 2
+      assert.equal(stats.criticalLowStockCount, 2);
       // Valuation: (450 * 2) + (580 * 14) + (390 * 28) + (850 * 0) = 900 + 8120 + 10920 + 0 = 19940
       assert.equal(stats.totalValuation, 19940);
       assert.equal(stats.categoriesCount, 3); // Brakes, Fluids, Drivetrain
+    });
+  });
+
+  describe('getStockBadgeLabel & isProductLowStock', () => {
+    it('returns accurate badge label across stock conditions', () => {
+      assert.equal(getStockBadgeLabel({ stock: 0, minThreshold: 5 }), 'Out of Stock');
+      assert.equal(getStockBadgeLabel({ stock: 2, minThreshold: 5 }), 'Low: 2 left (Min 5)');
+      assert.equal(getStockBadgeLabel({ stock: 15, minThreshold: 5 }), '15 in stock');
+    });
+
+    it('accurately detects whether product is below or at safety threshold', () => {
+      assert.equal(isProductLowStock({ stock: 0, minThreshold: 5 }), true);
+      assert.equal(isProductLowStock({ stock: 5, minThreshold: 5 }), true);
+      assert.equal(isProductLowStock({ stock: 6, minThreshold: 5 }), false);
+    });
+  });
+
+  describe('lowStockOnly quick-filter', () => {
+    it('filters exclusively items at or below minimum threshold when lowStockOnly is true', () => {
+      const lowStockItems = filterCatalogProducts(SAMPLE_PRODUCTS, { lowStockOnly: true });
+      assert.equal(lowStockItems.length, 2);
+      assert.deepEqual(
+        lowStockItems.map((p) => p.sku),
+        ['YAM-NMAX-BL01', 'HON-CLK-CVTB']
+      );
+    });
+
+    it('composes lowStockOnly toggle with category filter', () => {
+      const filtered = filterCatalogProducts(SAMPLE_PRODUCTS, {
+        lowStockOnly: true,
+        category: 'Brakes'
+      });
+      assert.equal(filtered.length, 1);
+      assert.equal(filtered[0].sku, 'YAM-NMAX-BL01');
     });
   });
 

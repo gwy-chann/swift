@@ -21,6 +21,7 @@ export function InventoryCatalog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [stockFilter, setStockFilter] = useState<StockFilterOption>('all');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
 
@@ -45,14 +46,16 @@ export function InventoryCatalog() {
     return filterCatalogProducts(products, {
       query: searchQuery,
       category: selectedCategory,
-      stockStatus: stockFilter
+      stockStatus: stockFilter,
+      lowStockOnly
     });
-  }, [products, searchQuery, selectedCategory, stockFilter]);
+  }, [products, searchQuery, selectedCategory, stockFilter, lowStockOnly]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('All');
     setStockFilter('all');
+    setLowStockOnly(false);
   };
 
   const handleAdjustStock = (sku: string) => {
@@ -97,6 +100,9 @@ export function InventoryCatalog() {
         categories={categories}
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
+        lowStockOnly={lowStockOnly}
+        onToggleLowStockOnly={() => setLowStockOnly((prev) => !prev)}
+        criticalLowStockCount={stats.criticalLowStockCount}
         onResetFilters={handleResetFilters}
         totalCount={products.length}
         filteredCount={filteredProducts.length}
