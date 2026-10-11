@@ -26,10 +26,14 @@ import { LaborRatesTable } from "@/components/admin/rates/labor-rates-table";
 import { EditServiceModal } from "@/components/admin/rates/edit-service-modal";
 import { NewServiceModal } from "@/components/admin/rates/new-service-modal";
 import { HourlyBenchmarkCard } from "@/components/admin/rates/hourly-benchmark-card";
+import { GlobalMarkupCard } from "@/components/admin/rates/global-markup-card";
+import { usePricingRulesRealtime } from "@/lib/hooks/use-pricing-rules-realtime";
 import type { LaborService, CreateLaborServicePayload } from "@/lib/types/service";
+import type { PricingRules } from "@/lib/types/pricing";
 
 export default function AdminRatesPage() {
   const [services, setServices] = useState<LaborService[]>([]);
+  const [pricingRules, setPricingRules] = useState<PricingRules | null>(null);
   const [hourlyRate, setHourlyRate] = useState<number>(450);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBayFilter, setSelectedBayFilter] = useState("ALL");
@@ -54,8 +58,11 @@ export default function AdminRatesPage() {
     // Fetch pricing benchmark rules
     getPricingRulesAction()
       .then((rules) => {
-        if (isMounted && rules.hourlyLaborRate) {
-          setHourlyRate(rules.hourlyLaborRate);
+        if (isMounted) {
+          setPricingRules(rules);
+          if (rules.hourlyLaborRate) {
+            setHourlyRate(rules.hourlyLaborRate);
+          }
         }
       })
       .catch((err) => {
@@ -67,7 +74,7 @@ export default function AdminRatesPage() {
     };
   }, []);
 
-  // Multi-terminal Realtime sync for admin view
+  // Multi-terminal Realtime sync for labor services
   useLaborServicesRealtime({
     onInsert: (newService) => {
       setServices((prev) => {
@@ -84,6 +91,17 @@ export default function AdminRatesPage() {
     },
     onDelete: (id, code) => {
       setServices((prev) => prev.filter((s) => s.code !== code && s.id !== id));
+    }
+  });
+
+  // Multi-terminal Realtime sync for global pricing rules
+  usePricingRulesRealtime({
+    onUpdate: (updatedRules) => {
+      setPricingRules(updatedRules);
+      if (updatedRules.hourlyLaborRate) {
+        setHourlyRate(updatedRules.hourlyLaborRate);
+      }
+      showNotification("Global pricing rules updated in realtime via Supabase broadcast");
     }
   });
 
@@ -272,6 +290,18 @@ export default function AdminRatesPage() {
           </p>
         </div>
       </div>
+
+      {/* Global Parts Markup Rules Card */}
+      <GlobalMarkupCard
+        initialRules={pricingRules ?? undefined}
+        onRulesUpdated={(updated) => {
+          setPricingRules(updated);
+          if (updated.hourlyLaborRate) {
+            setHourlyRate(updated.hourlyLaborRate);
+          }
+          showNotification("Saved global pricing markup rules successfully!");
+        }}
+      />
 
       {/* Hourly Labor Rate Benchmark & Dynamic Estimator */}
       <HourlyBenchmarkCard
