@@ -33,25 +33,36 @@ export function mapStaffShiftRow(row: DbStaffShift): PunchLog;
 | `created_at` | `string` | ISO 8601 UTC |
 | `updated_at` | `string` | ISO 8601 UTC |
 
-### Output: `PunchLog` (existing UI interface)
+### Output: `PunchLog` (existing UI interface in `lib/types/logs.ts`)
 
 | Field | Derived from |
 |---|---|
 | `id` | `row.id` |
-| `staffName` | `row.staff_name` |
+| `date` | `row.clock_in` formatted as a human-readable date |
+| `staff` | `row.staff_name` |
 | `timeIn` | `row.clock_in` formatted `HH:mm` |
 | `timeOut` | `row.clock_out` formatted `HH:mm`, or `"—"` when null |
 | `status` | normalized label (see mapping below) |
 | `terminal` | `row.terminal_id` |
 | `duration` | formatted from `row.duration_seconds`, or elapsed when active |
 
+> **Note**: `terminal` and `duration` are additive fields appended by the mapper. `PunchLog`
+> in `lib/types/logs.ts` currently declares `id?`, `date`, `staff`, `timeIn`, `timeOut`,
+> `duration`, `status`. The mapper's optional additions (`terminal`) require either extending
+> `PunchLog` or keeping the mapper's return type as a documented superset. Decision recorded
+> in T4: extend `PunchLog` with `terminal?: string` rather than invent a parallel type.
+
 ### Status normalization
 
 | DB `status` | UI `PunchLog.status` |
 |---|---|
 | `on_shift` | `'On Shift'` |
-| `break` | `'On Break'` |
+| `break` | `'Break'` |
 | `completed` | `'Completed'` |
+
+> **Note**: `PunchLog.status` is declared as `'On Shift' | 'Completed' | 'Break' | string`.
+> `'Break'` is the established label, not `'On Break'`. The mapper emits `'Break'`.
+
 
 ### Duration formatting
 
