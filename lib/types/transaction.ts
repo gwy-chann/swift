@@ -49,3 +49,47 @@ export interface Transaction {
   change?: number;
   paymentMethod?: TransactionPaymentMethod;
 }
+
+export interface CheckoutItemPayload {
+  itemType: TransactionItemType;
+  itemSkuOrCode: string;
+  itemName: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  shelfLocation?: string | null;
+  bay?: string | null;
+}
+
+export interface CheckoutPayload {
+  receiptNumber?: string;
+  cashierId?: string | null;
+  cashierName?: string;
+  pricingMode: PricingMode;
+  subtotal: number;
+  discountType?: TransactionDiscountType | null;
+  discountRate: number;
+  discountAmount: number;
+  totalDue: number;
+  cashTendered: number;
+  changeDue: number;
+  paymentMethod: TransactionPaymentMethod;
+  items: CheckoutItemPayload[];
+}
+
+export type CheckoutActionResult =
+  | {
+      success: true;
+      transactionId: string;
+      receiptNumber: string;
+      itemsCount: number;
+      partsDecremented: number;
+      createdAt: string;
+    }
+  | {
+      success: false;
+      code: 'INSUFFICIENT_STOCK' | 'PRODUCT_NOT_FOUND' | 'VALIDATION_ERROR' | 'CHECKOUT_FAILED';
+      sku?: string;
+      error: string;
+    };
+
