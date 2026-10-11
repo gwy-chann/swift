@@ -1,11 +1,15 @@
 import { getPrismaClient } from '@/lib/prisma';
+import type { Product as DbProduct } from '@prisma/client';
 import { Product, ProductCategory } from '@/lib/types/product';
 import { MOCK_PRODUCTS } from '@/lib/mock-data/products';
 
 /**
- * Server data-fetching function to retrieve master parts catalog for hydration.
- * Queries PostgreSQL via Prisma; if unpopulated or database is offline,
- * gracefully falls back to canonical MOCK_PRODUCTS.
+ * Server data-fetching action to retrieve the master motorcycle parts catalog.
+ * Queries PostgreSQL via Prisma ORM with ascending name sorting; if the database
+ * is unpopulated, unreachable, or unconfigured, gracefully falls back to canonical
+ * mock products.
+ *
+ * @returns {Promise<Product[]>} Array of domain Product objects formatted for client hydration
  */
 export async function getProductsAction(): Promise<Product[]> {
   try {
@@ -19,7 +23,7 @@ export async function getProductsAction(): Promise<Product[]> {
     });
 
     if (dbProducts && dbProducts.length > 0) {
-      return dbProducts.map((p) => ({
+      return dbProducts.map((p: DbProduct) => ({
         id: p.id,
         sku: p.sku,
         name: p.name,
