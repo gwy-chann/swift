@@ -2,6 +2,7 @@
 
 import type { PricingRules } from '../types/pricing.ts';
 import { MOCK_PRICING_RULES } from '../mock-data/pricing.ts';
+import { SWIFT_SEED_DATABASE } from '../mock-data/index.ts';
 
 // In-memory store for pricing rules, initialized from baseline mock data
 let memoryPricingRules: PricingRules = {
@@ -75,94 +76,87 @@ export async function getPricingRulesAction(): Promise<PricingRules> {
   return { ...memoryPricingRules };
 }
 
-/**
- * Server action to update global pricing rules and benchmark hourly labor rate.
- * Validates bounds (0 < markup <= 200, labor >= 0), updates singleton row 1,
- * inserts an immutable audit log, and revalidates /admin/rates, /staff/pos, and /admin/inventory.
- */
-export async function updatePricingRulesAction(
-  updates: Partial<PricingRules> & { userName?: string; reason?: string }
-): Promise<PricingActionResult<PricingRules>> {
-  // Validate hourlyLaborRate
+function validatePricingRuleUpdates(
+  updates: Partial<PricingRules>
+): string | null {
   if (
     updates.hourlyLaborRate !== undefined &&
     (typeof updates.hourlyLaborRate !== 'number' || updates.hourlyLaborRate <= 0)
   ) {
-    return {
-      success: false,
-      error: 'Hourly labor rate must be a positive number greater than 0',
-      code: 'VALIDATION_ERROR'
-    };
+    return 'Hourly labor rate must be a positive number greater than 0';
   }
 
-  // Validate retailMarkup (0 < markup <= 200)
   if (
     updates.retailMarkup !== undefined &&
     (typeof updates.retailMarkup !== 'number' || updates.retailMarkup <= 0 || updates.retailMarkup > 200)
   ) {
-    return {
-      success: false,
-      error: 'Retail markup must be greater than 0% and cannot exceed 200%',
-      code: 'VALIDATION_ERROR'
-    };
+    return 'Retail markup must be greater than 0% and cannot exceed 200%';
   }
 
-  // Validate wholesaleMarkup (0 < markup <= 200)
   if (
     updates.wholesaleMarkup !== undefined &&
     (typeof updates.wholesaleMarkup !== 'number' || updates.wholesaleMarkup <= 0 || updates.wholesaleMarkup > 200)
   ) {
-    return {
-      success: false,
-      error: 'Wholesale markup must be greater than 0% and cannot exceed 200%',
-      code: 'VALIDATION_ERROR'
-    };
+    return 'Wholesale markup must be greater than 0% and cannot exceed 200%';
   }
 
-  // Validate aftermarketMarkup (0 < markup <= 200)
   if (
     updates.aftermarketMarkup !== undefined &&
     (typeof updates.aftermarketMarkup !== 'number' || updates.aftermarketMarkup <= 0 || updates.aftermarketMarkup > 200)
   ) {
-    return {
-      success: false,
-      error: 'Aftermarket markup must be greater than 0% and cannot exceed 200%',
-      code: 'VALIDATION_ERROR'
-    };
+    return 'Aftermarket markup must be greater than 0% and cannot exceed 200%';
   }
 
-  const previousRules = { ...memoryPricingRules };
+  return null;
+}
 
-  const newRules: PricingRules = {
-    ...memoryPricingRules,
-    retailMarkup: updates.retailMarkup ?? memoryPricingRules.retailMarkup,
-    wholesaleMarkup: updates.wholesaleMarkup ?? memoryPricingRules.wholesaleMarkup,
-    aftermarketMarkup: updates.aftermarketMarkup ?? memoryPricingRules.aftermarketMarkup,
-    hourlyLaborRate: updates.hourlyLaborRate ?? memoryPricingRules.hourlyLaborRate,
-    updatedAt: new Date().toISOString()
-  };
+function buildAuditActionDescription(
+  previousRules: PricingRules,
+  newRules: PricingRules,
+  updates: Partial<PricingRules> & { reason?: string }
+): string {
+  const auditChanges: string[] = [];
+  if (updates.retailMarkup !== undefined && updates.retailMarkup !== previousRules.retailMarkup) {
+    auditChanges.push(`Retail from ${previousRules.retailMarkup}% to ${newRules.retailMarkup}%`);
+  }
+  if (updates.wholesaleMarkup !== undefined && updates.wholesaleMarkup !== previousRules.wholesaleMarkup) {
+    auditChanges.push(`Wholesale from ${previousRules.wholesaleMarkup}% to ${newRules.wholesaleMarkup}%`);
+  }
+  if (updates.aftermarketMarkup !== undefined && updates.aftermarketMarkup !== previousRules.aftermarketMarkup) {
+    auditChanges.push(`Aftermarket from ${previousRules.aftermarketMarkup}% to ${newRules.aftermarketMarkup}%`);
+  }
+  if (updates.hourlyLaborRate !== undefined && updates.hourlyLaborRate !== previousRules.hourlyLaborRate) {
+    auditChanges.push(`Hourly Labor Rate from ₱${previousRules.hourlyLaborRate} to ₱${newRules.hourlyLaborRate}`);
+  }
 
-  // Attempt Supabase persistence & audit logging
+  return auditChanges.length > 0
+    ? `Modified Global Pricing Markup rules: ${auditChanges.join(', ')}`
+    : (updates.reason || 'Modified Global Pricing Markup rules');
+}
+
+async function persistPricingRulesToSupabase(
+  newRules: PricingRules,
+  previousRules: PricingRules,
+  userName: string,
+  reason?: string
+): Promise<string | null> {
   try {
     const { createClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
 
     let userId: string | null = null;
-    let userName = updates.userName || 'Admin Manager';
+    let resolvedUserName = userName;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         userId = user.id;
-        userName = updates.userName || user.user_metadata?.full_name || user.email || 'Admin Manager';
+        resolvedUserName = user.user_metadata?.full_name || user.email || userName;
       }
     } catch {
       // User auth context not available
     }
 
-    newRules.updatedBy = userId;
-
-    // 1. Update singleton row 1
     const { error: updateError } = await supabase
       .from('pricing_rules')
       .update({
@@ -178,12 +172,11 @@ export async function updatePricingRulesAction(
     if (updateError) {
       console.error('[updatePricingRulesAction] Supabase update error:', updateError);
     } else {
-      // 2. Insert immutable audit log record
       const { error: auditError } = await supabase
         .from('pricing_rules_audit_logs')
         .insert({
           changed_by: userId,
-          user_name: userName,
+          user_name: resolvedUserName,
           old_retail_markup: previousRules.retailMarkup,
           new_retail_markup: newRules.retailMarkup,
           old_wholesale_markup: previousRules.wholesaleMarkup,
@@ -192,18 +185,64 @@ export async function updatePricingRulesAction(
           new_aftermarket_markup: newRules.aftermarketMarkup,
           old_hourly_labor_rate: previousRules.hourlyLaborRate,
           new_hourly_labor_rate: newRules.hourlyLaborRate,
-          reason: updates.reason || 'Admin global pricing update'
+          reason: reason || 'Admin global pricing update'
         });
 
       if (auditError) {
         console.error('[updatePricingRulesAction] Audit log insertion error:', auditError);
       }
     }
+
+    return userId;
   } catch {
-    // In-memory fallback
+    return null;
+  }
+}
+
+/**
+ * Server action to update global pricing rules and benchmark hourly labor rate.
+ * Validates bounds (0 < markup <= 200, labor >= 0), updates singleton row 1,
+ * inserts an immutable audit log, and revalidates /admin/rates, /staff/pos, and /admin/inventory.
+ */
+export async function updatePricingRulesAction(
+  updates: Partial<PricingRules> & { userName?: string; reason?: string }
+): Promise<PricingActionResult<PricingRules>> {
+  const validationError = validatePricingRuleUpdates(updates);
+  if (validationError) {
+    return {
+      success: false,
+      error: validationError,
+      code: 'VALIDATION_ERROR'
+    };
   }
 
+  const previousRules = { ...memoryPricingRules };
+
+  const newRules: PricingRules = {
+    ...memoryPricingRules,
+    retailMarkup: updates.retailMarkup ?? memoryPricingRules.retailMarkup,
+    wholesaleMarkup: updates.wholesaleMarkup ?? memoryPricingRules.wholesaleMarkup,
+    aftermarketMarkup: updates.aftermarketMarkup ?? memoryPricingRules.aftermarketMarkup,
+    hourlyLaborRate: updates.hourlyLaborRate ?? memoryPricingRules.hourlyLaborRate,
+    updatedAt: new Date().toISOString()
+  };
+
+  const userName = updates.userName || 'Admin Manager';
+  const userId = await persistPricingRulesToSupabase(newRules, previousRules, userName, updates.reason);
+  newRules.updatedBy = userId;
+
   memoryPricingRules = { ...newRules };
+  SWIFT_SEED_DATABASE.pricingRules = { ...newRules };
+
+  const actionDescription = buildAuditActionDescription(previousRules, newRules, updates);
+
+  SWIFT_SEED_DATABASE.auditLogs.unshift({
+    id: `AUD-${Date.now()}`,
+    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    user: userName,
+    action: actionDescription,
+    ip: '192.168.1.100 (Admin Portal)'
+  });
 
   await safeRevalidatePaths();
 

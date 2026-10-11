@@ -23,3 +23,6 @@ export const SWIFT_SEED_DATABASE = {
   auditLogs: MOCK_AUDIT_LOGS,
   punchLogs: MOCK_PUNCH_LOGS
 };
+
+export const SWIFT_DB = SWIFT_SEED_DATABASE;
+
