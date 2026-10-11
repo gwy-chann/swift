@@ -8,6 +8,7 @@ import { StockBadge } from "@/components/inventory/stock-badge";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
+import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import type { LaborService } from "@/lib/types/service";
 
 interface PosCartItem {
@@ -42,6 +43,35 @@ export default function StaffPosPage() {
       isMounted = false;
     };
   }, [hydrateProducts]);
+
+  // SIAA-59: Realtime multi-terminal rate synchronization in <500ms
+  useLaborServicesRealtime({
+    onInsert: (service) => {
+      if (service.active !== false) {
+        setLaborServices((prev) => {
+          if (prev.some((s) => s.code === service.code)) {
+            return prev.map((s) => (s.code === service.code ? service : s));
+          }
+          return [...prev, service];
+        });
+      }
+    },
+    onUpdate: (service) => {
+      setLaborServices((prev) => {
+        if (service.active === false) {
+          return prev.filter((s) => s.code !== service.code && s.id !== service.id);
+        }
+        const exists = prev.some((s) => s.code === service.code || (s.id && s.id === service.id));
+        if (exists) {
+          return prev.map((s) => (s.code === service.code || s.id === service.id ? service : s));
+        }
+        return [...prev, service];
+      });
+    },
+    onDelete: (id, code) => {
+      setLaborServices((prev) => prev.filter((s) => s.code !== code && s.id !== id));
+    }
+  });
 
   const [pricingMode, setPricingMode] = useState<"retail" | "wholesale">("retail");
   const [activeCategory, setActiveCategory] = useState("ALL");

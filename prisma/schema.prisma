@@ -97,8 +97,27 @@ model LaborService {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  rateAuditLogs ServiceRateAuditLog[]
+
   @@index([code])
   @@index([active])
   @@map("labor_services")
+}
+
+model ServiceRateAuditLog {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  serviceId   String       @map("service_id") @db.Uuid
+  serviceCode String       @map("service_code")
+  oldRate     Decimal      @map("old_rate") @db.Decimal(10, 2)
+  newRate     Decimal      @map("new_rate") @db.Decimal(10, 2)
+  reason      String       @default("")
+  userName    String       @default("Admin Manager") @map("user_name")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  service     LaborService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([createdAt])
+  @@map("service_rate_audit_logs")
 }
 
