@@ -1,4 +1,6 @@
-import { PricingRules } from '@/lib/types/pricing';
+import type { PricingRules } from '../types/pricing.ts';
+
+
 
 export const MOCK_PRICING_RULES: PricingRules = {
   retailMarkup: 35,
