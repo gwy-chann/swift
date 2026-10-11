@@ -5,11 +5,11 @@ import {
   Tags,
   Plus,
   Search,
-  Wrench,
   Activity,
   Layers,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 import {
   getAdminLaborServicesAction,
@@ -18,14 +18,19 @@ import {
   toggleServiceStatusAction,
   deleteLaborServiceAction
 } from "@/lib/admin/service-actions";
+import {
+  getPricingRulesAction
+} from "@/lib/admin/pricing-actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import { LaborRatesTable } from "@/components/admin/rates/labor-rates-table";
 import { EditServiceModal } from "@/components/admin/rates/edit-service-modal";
 import { NewServiceModal } from "@/components/admin/rates/new-service-modal";
+import { HourlyBenchmarkCard } from "@/components/admin/rates/hourly-benchmark-card";
 import type { LaborService, CreateLaborServicePayload } from "@/lib/types/service";
 
 export default function AdminRatesPage() {
   const [services, setServices] = useState<LaborService[]>([]);
+  const [hourlyRate, setHourlyRate] = useState<number>(450);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBayFilter, setSelectedBayFilter] = useState("ALL");
   const [editingService, setEditingService] = useState<LaborService | null>(null);
@@ -34,6 +39,8 @@ export default function AdminRatesPage() {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Fetch services catalog
     getAdminLaborServicesAction()
       .then((data) => {
         if (isMounted) {
@@ -42,6 +49,17 @@ export default function AdminRatesPage() {
       })
       .catch((err) => {
         console.error("[AdminRatesPage] Failed to load services:", err);
+      });
+
+    // Fetch pricing benchmark rules
+    getPricingRulesAction()
+      .then((rules) => {
+        if (isMounted && rules.hourlyLaborRate) {
+          setHourlyRate(rules.hourlyLaborRate);
+        }
+      })
+      .catch((err) => {
+        console.error("[AdminRatesPage] Failed to load pricing rules:", err);
       });
 
     return () => {
@@ -71,7 +89,7 @@ export default function AdminRatesPage() {
 
   const showNotification = (msg: string) => {
     setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 3500);
   };
 
   // Metrics calculation
@@ -81,14 +99,6 @@ export default function AdminRatesPage() {
     if (services.length === 0) return 0;
     const sum = services.reduce((acc, s) => acc + s.rate, 0);
     return sum / services.length;
-  }, [services]);
-
-  const uniqueBays = useMemo(() => {
-    const bays = new Set<string>();
-    services.forEach((s) => {
-      if (s.bay) bays.add(s.bay);
-    });
-    return Array.from(bays);
   }, [services]);
 
   // Filtering
@@ -173,7 +183,7 @@ export default function AdminRatesPage() {
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200">
+    <section id="view-pricing" className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-success text-text-light text-xs font-bold shadow-lg animate-in slide-in-from-top-2">
@@ -193,7 +203,7 @@ export default function AdminRatesPage() {
               Pricing & Labor Rates Matrix
             </h2>
             <p className="text-xs text-text-secondary">
-              Centralized flat-rate workshop labor schedules, repair bays, and live POS synchronization.
+              Standardized flat-rate workshop labor schedules, repair bays, and live POS synchronization.
             </p>
           </div>
         </div>
@@ -251,67 +261,95 @@ export default function AdminRatesPage() {
 
         <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs">
           <div className="flex items-center justify-between text-text-muted mb-1">
-            <span className="text-xs font-semibold">Repair Bays</span>
-            <Wrench className="w-4 h-4 text-secondary" />
+            <span className="text-xs font-semibold">Benchmark Hourly Rate</span>
+            <Clock className="w-4 h-4 text-secondary" />
           </div>
           <div className="text-2xl font-black font-mono text-text-primary">
-            {uniqueBays.length}
+            ₱{hourlyRate.toFixed(2)}/hr
           </div>
           <p className="text-[11px] text-text-secondary mt-1">
-            Dedicated workshop work zones
+            Shop baseline for dynamic bay jobs
           </p>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-3 bg-bg-surface border border-border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-        <div className="relative sm:w-80">
-          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search code, title, or repair bay..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:border-primary outline-hidden"
-          />
-        </div>
+      {/* Hourly Labor Rate Benchmark & Dynamic Estimator */}
+      <HourlyBenchmarkCard
+        initialHourlyRate={hourlyRate}
+        onRateUpdated={(newRate) => {
+          setHourlyRate(newRate);
+          showNotification(`Updated shop base hourly labor benchmark to ₱${newRate.toFixed(2)}/hr`);
+        }}
+      />
 
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedBayFilter("ALL")}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              selectedBayFilter === "ALL"
-                ? "bg-primary text-text-light shadow-xs"
-                : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-            }`}
-          >
-            All Repair Bays
-          </button>
-          {["Bay 1", "Bay 2", "Bay 3", "Bay 4"].map((b) => (
+      {/* Flat-Rate Labor Schedule Matrix Panel */}
+      <div className="bg-bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-text-primary">
+              Flat-Rate Labor Schedule Matrix
+            </h3>
+            <p className="text-xs text-text-secondary">
+              Standardized repair bay schedule with assigned completion durations and flat fees.
+            </p>
+          </div>
+
+          {/* Bay Filter Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
             <button
-              key={b}
               type="button"
-              onClick={() => setSelectedBayFilter(b)}
+              onClick={() => setSelectedBayFilter("ALL")}
               className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                selectedBayFilter === b
+                selectedBayFilter === "ALL"
                   ? "bg-primary text-text-light shadow-xs"
                   : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
               }`}
             >
-              {b}
+              All Repair Bays
             </button>
-          ))}
+            {["Bay 1", "Bay 2", "Bay 3", "Bay 4"].map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setSelectedBayFilter(b)}
+                className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedBayFilter === b
+                    ? "bg-primary text-text-light shadow-xs"
+                    : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Matrix Table */}
-      <LaborRatesTable
-        services={filteredServices}
-        onEdit={(srv) => setEditingService(srv)}
-        onToggleStatus={handleToggleStatus}
-        onDelete={handleDeleteService}
-      />
+        {/* Filter and Search Bar */}
+        <div className="p-3 bg-bg-surface/50 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative sm:w-80">
+            <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search code, title, or repair bay..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:border-primary outline-hidden"
+            />
+          </div>
+
+          <div className="text-xs text-text-muted font-medium">
+            Showing <span className="font-bold text-text-primary">{filteredServices.length}</span> of {totalCount} workshop services
+          </div>
+        </div>
+
+        {/* Matrix Table */}
+        <LaborRatesTable
+          services={filteredServices}
+          onEdit={(srv) => setEditingService(srv)}
+          onToggleStatus={handleToggleStatus}
+          onDelete={handleDeleteService}
+        />
+      </div>
 
       {/* Edit Modal */}
       <EditServiceModal
@@ -327,6 +365,6 @@ export default function AdminRatesPage() {
         onClose={() => setIsNewModalOpen(false)}
         onCreate={handleCreateService}
       />
-    </div>
+    </section>
   );
 }

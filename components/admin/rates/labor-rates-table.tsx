@@ -83,7 +83,7 @@ export function LaborRatesTable({
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary font-mono">
                       <Clock className="w-3 h-3 text-text-muted" />
-                      <span>{service.duration}</span>
+                      <span>{service.duration.replace(" mins", "m").replace(" min", "m")}</span>
                     </span>
                   </td>
 
