@@ -10,7 +10,7 @@ export type StockAdjustmentCategory =
   | 'Shrinkage'
   | 'Store Transfer'
   | 'Return / Exchange'
-  | string;
+  | 'Sale Outbound';
 
 export interface StockAdjustmentPayload {
   sku: string;
