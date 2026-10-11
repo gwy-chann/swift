@@ -353,7 +353,7 @@ class CartStore {
     code?: string;
     sku?: string;
     subtotal?: number;
-    discountType?: string;
+    discountType?: string | null;
     discountRate?: number;
     discountAmount?: number;
     total?: number;

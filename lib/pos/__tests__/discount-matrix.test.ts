@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { cartStore } from '../../store/cart-store.ts';
+import { inventoryStore } from '../../store/inventory-store.ts';
 import {
   DISCOUNT_TIERS,
   calculateCartTotals,
@@ -20,7 +21,7 @@ function assertClose(actual: number, expected: number, delta = 0.0001) {
 function createTestProduct(
   overrides: Partial<Product> & { sku: string; retail: number; wholesale: number }
 ): Product {
-  return {
+  const product: Product = {
     name: 'Test Product',
     brand: 'Generic',
     category: 'Fluids',
@@ -32,6 +33,8 @@ function createTestProduct(
     model: 'Universal',
     ...overrides
   };
+  inventoryStore.updateProduct(product);
+  return product;
 }
 
 describe('Customer Discount Matrix Engine (SIAA-20)', () => {
@@ -271,7 +274,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       assert.strictEqual(cartStore.getState().totals.total, 320);
     });
 
-    it('Scenario 4: stamps discount_type and discount_rate into checkout transaction payload', () => {
+    it('Scenario 4: stamps discount_type and discount_rate into checkout transaction payload', async () => {
       cartStore.addPart(
         createTestProduct({
           sku: 'TEST-SKU-6',
@@ -285,7 +288,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
 
       cartStore.setDiscountTier('senior_pwd');
 
-      const tx = cartStore.checkout({
+      const tx = await cartStore.checkout({
         cashier: 'Test Cashier',
         paymentMethod: 'Cash',
         cashTendered: 1500
@@ -294,7 +297,7 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
       assert.ok(tx);
       assert.strictEqual(tx.subtotal, 1500);
       assert.strictEqual(tx.discountType, 'senior_pwd');
-      assertClose(tx.discountRate, 0.2);
+      assertClose(tx.discountRate ?? 0, 0.2);
       assert.strictEqual(tx.discountAmount, 300);
       assert.strictEqual(tx.total, 1200);
       assert.strictEqual(tx.cashTendered, 1500);
