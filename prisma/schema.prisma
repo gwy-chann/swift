@@ -121,3 +121,49 @@ model ServiceRateAuditLog {
   @@map("service_rate_audit_logs")
 }
 
+model Transaction {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  receiptNumber  String            @unique @map("receipt_number")
+  cashierId      String?           @map("cashier_id") @db.Uuid
+  cashierName    String            @map("cashier_name")
+  pricingMode    String            @map("pricing_mode")
+  subtotal       Decimal           @db.Decimal(10, 2)
+  discountType   String?           @map("discount_type")
+  discountRate   Decimal           @default(0.0000) @map("discount_rate") @db.Decimal(5, 4)
+  discountAmount Decimal           @default(0.00) @map("discount_amount") @db.Decimal(10, 2)
+  totalDue       Decimal           @map("total_due") @db.Decimal(10, 2)
+  cashTendered   Decimal           @map("cash_tendered") @db.Decimal(10, 2)
+  changeDue      Decimal           @default(0.00) @map("change_due") @db.Decimal(10, 2)
+  paymentMethod  String            @default("Cash") @map("payment_method")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  items          TransactionItem[]
+
+  @@index([receiptNumber])
+  @@index([createdAt])
+  @@index([cashierId])
+  @@index([pricingMode])
+  @@index([paymentMethod])
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId   String      @map("transaction_id") @db.Uuid
+  itemType        String      @map("item_type")
+  itemSkuOrCode   String      @map("item_sku_or_code")
+  itemName        String      @map("item_name")
+  unitPrice       Decimal     @map("unit_price") @db.Decimal(10, 2)
+  quantity        Int
+  subtotal        Decimal     @db.Decimal(10, 2)
+  bay             String?
+  shelfLocation   String?     @map("shelf_location")
+
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([transactionId])
+  @@index([itemType])
+  @@index([itemSkuOrCode])
+  @@map("transaction_items")
+}
+
