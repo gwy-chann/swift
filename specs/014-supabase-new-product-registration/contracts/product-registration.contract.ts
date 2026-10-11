@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Product, ProductCategory } from '@/lib/types/product';
+import type { Product } from '@/lib/types/product';
 
 /**
  * Zod validation contract for New Product Registration payload
@@ -27,23 +27,23 @@ export const CreateProductPayloadSchema = z.object({
     .default('Universal')
     .transform((val) => val.trim()),
   cost: z
-    .number({ invalid_type_error: 'Unit cost must be a valid number.' })
+    .number()
     .positive('Unit cost must be greater than ₱0.00.'),
   wholesale: z
-    .number({ invalid_type_error: 'Wholesale price must be a valid number.' })
+    .number()
     .positive('Wholesale price must be greater than ₱0.00.')
     .optional(),
   retail: z
-    .number({ invalid_type_error: 'Retail price must be a valid number.' })
+    .number()
     .positive('Retail price must be greater than ₱0.00.')
     .optional(),
   stock: z
-    .number({ invalid_type_error: 'Stock must be an integer.' })
+    .number()
     .int('Stock must be an integer.')
     .nonnegative('Initial stock must be non-negative.')
     .default(0),
   minThreshold: z
-    .number({ invalid_type_error: 'Low stock threshold must be an integer.' })
+    .number()
     .int('Low stock threshold must be an integer.')
     .min(1, 'Low stock threshold must be at least 1.')
     .default(5),

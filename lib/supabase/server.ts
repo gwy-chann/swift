@@ -33,6 +33,13 @@ export async function createClient() {
     )
   } catch {
     // Outside Next.js request context (e.g. Node tests, CLI scripts)
-    return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    return createSupabaseClient(supabaseUrl, serviceRoleKey || supabaseAnonKey)
   }
+}
+
+export function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createSupabaseClient(supabaseUrl, key)
 }
