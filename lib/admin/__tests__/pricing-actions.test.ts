@@ -6,7 +6,7 @@ import {
   calculateProRatedLaborCharge
 } from '../pricing-actions.ts';
 
-describe('Admin Pricing Rules & Standard Hourly Labor Benchmark (SIAA-40)', () => {
+describe('Admin Pricing Rules & Standard Hourly Labor Benchmark (SIAA-40 & SIAA-57)', () => {
   it('retrieves default pricing rules including benchmark hourly labor rate', async () => {
     const rules = await getPricingRulesAction();
     assert.ok(rules, 'Pricing rules must be defined');
@@ -70,5 +70,68 @@ describe('Admin Pricing Rules & Standard Hourly Labor Benchmark (SIAA-40)', () =
     });
     assert.equal(resZero.success, false);
     assert.equal(resZero.code, 'VALIDATION_ERROR');
+  });
+
+  it('updates global markup percentages successfully (SIAA-57 Scenario 3)', async () => {
+    const res = await updatePricingRulesAction({
+      retailMarkup: 38,
+      wholesaleMarkup: 20,
+      aftermarketMarkup: 45,
+      userName: 'Store Owner',
+      reason: 'Inflation adjustment Q4'
+    });
+
+    assert.equal(res.success, true);
+    assert.equal(res.data?.retailMarkup, 38);
+    assert.equal(res.data?.wholesaleMarkup, 20);
+    assert.equal(res.data?.aftermarketMarkup, 45);
+
+    const rules = await getPricingRulesAction();
+    assert.equal(rules.retailMarkup, 38);
+    assert.equal(rules.wholesaleMarkup, 20);
+    assert.equal(rules.aftermarketMarkup, 45);
+
+    // Reset back to defaults for clean test environment
+    await updatePricingRulesAction({
+      retailMarkup: 35,
+      wholesaleMarkup: 18,
+      aftermarketMarkup: 40
+    });
+  });
+
+  it('rejects out-of-bounds retail markup percentages', async () => {
+    // 0 or negative
+    const resZero = await updatePricingRulesAction({ retailMarkup: 0 });
+    assert.equal(resZero.success, false);
+    assert.equal(resZero.code, 'VALIDATION_ERROR');
+
+    const resNegative = await updatePricingRulesAction({ retailMarkup: -5 });
+    assert.equal(resNegative.success, false);
+    assert.equal(resNegative.code, 'VALIDATION_ERROR');
+
+    // Greater than 200%
+    const resOver = await updatePricingRulesAction({ retailMarkup: 205 });
+    assert.equal(resOver.success, false);
+    assert.equal(resOver.code, 'VALIDATION_ERROR');
+  });
+
+  it('rejects out-of-bounds wholesale markup percentages', async () => {
+    const resZero = await updatePricingRulesAction({ wholesaleMarkup: 0 });
+    assert.equal(resZero.success, false);
+    assert.equal(resZero.code, 'VALIDATION_ERROR');
+
+    const resOver = await updatePricingRulesAction({ wholesaleMarkup: 250 });
+    assert.equal(resOver.success, false);
+    assert.equal(resOver.code, 'VALIDATION_ERROR');
+  });
+
+  it('rejects out-of-bounds aftermarket markup percentages', async () => {
+    const resZero = await updatePricingRulesAction({ aftermarketMarkup: 0 });
+    assert.equal(resZero.success, false);
+    assert.equal(resZero.code, 'VALIDATION_ERROR');
+
+    const resOver = await updatePricingRulesAction({ aftermarketMarkup: 300 });
+    assert.equal(resOver.success, false);
+    assert.equal(resOver.code, 'VALIDATION_ERROR');
   });
 });

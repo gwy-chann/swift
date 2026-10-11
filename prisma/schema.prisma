@@ -167,3 +167,34 @@ model TransactionItem {
   @@map("transaction_items")
 }
 
+model PricingRules {
+  id                Int      @id @default(1)
+  retailMarkup      Decimal  @map("retail_markup") @db.Decimal(5, 2)
+  wholesaleMarkup   Decimal  @map("wholesale_markup") @db.Decimal(5, 2)
+  aftermarketMarkup Decimal  @map("aftermarket_markup") @db.Decimal(5, 2)
+  hourlyLaborRate   Decimal  @map("hourly_labor_rate") @db.Decimal(10, 2)
+  updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy         String?  @map("updated_by") @db.Uuid
+
+  @@map("pricing_rules")
+}
+
+model PricingRulesAuditLog {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  changedBy            String?  @map("changed_by") @db.Uuid
+  userName             String   @default("Admin") @map("user_name")
+  oldRetailMarkup      Decimal  @map("old_retail_markup") @db.Decimal(5, 2)
+  newRetailMarkup      Decimal  @map("new_retail_markup") @db.Decimal(5, 2)
+  oldWholesaleMarkup   Decimal  @map("old_wholesale_markup") @db.Decimal(5, 2)
+  newWholesaleMarkup   Decimal  @map("new_wholesale_markup") @db.Decimal(5, 2)
+  oldAftermarketMarkup Decimal  @map("old_aftermarket_markup") @db.Decimal(5, 2)
+  newAftermarketMarkup Decimal  @map("new_aftermarket_markup") @db.Decimal(5, 2)
+  oldHourlyLaborRate   Decimal  @map("old_hourly_labor_rate") @db.Decimal(10, 2)
+  newHourlyLaborRate   Decimal  @map("new_hourly_labor_rate") @db.Decimal(10, 2)
+  reason               String?  @default("")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@index([changedBy])
+  @@map("pricing_rules_audit_logs")
+}
