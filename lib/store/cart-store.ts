@@ -16,11 +16,18 @@ import type {
 } from '../types/index.ts';
 import { inventoryStore } from './inventory-store.ts';
 import { processCheckoutAction } from '../pos/actions.ts';
+import {
+  calculateCartTotals,
+  type DiscountTierId,
+  getDiscountTierById,
+  getDiscountTierByRate
+} from '../pos/discount-matrix.ts';
 
 export interface CartStoreState {
   items: CartItem[];
   pricingMode: PricingMode;
   discountRate: number;
+  discountType: DiscountTierId;
   totals: CartTotals;
   isProcessingCheckout: boolean;
   isReceiptModalOpen: boolean;
@@ -53,32 +60,19 @@ const INITIAL_CART_ITEMS: CartItem[] = [
   }
 ];
 
-function calculateCartTotals(items: CartItem[], discountRate: number): CartTotals {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const discountAmount = Math.round(subtotal * discountRate * 100) / 100;
-  const total = Math.max(0, subtotal - discountAmount);
-  const itemCount = items.reduce((sum, item) => sum + item.qty, 0);
-
-  return {
-    subtotal,
-    discountRate,
-    discountAmount,
-    total,
-    itemCount
-  };
-}
-
 class CartStore {
   private state: CartStoreState;
   private readonly listeners = new Set<() => void>();
 
   constructor() {
     const discountRate = 0;
+    const discountType: DiscountTierId = 'none';
     this.state = {
       items: INITIAL_CART_ITEMS,
       pricingMode: 'retail',
       discountRate,
-      totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate),
+      discountType,
+      totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate, discountType),
       isProcessingCheckout: false,
       isReceiptModalOpen: false,
       activeReceiptData: null,
@@ -105,11 +99,16 @@ class CartStore {
 
   private updateState(partial: Partial<CartStoreState>) {
     const updatedState = { ...this.state, ...partial };
-    // Always recompute totals when items or discountRate changes
-    if (partial.items || partial.discountRate !== undefined) {
+    // Always recompute totals when items, discountRate, or discountType changes
+    if (
+      partial.items ||
+      partial.discountRate !== undefined ||
+      partial.discountType !== undefined
+    ) {
       updatedState.totals = calculateCartTotals(
         updatedState.items,
-        updatedState.discountRate
+        updatedState.discountRate,
+        updatedState.discountType
       );
     }
     this.state = updatedState;
@@ -261,6 +260,7 @@ class CartStore {
     this.updateState({
       items: [],
       discountRate: 0,
+      discountType: 'none',
       lastCheckoutError: null
     });
   };
@@ -298,7 +298,11 @@ class CartStore {
       return item;
     });
 
-    const totals = calculateCartTotals(updatedItems, this.state.discountRate);
+    const totals = calculateCartTotals(
+      updatedItems,
+      this.state.discountRate,
+      this.state.discountType
+    );
 
     this.state = {
       ...this.state,
@@ -310,7 +314,29 @@ class CartStore {
   };
 
   public setDiscountRate = (rate: number): void => {
-    this.updateState({ discountRate: Math.max(0, rate) });
+    const validRate = Math.max(0, rate);
+    const tier = getDiscountTierByRate(validRate);
+    this.updateState({
+      discountRate: validRate,
+      discountType: tier.id
+    });
+  };
+
+  public setDiscountTier = (tierId: DiscountTierId): void => {
+    // If clicking currently active tier or 'none', toggle back to Standard 0%
+    if (this.state.discountType === tierId || tierId === 'none') {
+      this.updateState({
+        discountRate: 0,
+        discountType: 'none'
+      });
+      return;
+    }
+
+    const tier = getDiscountTierById(tierId);
+    this.updateState({
+      discountRate: tier.rate,
+      discountType: tier.id
+    });
   };
 
   public checkout = async (params: {
@@ -326,6 +352,13 @@ class CartStore {
     error?: string;
     code?: string;
     sku?: string;
+    subtotal?: number;
+    discountType?: string;
+    discountRate?: number;
+    discountAmount?: number;
+    total?: number;
+    cashTendered?: number;
+    change?: number;
   }> => {
     const { cashier, cashTendered, paymentMethod = 'Cash', discountType } = params;
     const totals = this.state.totals;
@@ -343,7 +376,7 @@ class CartStore {
         cashierName: cashier,
         pricingMode: this.state.pricingMode,
         subtotal: totals.subtotal,
-        discountType: discountType || (this.state.discountRate > 0 ? 'discount' : 'none'),
+        discountType: discountType || this.state.discountType || (this.state.discountRate > 0 ? 'discount' : 'none'),
         discountRate: totals.discountRate,
         discountAmount: totals.discountAmount,
         totalDue: totals.total,
@@ -424,6 +457,7 @@ class CartStore {
       this.updateState({
         items: [],
         discountRate: 0,
+        discountType: 'none',
         isProcessingCheckout: false,
         isReceiptModalOpen: true,
         activeReceiptData: receiptData,
@@ -447,7 +481,14 @@ class CartStore {
         success: true,
         receiptNumber: result.receiptNumber,
         transactionId: result.transactionId,
-        receiptData
+        receiptData,
+        subtotal: totals.subtotal,
+        discountType: payload.discountType,
+        discountRate: totals.discountRate,
+        discountAmount: totals.discountAmount,
+        total: totals.total,
+        cashTendered: tendered,
+        change
       };
 
     } catch (err) {
@@ -471,6 +512,7 @@ export function useCartStore(): CartStoreState & {
   clearCart: typeof cartStore.clearCart;
   setPricingMode: typeof cartStore.setPricingMode;
   setDiscountRate: typeof cartStore.setDiscountRate;
+  setDiscountTier: typeof cartStore.setDiscountTier;
   checkout: typeof cartStore.checkout;
   openReceiptModal: typeof cartStore.openReceiptModal;
   closeReceiptModal: typeof cartStore.closeReceiptModal;
@@ -490,6 +532,7 @@ export function useCartStore(): CartStoreState & {
     clearCart: cartStore.clearCart,
     setPricingMode: cartStore.setPricingMode,
     setDiscountRate: cartStore.setDiscountRate,
+    setDiscountTier: cartStore.setDiscountTier,
     checkout: cartStore.checkout,
     openReceiptModal: cartStore.openReceiptModal,
     closeReceiptModal: cartStore.closeReceiptModal
