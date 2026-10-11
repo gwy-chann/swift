@@ -24,7 +24,7 @@ graph TD
 
 ## Phase 1: Setup & Foundational Types
 
-- [ ] T001 Verify and enhance thermal receipt data models and interfaces in `lib/types/transaction.ts` ensuring `technicianNotes`, `skuOrCode`, `shelfLocation`, `bay`, `duration`, and `unitPrice` are fully typed.
+- [x] T001 Verify and enhance thermal receipt data models and interfaces in `lib/types/transaction.ts` ensuring `technicianNotes`, `skuOrCode`, `shelfLocation`, `bay`, `duration`, and `unitPrice` are fully typed.
 
 ---
 
@@ -42,14 +42,14 @@ graph TD
 - "Print Receipt & Finish" button triggers window print and completes modal session.
 
 ### Tasks:
-- [ ] T002 [US1] Create unit test suite for thermal receipt generation and printable modal interactions in `__tests__/pos/thermal-receipt-modal.test.tsx`.
-- [ ] T003 [US1] Elevate `components/pos/thermal-receipt-modal.tsx` to render itemized SKUs for physical parts, service codes and unit labor rates for workshop services, technician notes, 7-day warranty disclaimer, and "Print Receipt & Finish" action.
-- [ ] T004 [US1] Wire receipt finalization and "Print Receipt & Finish" callbacks in Admin POS cashier at `app/admin/pos/page.tsx`.
-- [ ] T005 [US1] Wire receipt finalization and "Print Receipt & Finish" callbacks in Staff Fast-Lane POS cashier at `app/staff/pos/page.tsx`.
+- [x] T002 [US1] Create unit test suite for thermal receipt generation and printable modal interactions in `__tests__/pos/thermal-receipt-modal.test.tsx`.
+- [x] T003 [US1] Elevate `components/pos/thermal-receipt-modal.tsx` to render itemized SKUs for physical parts, service codes and unit labor rates for workshop services, technician notes, 7-day warranty disclaimer, and "Print Receipt & Finish" action.
+- [x] T004 [US1] Wire receipt finalization and "Print Receipt & Finish" callbacks in Admin POS cashier at `app/admin/pos/page.tsx`.
+- [x] T005 [US1] Wire receipt finalization and "Print Receipt & Finish" callbacks in Staff Fast-Lane POS cashier at `app/staff/pos/page.tsx`.
 
 ---
 
 ## Phase 3: Polish, Verification & Convergence
 
-- [ ] T006 Run static verification (`npm run typecheck`, `npm test`) to guarantee zero compilation errors and passing test suites.
-- [ ] T007 Validate constitutional compliance (zero hardcoded colors, semantic tokens) and perform Graphify auto-sync.
+- [x] T006 Run static verification (`npm run typecheck`, `npm test`) to guarantee zero compilation errors and passing test suites.
+- [x] T007 Validate constitutional compliance (zero hardcoded colors, semantic tokens) and perform Graphify auto-sync.
