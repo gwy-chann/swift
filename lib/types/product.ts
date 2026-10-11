@@ -11,6 +11,7 @@ export type ProductCategory =
   | string;
 
 export interface Product {
+  id?: string;
   sku: string;
   name: string;
   category: ProductCategory;
@@ -25,6 +26,8 @@ export interface Product {
   brand: string;
   description?: string;
   imageUrl?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export type MotorcycleModel =

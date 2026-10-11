@@ -193,6 +193,15 @@ export class InventoryStore {
 
     return { success: true };
   };
+
+  public hydrateProducts = (products: Product[]): void => {
+    if (!products || products.length === 0) return;
+    this.state = {
+      ...this.state,
+      products: [...products.map((p) => ({ ...p }))]
+    };
+    this.notify();
+  };
 }
 
 export const inventoryStore = new InventoryStore();
@@ -205,6 +214,7 @@ export function useInventoryStore(): InventoryStoreState & {
   decrementStock: typeof inventoryStore.decrementStock;
   adjustStock: typeof inventoryStore.adjustStock;
   registerProduct: typeof inventoryStore.registerProduct;
+  hydrateProducts: typeof inventoryStore.hydrateProducts;
 } {
   const state = useSyncExternalStore(
     inventoryStore.subscribe,
@@ -220,6 +230,7 @@ export function useInventoryStore(): InventoryStoreState & {
     searchProducts: inventoryStore.searchProducts,
     decrementStock: inventoryStore.decrementStock,
     adjustStock: inventoryStore.adjustStock,
-    registerProduct: inventoryStore.registerProduct
+    registerProduct: inventoryStore.registerProduct,
+    hydrateProducts: inventoryStore.hydrateProducts
   };
 }
