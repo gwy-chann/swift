@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useId } from 'react';
-import { Printer, X, Check, Search, AlertCircle } from 'lucide-react';
+import { Printer, X, Search, AlertCircle } from 'lucide-react';
 import type { ThermalReceiptData, ThermalRollWidth } from '@/lib/types/transaction';
 import { getThermalReceiptByReceiptAction } from '@/lib/pos/transaction-actions';
+import {
+  STORE_RECEIPT_CONFIG,
+  getThermalRollDimensions,
+  generateReceiptBarcodePattern
+} from '@/lib/pos/thermal-receipt';
 
-interface ThermalReceiptModalProps {
+export interface ThermalReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onFinish?: () => void;
   receiptData?: ThermalReceiptData | null;
   initialRollWidth?: ThermalRollWidth;
 }
@@ -15,9 +21,10 @@ interface ThermalReceiptModalProps {
 export function ThermalReceiptModal({
   isOpen,
   onClose,
+  onFinish,
   receiptData: initialReceiptData,
   initialRollWidth = '80mm'
-}: ThermalReceiptModalProps) {
+}: Readonly<ThermalReceiptModalProps>) {
   const [rollWidth, setRollWidth] = useState<ThermalRollWidth>(initialRollWidth);
   const [activeReceipt, setActiveReceipt] = useState<ThermalReceiptData | null>(initialReceiptData || null);
   const [lookupQuery, setLookupQuery] = useState('');
@@ -54,6 +61,15 @@ export function ThermalReceiptModal({
     }
   }, []);
 
+  const handlePrintAndFinish = useCallback(() => {
+    handlePrint();
+    if (onFinish) {
+      onFinish();
+    } else {
+      onClose();
+    }
+  }, [handlePrint, onFinish, onClose]);
+
   const handleLookup = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = lookupQuery.trim();
@@ -77,6 +93,8 @@ export function ThermalReceiptModal({
   }, [lookupQuery]);
 
   if (!isOpen) return null;
+
+  const rollDim = getThermalRollDimensions(rollWidth);
 
   return (
     <div
@@ -102,7 +120,7 @@ export function ThermalReceiptModal({
               <button
                 type="button"
                 onClick={() => setRollWidth('58mm')}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors ${
+                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                   rollWidth === '58mm'
                     ? 'bg-primary text-text-light shadow-xs'
                     : 'text-text-secondary hover:text-text-primary'
@@ -114,7 +132,7 @@ export function ThermalReceiptModal({
               <button
                 type="button"
                 onClick={() => setRollWidth('80mm')}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors ${
+                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                   rollWidth === '80mm'
                     ? 'bg-primary text-text-light shadow-xs'
                     : 'text-text-secondary hover:text-text-primary'
@@ -130,7 +148,7 @@ export function ThermalReceiptModal({
               type="button"
               onClick={onClose}
               aria-label="Close receipt modal"
-              className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
+              className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -153,7 +171,7 @@ export function ThermalReceiptModal({
             <button
               type="submit"
               disabled={isLoadingLookup || !lookupQuery.trim()}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover disabled:opacity-50 transition-colors cursor-pointer"
             >
               {isLoadingLookup ? 'Loading...' : 'Lookup'}
             </button>
@@ -172,25 +190,21 @@ export function ThermalReceiptModal({
           {activeReceipt ? (
             <div
               id="thermal-receipt-print-area"
-              className={`thermal-receipt-paper bg-bg-surface text-text-primary border border-dashed border-border rounded-xs p-4 sm:p-5 font-mono shadow-xs transition-all duration-150 print:border-none print:shadow-none print:p-0 print:w-full print:text-black print:bg-white ${
-                rollWidth === '58mm'
-                  ? 'w-[270px] max-w-[270px] text-[11px] leading-tight'
-                  : 'w-[350px] max-w-[350px] text-xs leading-normal'
-              }`}
+              className={`thermal-receipt-paper bg-bg-surface text-text-primary border border-dashed border-border rounded-xs p-4 sm:p-5 font-mono shadow-xs transition-all duration-150 print:border-none print:shadow-none print:p-0 print:w-full print:text-black print:bg-white ${rollDim.containerClass} ${rollDim.fontSizeClass}`}
             >
               {/* Receipt Header */}
               <div className="text-center space-y-0.5 pb-3">
                 <div className="text-sm sm:text-base font-black tracking-wider uppercase text-text-primary print:text-black">
-                  SWIFT MOTO SERVICE
+                  {STORE_RECEIPT_CONFIG.storeName}
                 </div>
                 <div className="text-[10px] text-text-secondary print:text-black">
-                  104 Rizal Ave, Motor City
+                  {STORE_RECEIPT_CONFIG.address}
                 </div>
                 <div className="text-[10px] text-text-secondary print:text-black">
-                  TIN: 409-281-992-000
+                  {STORE_RECEIPT_CONFIG.tin}
                 </div>
                 <div className="text-[10px] text-text-secondary print:text-black">
-                  Tel: (02) 8921-4450
+                  {STORE_RECEIPT_CONFIG.phone}
                 </div>
               </div>
 
@@ -231,15 +245,22 @@ export function ThermalReceiptModal({
                           <div className="font-medium text-text-primary print:text-black truncate max-w-[170px]">
                             {item.name}
                           </div>
-                          {item.itemType === 'part' && item.shelfLocation && (
+                          {item.itemType === 'part' && (
                             <div className="text-[9px] text-text-muted print:text-black/80">
-                              Loc: {item.shelfLocation}
+                              <span className="font-semibold">SKU:</span> {item.skuOrCode}
+                              {item.shelfLocation ? ` • Loc: ${item.shelfLocation}` : ''}
                             </div>
                           )}
                           {item.itemType === 'service' && (
-                            <div className="text-[9px] text-text-muted print:text-black/80">
-                              {item.bay ? `${item.bay} • ` : ''}
-                              {item.duration ? `${item.duration}` : 'Labor'}
+                            <div className="text-[9px] text-text-muted print:text-black/80 space-y-0.5">
+                              <div>
+                                <span className="font-semibold">Code:</span> {item.skuOrCode}
+                                {item.bay ? ` • ${item.bay}` : ''}
+                              </div>
+                              <div>
+                                <span className="font-semibold">Rate:</span> ₱{item.unitPrice.toFixed(2)}
+                                {item.duration ? ` • ${item.duration}` : ''}
+                              </div>
                             </div>
                           )}
                         </td>
@@ -254,6 +275,18 @@ export function ThermalReceiptModal({
                   </tbody>
                 </table>
               </div>
+
+              {/* Optional Technician Notes */}
+              {activeReceipt.technicianNotes && (
+                <div className="border-b border-dashed border-border py-1.5 text-[10px] print:text-black">
+                  <div className="font-bold text-text-secondary print:text-black uppercase text-[9px]">
+                    Technician Notes:
+                  </div>
+                  <div className="text-text-primary print:text-black italic mt-0.5">
+                    {activeReceipt.technicianNotes}
+                  </div>
+                </div>
+              )}
 
               {/* Totals Breakdown */}
               <div className="py-2 text-[10px] sm:text-[11px] space-y-1">
@@ -297,18 +330,16 @@ export function ThermalReceiptModal({
               {/* Receipt Footer & Barcode */}
               <div className="border-t border-dashed border-border pt-3 mt-1 text-center space-y-1 text-[10px] text-text-secondary print:text-black">
                 <div>Thank you for your business!</div>
-                <div>Parts warranty valid for 7 days with receipt.</div>
-                <div className="font-bold tracking-wider">*** CUSTOMER COPY ***</div>
+                <div>{STORE_RECEIPT_CONFIG.warrantyNotice}</div>
+                <div className="font-bold tracking-wider">{STORE_RECEIPT_CONFIG.customerCopyNotice}</div>
 
                 {/* Simulated Barcode */}
                 <div className="pt-2 flex flex-col items-center justify-center">
                   <div className="h-7 w-40 flex items-center justify-center gap-[2px] opacity-80 print:opacity-100">
-                    {Array.from({ length: 32 }).map((_, i) => (
+                    {generateReceiptBarcodePattern(activeReceipt.receiptNumber).map((bar, i) => (
                       <div
                         key={i}
-                        className={`h-full bg-text-primary print:bg-black ${
-                          i % 3 === 0 ? 'w-1' : i % 2 === 0 ? 'w-[2px]' : 'w-[1px]'
-                        }`}
+                        className={`h-full bg-text-primary print:bg-black ${bar.widthClass}`}
                       />
                     ))}
                   </div>
@@ -334,20 +365,32 @@ export function ThermalReceiptModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover transition-colors"
+            className="px-4 py-2 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover transition-colors cursor-pointer"
           >
             Close
           </button>
 
-          <button
-            type="button"
-            onClick={handlePrint}
-            disabled={!activeReceipt}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-primary text-text-light hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-xs"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Receipt</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={!activeReceipt}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-bg-surface border border-border text-text-primary hover:bg-bg-hover disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5 text-text-secondary" />
+              <span>Print Only</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrintAndFinish}
+              disabled={!activeReceipt}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-primary text-text-light hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Receipt &amp; Finish</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
