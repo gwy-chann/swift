@@ -13,12 +13,16 @@ export interface PartCartItem extends BaseCartItem {
   location?: string;
   retailPrice?: number;
   wholesalePrice?: number;
+  stock?: number;
+  minThreshold?: number;
+  isOverridden?: boolean;
 }
 
 export interface ServiceCartItem extends BaseCartItem {
   type: 'service';
   code: string;
   bay?: string;
+  duration?: string;
 }
 
 export type CartItem = PartCartItem | ServiceCartItem;

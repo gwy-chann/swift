@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import {
+import type {
   CartItem,
   CartTotals,
   PricingMode,
@@ -11,8 +11,8 @@ import {
   LaborService,
   Transaction,
   TransactionPaymentMethod
-} from '@/lib/types';
-import { inventoryStore } from '@/lib/store/inventory-store';
+} from '../types/index.ts';
+import { inventoryStore } from './inventory-store.ts';
 
 export interface CartStoreState {
   items: CartItem[];
@@ -104,21 +104,42 @@ class CartStore {
     this.notify();
   }
 
-  public addPart = (product: Product, qty: number = 1): void => {
-    const existingIndex = this.state.items.findIndex(
+  public addPart = (
+    product: Product,
+    qty: number = 1,
+    isOverridden: boolean = false
+  ): { success: boolean; reason?: 'out_of_stock' | 'exceeds_stock' } => {
+    const existing = this.state.items.find(
       (item) => item.type === 'part' && item.sku === product.sku
-    );
+    ) as PartCartItem | undefined;
+
+    const currentQty = existing ? existing.qty : 0;
+    const targetQty = currentQty + qty;
+    const stock = product.stock ?? 0;
+    const alreadyOverridden = existing?.isOverridden || isOverridden;
+
+    if (!alreadyOverridden) {
+      if (stock <= 0) {
+        return { success: false, reason: 'out_of_stock' };
+      }
+      if (targetQty > stock) {
+        return { success: false, reason: 'exceeds_stock' };
+      }
+    }
 
     const price = this.state.pricingMode === 'wholesale' ? product.wholesale : product.retail;
 
     let updatedItems: CartItem[];
 
-    if (existingIndex > -1) {
-      updatedItems = this.state.items.map((item, idx) => {
-        if (idx === existingIndex) {
+    if (existing) {
+      updatedItems = this.state.items.map((item) => {
+        if (item.type === 'part' && item.sku === product.sku) {
           return {
             ...item,
-            qty: item.qty + qty
+            qty: targetQty,
+            price,
+            stock: product.stock,
+            isOverridden: alreadyOverridden
           };
         }
         return item;
@@ -133,15 +154,22 @@ class CartStore {
         qty,
         location: product.location,
         retailPrice: product.retail,
-        wholesalePrice: product.wholesale
+        wholesalePrice: product.wholesale,
+        stock: product.stock,
+        minThreshold: product.minThreshold,
+        isOverridden: alreadyOverridden
       };
       updatedItems = [...this.state.items, newItem];
     }
 
     this.updateState({ items: updatedItems });
+    return { success: true };
   };
 
-  public addService = (service: LaborService, qty: number = 1): void => {
+  public addService = (
+    service: LaborService,
+    qty: number = 1
+  ): { success: boolean } => {
     const existingIndex = this.state.items.findIndex(
       (item) => item.type === 'service' && item.code === service.code
     );
@@ -166,28 +194,50 @@ class CartStore {
         name: `Labor: ${service.name}`,
         price: service.rate,
         qty,
-        bay: service.bay
+        bay: service.bay,
+        duration: service.duration
       };
       updatedItems = [...this.state.items, newItem];
     }
 
     this.updateState({ items: updatedItems });
+    return { success: true };
   };
 
-  public updateQuantity = (id: string, qty: number): void => {
+  public updateQuantity = (
+    id: string,
+    qty: number,
+    isOverridden: boolean = false
+  ): { success: boolean; reason?: 'exceeds_stock' } => {
     if (qty <= 0) {
       this.removeItem(id);
-      return;
+      return { success: true };
     }
 
-    const updatedItems = this.state.items.map((item) => {
-      if (item.id === id) {
-        return { ...item, qty };
+    const item = this.state.items.find((i) => i.id === id);
+    if (!item) return { success: true };
+
+    if (item.type === 'part') {
+      const stock = item.stock ?? 999;
+      const alreadyOverridden = item.isOverridden || isOverridden;
+      if (!alreadyOverridden && qty > stock) {
+        return { success: false, reason: 'exceeds_stock' };
       }
-      return item;
+    }
+
+    const updatedItems = this.state.items.map((i) => {
+      if (i.id === id) {
+        return {
+          ...i,
+          qty,
+          ...(i.type === 'part' && isOverridden ? { isOverridden: true } : {})
+        };
+      }
+      return i;
     });
 
     this.updateState({ items: updatedItems });
+    return { success: true };
   };
 
   public removeItem = (id: string): void => {
