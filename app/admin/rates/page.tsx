@@ -1,29 +1,332 @@
-import React from "react";
-import { Tags } from "lucide-react";
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Tags,
+  Plus,
+  Search,
+  Wrench,
+  Activity,
+  Layers,
+  Sparkles,
+  CheckCircle2
+} from "lucide-react";
+import {
+  getAdminLaborServicesAction,
+  createLaborServiceAction,
+  updateLaborServiceAction,
+  toggleServiceStatusAction,
+  deleteLaborServiceAction
+} from "@/lib/admin/service-actions";
+import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
+import { LaborRatesTable } from "@/components/admin/rates/labor-rates-table";
+import { EditServiceModal } from "@/components/admin/rates/edit-service-modal";
+import { NewServiceModal } from "@/components/admin/rates/new-service-modal";
+import type { LaborService, CreateLaborServicePayload } from "@/lib/types/service";
 
 export default function AdminRatesPage() {
+  const [services, setServices] = useState<LaborService[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBayFilter, setSelectedBayFilter] = useState("ALL");
+  const [editingService, setEditingService] = useState<LaborService | null>(null);
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getAdminLaborServicesAction()
+      .then((data) => {
+        if (isMounted) {
+          setServices(data);
+        }
+      })
+      .catch((err) => {
+        console.error("[AdminRatesPage] Failed to load services:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Multi-terminal Realtime sync for admin view
+  useLaborServicesRealtime({
+    onInsert: (newService) => {
+      setServices((prev) => {
+        if (prev.some((s) => s.code === newService.code)) {
+          return prev.map((s) => (s.code === newService.code ? newService : s));
+        }
+        return [...prev, newService];
+      });
+    },
+    onUpdate: (updated) => {
+      setServices((prev) =>
+        prev.map((s) => (s.code === updated.code || s.id === updated.id ? updated : s))
+      );
+    },
+    onDelete: (id, code) => {
+      setServices((prev) => prev.filter((s) => s.code !== code && s.id !== id));
+    }
+  });
+
+  const showNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Metrics calculation
+  const totalCount = services.length;
+  const activeCount = services.filter((s) => s.active !== false).length;
+  const avgRate = useMemo(() => {
+    if (services.length === 0) return 0;
+    const sum = services.reduce((acc, s) => acc + s.rate, 0);
+    return sum / services.length;
+  }, [services]);
+
+  const uniqueBays = useMemo(() => {
+    const bays = new Set<string>();
+    services.forEach((s) => {
+      if (s.bay) bays.add(s.bay);
+    });
+    return Array.from(bays);
+  }, [services]);
+
+  // Filtering
+  const filteredServices = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return services.filter((s) => {
+      const matchesBay =
+        selectedBayFilter === "ALL" ||
+        s.bay.toLowerCase().includes(selectedBayFilter.toLowerCase());
+
+      const matchesQuery =
+        !q ||
+        s.code.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.bay.toLowerCase().includes(q);
+
+      return matchesBay && matchesQuery;
+    });
+  }, [services, selectedBayFilter, searchQuery]);
+
+  // Handlers
+  const handleSaveRateUpdate = async (
+    serviceId: string,
+    updates: {
+      name?: string;
+      bay?: string;
+      rate: number;
+      duration: string;
+      description?: string;
+      reason: string;
+    }
+  ) => {
+    const res = await updateLaborServiceAction(serviceId, {
+      ...updates,
+      userName: "Service Desk Manager"
+    });
+
+    if (res.success && res.data) {
+      setServices((prev) =>
+        prev.map((s) => (s.id === serviceId || s.code === serviceId ? res.data! : s))
+      );
+      showNotification(`Updated rate for ${res.data.name} to ₱${res.data.rate.toFixed(2)}`);
+      return true;
+    }
+    return false;
+  };
+
+  const handleCreateService = async (payload: CreateLaborServicePayload) => {
+    const res = await createLaborServiceAction(payload);
+    if (res.success && res.data) {
+      setServices((prev) => [...prev, res.data!]);
+      showNotification(`Registered new labor service: ${res.data.name}`);
+      return true;
+    }
+    return false;
+  };
+
+  const handleToggleStatus = async (service: LaborService) => {
+    const nextStatus = service.active === false;
+    const idToUse = service.id || service.code;
+    const res = await toggleServiceStatusAction(idToUse, nextStatus);
+    if (res.success && res.data) {
+      setServices((prev) =>
+        prev.map((s) => (s.code === service.code ? res.data! : s))
+      );
+      showNotification(
+        `${nextStatus ? "Restored" : "Archived"} service ${service.name}`
+      );
+    }
+  };
+
+  const handleDeleteService = async (service: LaborService) => {
+    if (!confirm(`Are you sure you want to permanently delete "${service.name}" (${service.code})?`)) {
+      return;
+    }
+    const idToUse = service.id || service.code;
+    const res = await deleteLaborServiceAction(idToUse);
+    if (res.success) {
+      setServices((prev) => prev.filter((s) => s.code !== service.code && s.id !== service.id));
+      showNotification(`Deleted service: ${service.name}`);
+    }
+  };
+
   return (
-    <div className="space-y-4 animate-fadeIn">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center">
-          <Tags className="w-5 h-5" />
+    <div className="space-y-5 animate-in fade-in duration-200">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-success text-text-light text-xs font-bold shadow-lg animate-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{notification}</span>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-text-primary">Pricing & Labor Rates Matrix</h2>
-          <p className="text-xs text-text-secondary">
-            Global markup rules, wholesale discounts, and flat-rate service labor schedules.
+      )}
+
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center shadow-xs">
+            <Tags className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">
+              Pricing & Labor Rates Matrix
+            </h2>
+            <p className="text-xs text-text-secondary">
+              Centralized flat-rate workshop labor schedules, repair bays, and live POS synchronization.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsNewModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-primary hover:bg-primary-hover text-text-light shadow-xs transition-colors cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Register New Service</span>
+        </button>
+      </div>
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-text-muted mb-1">
+            <span className="text-xs font-semibold">Total Services</span>
+            <Layers className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-2xl font-black font-mono text-text-primary">
+            {totalCount}
+          </div>
+          <p className="text-[11px] text-text-secondary mt-1">
+            Standard shop repair offerings
+          </p>
+        </div>
+
+        <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-text-muted mb-1">
+            <span className="text-xs font-semibold">Active Services</span>
+            <Activity className="w-4 h-4 text-success" />
+          </div>
+          <div className="text-2xl font-black font-mono text-success">
+            {activeCount}
+          </div>
+          <p className="text-[11px] text-text-secondary mt-1">
+            Available on Fast-Lane POS
+          </p>
+        </div>
+
+        <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-text-muted mb-1">
+            <span className="text-xs font-semibold">Average Flat Rate</span>
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-2xl font-black font-mono text-primary">
+            ₱{avgRate.toFixed(2)}
+          </div>
+          <p className="text-[11px] text-text-secondary mt-1">
+            Standard labor charge per ticket
+          </p>
+        </div>
+
+        <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-text-muted mb-1">
+            <span className="text-xs font-semibold">Repair Bays</span>
+            <Wrench className="w-4 h-4 text-secondary" />
+          </div>
+          <div className="text-2xl font-black font-mono text-text-primary">
+            {uniqueBays.length}
+          </div>
+          <p className="text-[11px] text-text-secondary mt-1">
+            Dedicated workshop work zones
           </p>
         </div>
       </div>
 
-      <div className="p-8 rounded-lg bg-bg-card border border-border text-center">
-        <p className="text-sm font-semibold text-text-primary">
-          🏷️ Global Markup & Labor Schedule Configuration (EPIC-7)
-        </p>
-        <p className="text-xs text-text-muted mt-1">
-          Scheduled for implementation under Jira stories SIAA-39 and SIAA-40.
-        </p>
+      {/* Filter and Search Bar */}
+      <div className="p-3 bg-bg-surface border border-border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="relative sm:w-80">
+          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search code, title, or repair bay..."
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:border-primary outline-hidden"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedBayFilter("ALL")}
+            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              selectedBayFilter === "ALL"
+                ? "bg-primary text-text-light shadow-xs"
+                : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+            }`}
+          >
+            All Repair Bays
+          </button>
+          {["Bay 1", "Bay 2", "Bay 3", "Bay 4"].map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => setSelectedBayFilter(b)}
+              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedBayFilter === b
+                  ? "bg-primary text-text-light shadow-xs"
+                  : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+              }`}
+            >
+              {b}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Matrix Table */}
+      <LaborRatesTable
+        services={filteredServices}
+        onEdit={(srv) => setEditingService(srv)}
+        onToggleStatus={handleToggleStatus}
+        onDelete={handleDeleteService}
+      />
+
+      {/* Edit Modal */}
+      <EditServiceModal
+        isOpen={Boolean(editingService)}
+        service={editingService}
+        onClose={() => setEditingService(null)}
+        onSave={handleSaveRateUpdate}
+      />
+
+      {/* New Service Modal */}
+      <NewServiceModal
+        isOpen={isNewModalOpen}
+        onClose={() => setIsNewModalOpen(false)}
+        onCreate={handleCreateService}
+      />
     </div>
   );
 }
