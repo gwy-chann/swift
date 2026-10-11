@@ -1,10 +1,8 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Product } from '@/lib/types/product';
-import { StockAdjustmentLog, AuditLog } from '@/lib/types/logs';
-import { MOCK_PRODUCTS, MOCK_STOCK_ADJUSTMENT_LOGS, MOCK_AUDIT_LOGS } from '@/lib/mock-data';
-
+import type { Product } from '../types/product.ts';
+import type { StockAdjustmentLog, AuditLog } from '../types/logs.ts';
 export interface InventoryStoreState {
   products: Product[];
   adjustmentLogs: StockAdjustmentLog[];
@@ -15,11 +13,11 @@ export class InventoryStore {
   private state: InventoryStoreState;
   private readonly listeners = new Set<() => void>();
 
-  constructor() {
+  constructor(initialState?: Partial<InventoryStoreState>) {
     this.state = {
-      products: [...MOCK_PRODUCTS.map((p) => ({ ...p }))],
-      adjustmentLogs: [...MOCK_STOCK_ADJUSTMENT_LOGS],
-      auditLogs: [...MOCK_AUDIT_LOGS]
+      products: initialState?.products ? [...initialState.products.map((p) => ({ ...p }))] : [],
+      adjustmentLogs: initialState?.adjustmentLogs ? [...initialState.adjustmentLogs] : [],
+      auditLogs: initialState?.auditLogs ? [...initialState.auditLogs] : []
     };
   }
 
@@ -94,14 +92,19 @@ export class InventoryStore {
     units: number;
     reason: string;
     user: string;
-  }): void => {
+  }): { previousStock: number; newStock: number; logId: string } => {
     const { sku, type, units, reason, user } = params;
+
+    let previousStock = 0;
+    let newStock = 0;
 
     const updatedProducts = this.state.products.map((p) => {
       if (p.sku === sku) {
+        previousStock = p.stock;
+        newStock = Math.max(0, p.stock + units);
         return {
           ...p,
-          stock: Math.max(0, p.stock + units)
+          stock: newStock
         };
       }
       return p;
@@ -114,8 +117,10 @@ export class InventoryStore {
       ? (crypto.getRandomValues(new Uint16Array(1))[0] % 9000) + 1000
       : (Date.now() % 9000) + 1000;
 
+    const logId = `ADJ-${randomSuffix}`;
+
     const newLog: StockAdjustmentLog = {
-      id: `ADJ-${randomSuffix}`,
+      id: logId,
       timestamp: formattedDate,
       sku,
       type,
@@ -128,6 +133,41 @@ export class InventoryStore {
       ...this.state,
       products: updatedProducts,
       adjustmentLogs: [newLog, ...this.state.adjustmentLogs]
+    };
+    this.notify();
+
+    return { previousStock, newStock, logId };
+  };
+
+  /**
+   * Reverts an optimistic stock adjustment back to a target stock level,
+   * optionally removing the optimistic log entry created during the adjustment.
+   */
+  public rollbackStock = (params: {
+    sku: string;
+    previousStock: number;
+    logId?: string;
+  }): void => {
+    const { sku, previousStock, logId } = params;
+
+    const updatedProducts = this.state.products.map((p) => {
+      if (p.sku === sku) {
+        return {
+          ...p,
+          stock: previousStock
+        };
+      }
+      return p;
+    });
+
+    const updatedLogs = logId
+      ? this.state.adjustmentLogs.filter((log) => log.id !== logId)
+      : this.state.adjustmentLogs;
+
+    this.state = {
+      ...this.state,
+      products: updatedProducts,
+      adjustmentLogs: updatedLogs
     };
     this.notify();
   };
@@ -213,6 +253,7 @@ export function useInventoryStore(): InventoryStoreState & {
   searchProducts: typeof inventoryStore.searchProducts;
   decrementStock: typeof inventoryStore.decrementStock;
   adjustStock: typeof inventoryStore.adjustStock;
+  rollbackStock: typeof inventoryStore.rollbackStock;
   registerProduct: typeof inventoryStore.registerProduct;
   hydrateProducts: typeof inventoryStore.hydrateProducts;
 } {
@@ -230,6 +271,7 @@ export function useInventoryStore(): InventoryStoreState & {
     searchProducts: inventoryStore.searchProducts,
     decrementStock: inventoryStore.decrementStock,
     adjustStock: inventoryStore.adjustStock,
+    rollbackStock: inventoryStore.rollbackStock,
     registerProduct: inventoryStore.registerProduct,
     hydrateProducts: inventoryStore.hydrateProducts
   };

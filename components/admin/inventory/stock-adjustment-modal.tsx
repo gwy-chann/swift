@@ -19,6 +19,7 @@ import {
 export interface StockAdjustmentModalProps {
   isOpen: boolean;
   product: Product | null;
+  isSubmitting?: boolean;
   onClose: () => void;
   onSubmit: (params: {
     sku: string;
@@ -31,9 +32,10 @@ export interface StockAdjustmentModalProps {
 export function StockAdjustmentModal({
   isOpen,
   product,
+  isSubmitting = false,
   onClose,
   onSubmit
-}: StockAdjustmentModalProps) {
+}: Readonly<StockAdjustmentModalProps>) {
   const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('Restock Inbound');
   const [quantityInput, setQuantityInput] = useState<string>('1');
   const [reasonInput, setReasonInput] = useState<string>('');
@@ -80,12 +82,12 @@ export function StockAdjustmentModal({
   const parsedQty = parseInt(quantityInput, 10);
   const validQty = !isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 0;
 
-  const currentMode =
-    adjustmentType === 'Audit Adjustment'
-      ? auditMode
-      : adjustmentType === 'Restock Inbound'
-        ? 'add'
-        : 'deduct';
+  let currentMode: 'add' | 'deduct' = 'deduct';
+  if (adjustmentType === 'Audit Adjustment') {
+    currentMode = auditMode;
+  } else if (adjustmentType === 'Restock Inbound') {
+    currentMode = 'add';
+  }
 
   const { delta, resultingStock, formattedChange } = calculateStockAdjustmentDelta({
     currentStock: product.stock,
@@ -291,10 +293,10 @@ export function StockAdjustmentModal({
 
             {/* Warning if deducting below zero */}
             {product.stock + delta < 0 && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-accent-light text-accent border border-accent/30 text-xs">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-danger-light text-danger border border-danger/30 text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>
-                  Deduction exceeds on-hand stock. Final count will be floored at 0 units.
+                  Deduction exceeds on-hand stock ({product.stock} units). Negative inventory is strictly prevented.
                 </span>
               </div>
             )}
@@ -304,16 +306,17 @@ export function StockAdjustmentModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 text-xs font-bold rounded-lg bg-bg-muted hover:bg-bg-hover text-text-secondary border border-border-subtle transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="px-4 py-2.5 text-xs font-bold rounded-lg bg-bg-muted hover:bg-bg-hover text-text-secondary border border-border-subtle transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={validQty <= 0}
-                className="px-5 py-2.5 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-text-light transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={validQty <= 0 || product.stock + delta < 0 || isSubmitting}
+                className="px-5 py-2.5 text-xs font-bold rounded-lg bg-primary hover:bg-primary-hover text-text-light transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                Confirm Adjustment
+                {isSubmitting ? 'Processing...' : 'Confirm Adjustment'}
               </button>
             </div>
           </form>

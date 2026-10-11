@@ -14,7 +14,7 @@ interface AdminSidebarProps {
   className?: string;
 }
 
-export function AdminSidebar({ onItemClick, className = "" }: AdminSidebarProps) {
+export function AdminSidebar({ onItemClick, className = "" }: Readonly<AdminSidebarProps>) {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);

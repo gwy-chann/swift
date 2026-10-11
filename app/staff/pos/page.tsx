@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Zap, Search, ShoppingCart, CheckCircle2, Plus, Minus, Trash2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { Product } from "@/lib/types/product";
 import { StockBadge } from "@/components/inventory/stock-badge";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
+import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
 
 interface PosCartItem {
   product: Product;
@@ -45,7 +46,19 @@ const LABOR_SERVICES: Product[] = [
 ];
 
 export default function StaffPosPage() {
-  const { products } = useInventoryStore();
+  const { products, hydrateProducts } = useInventoryStore();
+
+  useEffect(() => {
+    let isMounted = true;
+    getProductsAction().then((fetched) => {
+      if (isMounted && fetched.length > 0) {
+        hydrateProducts(fetched);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [hydrateProducts]);
 
   const [pricingMode, setPricingMode] = useState<"retail" | "wholesale">("retail");
   const [activeCategory, setActiveCategory] = useState("ALL");
@@ -53,30 +66,8 @@ export default function StaffPosPage() {
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Cart state
-  const [cart, setCart] = useState<PosCartItem[]>([
-    {
-      product: products.find((p) => p.sku === "MOT-3100-10W40") || {
-        sku: "MOT-3100-10W40",
-        name: "Motul 3100 Gold 4T 10W40 (1L)",
-        category: "Fluids",
-        stock: 28,
-        minThreshold: 15,
-        location: "Aisle 1 / Shelf 1",
-        cost: 260,
-        wholesale: 330,
-        retail: 390,
-        oem: false,
-        model: "Universal",
-        brand: "Motul"
-      },
-      qty: 1
-    },
-    {
-      product: LABOR_SERVICES[0],
-      qty: 1
-    }
-  ]);
+  // Cart state initialized cleanly
+  const [cart, setCart] = useState<PosCartItem[]>([]);
 
   // Manager override modal state
   const [pendingOverrideProduct, setPendingOverrideProduct] = useState<Product | null>(null);
@@ -211,9 +202,33 @@ export default function StaffPosPage() {
     return Math.max(0, subtotal - discountAmount);
   }, [subtotal, discountAmount]);
 
-  const handleCompleteSale = () => {
-    if (cart.length === 0) return;
+  const handleCompleteSale = async () => {
+    if (cart.length === 0 || isCompleted) return;
     setIsCompleted(true);
+
+    try {
+      // Execute atomic stock deduction in Supabase for all physical catalog parts sold
+      for (const item of cart) {
+        if (item.product.category !== "SERVICES") {
+          await adjustProductStockAction({
+            sku: item.product.sku,
+            type: "Sale Outbound",
+            delta: -item.qty,
+            reason: "POS Fast-Lane sale checkout",
+            userName: "Cashier"
+          });
+        }
+      }
+
+      // Re-fetch latest stock levels from Supabase
+      const updated = await getProductsAction();
+      if (updated.length > 0) {
+        hydrateProducts(updated);
+      }
+    } catch (err) {
+      console.error("[POS] Stock adjustment error on sale:", err);
+    }
+
     setTimeout(() => {
       setIsCompleted(false);
       setCart([]);
@@ -248,20 +263,28 @@ export default function StaffPosPage() {
 
           {/* Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  activeCategory === cat
-                    ? "bg-primary text-text-light shadow-xs"
-                    : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                }`}
-              >
-                {cat === "ALL" ? "All Fast Items" : cat === "SERVICES" ? "Add Labor / Bay Service" : cat}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const categoryLabels: Record<string, string> = {
+                ALL: "All Fast Items",
+                SERVICES: "Add Labor / Bay Service",
+              };
+              const categoryLabel = categoryLabels[cat] ?? cat;
+
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    activeCategory === cat
+                      ? "bg-primary text-text-light shadow-xs"
+                      : "bg-bg-base text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                  }`}
+                >
+                  {categoryLabel}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -273,6 +296,30 @@ export default function StaffPosPage() {
               const isOutOfStock = !isService && item.stock <= 0;
               const isLowStock = !isService && item.stock > 0 && item.stock <= item.minThreshold;
               const itemPrice = getItemPrice(item);
+
+              const renderActionBadge = () => {
+                if (isOutOfStock) {
+                  return (
+                    <span className="text-[11px] font-bold text-danger flex items-center gap-1 group-hover:underline">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>Override</span>
+                    </span>
+                  );
+                }
+                if (isLowStock) {
+                  return (
+                    <span className="text-[11px] font-bold text-danger flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>+ Add</span>
+                    </span>
+                  );
+                }
+                return (
+                  <span className="text-[11px] font-semibold text-text-muted group-hover:text-primary flex items-center gap-1">
+                    <span>+ Add</span>
+                  </span>
+                );
+              };
 
               return (
                 <div
@@ -309,21 +356,7 @@ export default function StaffPosPage() {
                     <span className="text-sm font-extrabold font-mono text-primary">
                       ₱{itemPrice.toFixed(2)}
                     </span>
-                    {isOutOfStock ? (
-                      <span className="text-[11px] font-bold text-danger flex items-center gap-1 group-hover:underline">
-                        <ShieldAlert className="w-3.5 h-3.5" />
-                        <span>Override</span>
-                      </span>
-                    ) : isLowStock ? (
-                      <span className="text-[11px] font-bold text-danger flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>+ Add</span>
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-semibold text-text-muted group-hover:text-primary flex items-center gap-1">
-                        <span>+ Add</span>
-                      </span>
-                    )}
+                    {renderActionBadge()}
                   </div>
                 </div>
               );
