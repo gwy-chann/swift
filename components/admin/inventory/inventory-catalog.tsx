@@ -17,6 +17,7 @@ import { CatalogEmptyState } from './catalog-empty-state';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
 import { adjustProductStockAction } from '@/lib/admin/product-actions';
+import { useInventoryRealtime } from '@/lib/hooks/use-inventory-realtime';
 
 export interface InventoryCatalogProps {
   initialProducts?: Product[];
@@ -31,6 +32,19 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
       hydrateProducts(initialProducts);
     }
   }, [initialProducts, hydrateProducts]);
+
+  // Subscribe to multi-terminal Supabase Realtime stock changes & low-stock alerts
+  useInventoryRealtime({
+    onLowStock: (product) => {
+      setToastMessage({
+        type: 'error',
+        text: `⚠️ Low Stock Alert: Part ${product.sku} (${product.name}) has dropped to ${product.stock} units (Minimum threshold: ${product.minThreshold}).`
+      });
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 7000);
+    }
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
