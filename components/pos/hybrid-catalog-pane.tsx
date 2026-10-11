@@ -130,6 +130,14 @@ export function HybridCatalogPane({
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-primary" />
             <h3 className="text-base font-bold text-text-primary">{title}</h3>
+            {pricingMode === 'wholesale' && (
+              <span
+                data-testid="catalog-wholesale-indicator"
+                className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 tracking-wide"
+              >
+                Wholesale Tier Active
+              </span>
+            )}
           </div>
           <div className="relative sm:w-80">
             <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -256,9 +264,16 @@ export function HybridCatalogPane({
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <span className="text-sm font-extrabold font-mono text-primary">
-                      ₱{price.toFixed(2)}
-                    </span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm font-extrabold font-mono text-primary">
+                        ₱{price.toFixed(2)}
+                      </span>
+                      {pricingMode === 'wholesale' && !isService && (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded">
+                          Wholesale
+                        </span>
+                      )}
+                    </div>
                     {renderActionBadge()}
                   </div>
                 </div>

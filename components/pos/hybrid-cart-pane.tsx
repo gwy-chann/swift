@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import type { CartItem, Product } from '@/lib/types';
 
@@ -68,6 +68,7 @@ export function HybridCartPane({
         <div className="flex items-center p-0.5 rounded-lg bg-bg-base border border-border text-xs font-bold">
           <button
             type="button"
+            data-testid="pricing-tab-retail"
             onClick={() => setPricingMode('retail')}
             className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
               pricingMode === 'retail'
@@ -79,6 +80,7 @@ export function HybridCartPane({
           </button>
           <button
             type="button"
+            data-testid="pricing-tab-wholesale"
             onClick={() => setPricingMode('wholesale')}
             className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
               pricingMode === 'wholesale'
@@ -249,6 +251,30 @@ export function HybridCartPane({
             ₱{totals.total.toFixed(2)}
           </span>
         </div>
+
+        {/* Visual Active Wholesale Tier Warning Indicator (SIAA-19) */}
+        {pricingMode === 'wholesale' && (
+          <div
+            data-testid="wholesale-tier-badge"
+            className="p-2.5 rounded-lg bg-accent/15 border border-accent/40 text-accent flex items-center justify-between gap-2 shadow-2xs transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+              <div>
+                <div className="text-[11px] font-black tracking-wider uppercase flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-accent" />
+                  <span>WHOLESALE TIER ACTIVE</span>
+                </div>
+                <div className="text-[10px] text-text-muted font-medium">
+                  Trade prices applied &bull; Labor invariant
+                </div>
+              </div>
+            </div>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-accent text-text-light">
+              Wholesale
+            </span>
+          </div>
+        )}
 
         {/* Complete Sale Action */}
         <button
