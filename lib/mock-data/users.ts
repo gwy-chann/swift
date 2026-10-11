@@ -1,6 +1,5 @@
 import type { UserSession } from '../types/auth.ts';
 
-
 export const MOCK_USERS: UserSession[] = [
   {
     id: 1,
