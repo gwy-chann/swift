@@ -36,3 +36,31 @@ model Profile {
 
   @@map("profiles")
 }
+
+model Product {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sku          String   @unique
+  name         String
+  category     String
+  brand        String
+  model        String   @default("Universal")
+  cost         Decimal  @db.Decimal(10, 2)
+  wholesale    Decimal  @db.Decimal(10, 2)
+  retail       Decimal  @db.Decimal(10, 2)
+  stock        Int      @default(0)
+  minThreshold Int      @default(0) @map("min_threshold")
+  location     String?
+  oem          Boolean  @default(false)
+  imageUrl     String?  @map("image_url")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([sku])
+  @@index([category])
+  @@index([brand])
+  @@index([model])
+  @@index([location])
+  @@map("products")
+}
+

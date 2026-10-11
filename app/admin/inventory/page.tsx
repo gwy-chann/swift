@@ -1,13 +1,17 @@
 import React from 'react';
+import { Metadata } from 'next';
 import { Boxes } from 'lucide-react';
 import { InventoryCatalog } from '@/components/admin/inventory/inventory-catalog';
+import { getProductsAction } from '@/lib/admin/product-actions';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Inventory & Warehouse Stock | SWIFT Admin',
   description: 'Master parts catalog, warehouse shelf locator mapping, and real-time inventory search.'
 };
 
-export default function AdminInventoryPage() {
+export default async function AdminInventoryPage() {
+  const initialProducts = await getProductsAction();
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Page Header */}
@@ -28,7 +32,7 @@ export default function AdminInventoryPage() {
       </div>
 
       {/* Main Reactive Inventory Catalog View */}
-      <InventoryCatalog />
+      <InventoryCatalog initialProducts={initialProducts} />
     </div>
   );
 }
