@@ -348,5 +348,55 @@ SET fitment_type = EXCLUDED.fitment_type,
     year_range = EXCLUDED.year_range,
     notes = EXCLUDED.notes;
 
+-- 9. Seed Baseline Staff Shifts (Punch Clock)
+-- Idempotent baseline demo data mirroring the UI mock MOCK_PUNCH_LOGS.
+-- Bound to the cashier account (cashier@swift.local).
+INSERT INTO public.staff_shifts (
+    id,
+    profile_id,
+    staff_name,
+    terminal_id,
+    clock_in,
+    clock_out,
+    duration_seconds,
+    status,
+    notes
+)
+VALUES
+    (
+        'p0000000-0000-0000-0000-000000000001',
+        'c0000000-0000-0000-0000-000000000002',
+        'Maria Santos',
+        'Terminal #01',
+        timezone('utc'::text, now() - INTERVAL '3 days' + INTERVAL '8 hours'),
+        timezone('utc'::text, now() - INTERVAL '3 days' + INTERVAL '17 hours'),
+        32415,
+        'completed',
+        'Baseline demo shift'
+    ),
+    (
+        'p0000000-0000-0000-0000-000000000002',
+        'c0000000-0000-0000-0000-000000000002',
+        'Maria Santos',
+        'Terminal #01',
+        timezone('utc'::text, now() - INTERVAL '2 days' + INTERVAL '8 hours'),
+        timezone('utc'::text, now() - INTERVAL '2 days' + INTERVAL '17 hours'),
+        31632,
+        'completed',
+        'Baseline demo shift'
+    ),
+    (
+        'p0000000-0000-0000-0000-000000000003',
+        'c0000000-0000-0000-0000-000000000002',
+        'Maria Santos',
+        'Terminal #02',
+        timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '8 hours'),
+        NULL,
+        0,
+        'on_shift',
+        'Baseline demo shift'
+    )
+ON CONFLICT (id) DO NOTHING;
+
 
 
