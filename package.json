@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --env-file=.env.local --experimental-strip-types --test \"lib/**/__tests__/*.test.ts\"",
+    "test": "node --env-file=.env.local --experimental-strip-types --test --test-concurrency=1 \"lib/**/__tests__/*.test.ts\"",
     "postinstall": "prisma generate",
     "prepare": "husky"
   },
