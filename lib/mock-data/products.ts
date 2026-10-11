@@ -1,4 +1,4 @@
-import { Product } from '@/lib/types/product';
+import type { Product } from '../types/product.ts';
 
 export const MOCK_PRODUCTS: Product[] = [
   {

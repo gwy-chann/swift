@@ -1,4 +1,4 @@
-import { StockAdjustmentLog, AuditLog, PunchLog } from '@/lib/types/logs';
+import type { StockAdjustmentLog, AuditLog, PunchLog } from '../types/logs.ts';
 
 export const MOCK_STOCK_ADJUSTMENT_LOGS: StockAdjustmentLog[] = [
   {
