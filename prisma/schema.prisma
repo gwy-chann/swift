@@ -56,6 +56,7 @@ model Product {
   createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   stockAdjustments StockAdjustmentLog[]
+  fitments         ProductFitment[]
 
   @@index([sku])
   @@index([category])
@@ -197,4 +198,41 @@ model PricingRulesAuditLog {
   @@index([createdAt])
   @@index([changedBy])
   @@map("pricing_rules_audit_logs")
+}
+
+model MotorcycleModel {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  make           String
+  model          String
+  displacementCc Int              @map("displacement_cc")
+  yearStart      Int              @map("year_start")
+  yearEnd        Int?             @map("year_end")
+  category       String
+  imageUrl       String?          @map("image_url")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  fitments       ProductFitment[]
+
+  @@unique([make, model, yearStart], map: "uq_motorcycle_models_make_model_year")
+  @@index([make, model])
+  @@map("motorcycle_models")
+}
+
+model ProductFitment {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId   String          @map("product_id") @db.Uuid
+  modelId     String          @map("model_id") @db.Uuid
+  fitmentType String          @map("fitment_type")
+  yearRange   String?         @map("year_range")
+  notes       String?
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  model       MotorcycleModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, modelId], map: "uq_product_fitments_product_model")
+  @@index([modelId, fitmentType])
+  @@index([productId])
+  @@map("product_fitments")
 }

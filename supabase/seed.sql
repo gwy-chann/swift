@@ -289,4 +289,64 @@ VALUES
     ('i0000000-0000-0000-0000-000000000008', 't0000000-0000-0000-0000-000000000003', 'service', 'SRV-BRK-01', 'Brake Caliper Flush & Bleeding', 140.00, 1, 140.00, 'Bay 3 / Mechanical Bay', NULL)
 ON CONFLICT (id) DO NOTHING;
 
+-- 7. Seed Canonical Motorcycle Models (5 Baseline Models + Universal)
+INSERT INTO public.motorcycle_models (
+    id,
+    make,
+    model,
+    displacement_cc,
+    year_start,
+    year_end,
+    category,
+    image_url
+)
+VALUES
+    ('b0000000-0000-0000-0000-000000000001', 'Yamaha', 'NMAX 155', 155, 2020, 2026, 'Scooter', NULL),
+    ('b0000000-0000-0000-0000-000000000002', 'Yamaha', 'Aerox 155', 155, 2019, 2026, 'Scooter', NULL),
+    ('b0000000-0000-0000-0000-000000000003', 'Honda', 'Click 125i/150i', 150, 2018, 2026, 'Scooter', NULL),
+    ('b0000000-0000-0000-0000-000000000004', 'Honda', 'ADV 160', 160, 2022, 2026, 'Scooter', NULL),
+    ('b0000000-0000-0000-0000-000000000005', 'Suzuki', 'Raider 150 Fi', 150, 2017, 2026, 'Underbone', NULL),
+    ('b0000000-0000-0000-0000-000000000000', 'Universal', 'Universal / Multi-Fit', 150, 2000, NULL, 'Universal', NULL)
+
+ON CONFLICT (id) DO UPDATE
+SET make = EXCLUDED.make,
+    model = EXCLUDED.model,
+    displacement_cc = EXCLUDED.displacement_cc,
+    year_start = EXCLUDED.year_start,
+    year_end = EXCLUDED.year_end,
+    category = EXCLUDED.category,
+    updated_at = timezone('utc'::text, now());
+
+-- 8. Seed Canonical Product Fitments (12 Baseline Fitment Mappings)
+INSERT INTO public.product_fitments (
+    product_id,
+    model_id,
+    fitment_type,
+    year_range,
+    notes
+)
+SELECT p.id, m.id, f.fitment_type, f.year_range, f.notes
+FROM (
+    VALUES
+        ('YAM-NMAX-BL01', 'Yamaha', 'NMAX 155', 2020, 'oem', '2020-2026', 'Front caliper OEM direct fit'),
+        ('RCB-NMAX-BP02', 'Yamaha', 'NMAX 155', 2020, 'aftermarket', '2019-2026', 'High-temp racing ceramic compound'),
+        ('HON-CLK-CVTB', 'Honda', 'Click 125i/150i', 2018, 'oem', '2018-2026', 'Gates Bando dual-cog OEM belt'),
+        ('HON-ADV-CVTB', 'Honda', 'ADV 160', 2022, 'oem', '2022-2026', 'Gates Bando dual-cog OEM belt ADV 160'),
+        ('UMA-CLK-CVTR', 'Honda', 'Click 125i/150i', 2018, 'aftermarket', '2018-2026', 'Reinforced kevlar fiber cord'),
+        ('MOT-3100-10W40', 'Universal', 'Universal / Multi-Fit', 2000, 'universal', NULL, 'Compatible with all 4T air and liquid cooled engines'),
+        ('SHL-ADV-AX7', 'Universal', 'Universal / Multi-Fit', 2000, 'universal', NULL, 'Compatible with all 4T scooter and manual clutch engines'),
+        ('NGK-CPR8EA9', 'Honda', 'Click 125i/150i', 2018, 'oem', '2018-2026', 'Standard heat range 8'),
+        ('DEN-IU24-IR', 'Yamaha', 'NMAX 155', 2020, 'aftermarket', '2016-2026', '0.4mm ultra-fine iridium center electrode'),
+        ('SUZ-RAI-CLUTCH', 'Suzuki', 'Raider 150 Fi', 2017, 'oem', '2017-2026', 'Genuine Suzuki cork-paper friction plates'),
+        ('KTR-RAI-CL6SP', 'Suzuki', 'Raider 150 Fi', 2017, 'aftermarket', '2017-2026', 'Heavy-duty 6-spring racing pressure plate kit'),
+        ('MIC-PILOT-ST', 'Honda', 'ADV 160', 2022, 'aftermarket', '2022-2026', '110/80-14 front tubeless tire')
+) AS f(sku, make, model, year_start, fitment_type, year_range, notes)
+JOIN public.products p ON p.sku = f.sku
+JOIN public.motorcycle_models m ON m.make = f.make AND m.model = f.model AND m.year_start = f.year_start
+ON CONFLICT (product_id, model_id) DO UPDATE
+SET fitment_type = EXCLUDED.fitment_type,
+    year_range = EXCLUDED.year_range,
+    notes = EXCLUDED.notes;
+
+
 
