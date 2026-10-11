@@ -236,3 +236,21 @@ model ProductFitment {
   @@index([productId])
   @@map("product_fitments")
 }
+
+model StaffShift {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId       String    @map("profile_id") @db.Uuid
+  staffName       String    @map("staff_name")
+  terminalId      String    @default("Terminal #01") @map("terminal_id")
+  clockIn         DateTime  @default(now()) @map("clock_in") @db.Timestamptz(6)
+  clockOut        DateTime? @map("clock_out") @db.Timestamptz(6)
+  durationSeconds Int?      @default(0) @map("duration_seconds")
+  status          String    @default("on_shift")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([profileId, clockIn(sort: Desc)])
+  @@index([status, terminalId])
+  @@map("staff_shifts")
+}
