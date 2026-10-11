@@ -90,4 +90,12 @@ describe('Cart Store Async Checkout & Receipt Persistence (SIAA-52)', () => {
     cartStore.closeReceiptModal();
     assert.equal(cartStore.getState().isReceiptModalOpen, false);
   });
+
+  it('supports payment modal controls: openPaymentModal and closePaymentModal', () => {
+    cartStore.openPaymentModal();
+    assert.equal(cartStore.getState().isPaymentModalOpen, true);
+
+    cartStore.closePaymentModal();
+    assert.equal(cartStore.getState().isPaymentModalOpen, false);
+  });
 });

@@ -19,12 +19,10 @@ export const quickDenominationSchema = z.object({
 
 export type QuickDenomination = z.infer<typeof quickDenominationSchema>;
 
-export const cashTenderModalPropsSchema = z.object({
-  isOpen: z.boolean(),
-  totalDue: z.number().nonnegative(),
-  isProcessing: z.boolean().optional(),
-  onClose: z.function().args().returns(z.void()),
-  onConfirmPayment: z.function().args(z.number(), z.number()).returns(z.union([z.promise(z.void()), z.void()]))
-});
-
-export type CashTenderModalProps = z.infer<typeof cashTenderModalPropsSchema>;
+export interface CashTenderModalProps {
+  isOpen: boolean;
+  totalDue: number;
+  isProcessing?: boolean;
+  onClose: () => void;
+  onConfirmPayment: (cashTendered: number, changeDue: number) => Promise<void> | void;
+}
