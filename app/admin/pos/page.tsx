@@ -5,24 +5,34 @@ import { ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
+import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
-import { getLaborServicesAction, processCheckoutAction } from "@/lib/pos/actions";
+import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
-import type { CheckoutPayload } from "@/lib/types/transaction";
 
 export default function AdminPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
-  const { items, pricingMode, totals, addPart, addService, clearCart } = useCartStore();
+  const {
+    items,
+    totals,
+    addPart,
+    addService,
+    isReceiptModalOpen,
+    activeReceiptData,
+    closeReceiptModal,
+    checkout
+  } = useCartStore();
   const [laborServices, setLaborServices] = useState<LaborService[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
@@ -130,53 +140,18 @@ export default function AdminPosPage() {
     setIsProcessing(true);
 
     try {
-      const payload: CheckoutPayload = {
-        pricingMode,
-        subtotal: totals.subtotal,
-        discountRate: totals.discountRate,
-        discountAmount: totals.discountAmount,
-        totalDue: totals.total,
+      const result = await checkout({
+        cashier: "Admin Cashier",
         cashTendered: totals.total,
-        changeDue: 0,
-        paymentMethod: "Cash",
-        cashierName: "Admin Cashier",
-        items: items.map((item) => {
-          if (item.type === "part") {
-            return {
-              itemType: "part" as const,
-              itemSkuOrCode: item.sku,
-              itemName: item.name,
-              unitPrice: item.price,
-              quantity: item.qty,
-              subtotal: item.price * item.qty,
-              shelfLocation: item.location || null,
-              bay: null
-            };
-          }
-          return {
-            itemType: "service" as const,
-            itemSkuOrCode: item.code,
-            itemName: item.name,
-            unitPrice: item.price,
-            quantity: item.qty,
-            subtotal: item.price * item.qty,
-            shelfLocation: null,
-            bay: item.bay || null
-          };
-        })
-
-      };
-
-      const result = await processCheckoutAction(payload);
+        paymentMethod: "Cash"
+      });
 
       if (!result.success) {
         showToast("error", `Cannot complete checkout: ${result.error || `Insufficient stock for SKU ${result.sku}`}`);
-        setIsProcessing(false);
         return;
       }
 
       showToast("success", `Sale completed successfully! Receipt #${result.receiptNumber}`);
-      clearCart();
 
       const updated = await getProductsAction();
       if (updated.length > 0) {
@@ -188,7 +163,7 @@ export default function AdminPosPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [items, isProcessing, pricingMode, totals, showToast, clearCart, hydrateProducts]);
+  }, [items, isProcessing, totals, checkout, showToast, hydrateProducts]);
 
   // Keyboard shortcut F12 checkout
   useEffect(() => {
@@ -276,6 +251,14 @@ export default function AdminPosPage() {
         }}
         onAuthorize={handleAuthorizedOverride}
       />
+
+      {/* Printable Thermal Receipt Modal */}
+      <ThermalReceiptModal
+        isOpen={isReceiptModalOpen}
+        onClose={closeReceiptModal}
+        receiptData={activeReceiptData}
+      />
     </div>
   );
 }
+
