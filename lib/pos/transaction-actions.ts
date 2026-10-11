@@ -360,6 +360,7 @@ export function mapDbTransactionToThermalReceipt(t: DbTransaction): ThermalRecei
     cashTendered: t.cash_tendered,
     changeDue: t.change_due,
     paymentMethod: t.payment_method,
+    technicianNotes: t.technician_notes || null,
     items: (t.items || []).map((item, idx) => ({
       id: item.id || `item-${idx}`,
       itemType: item.item_type,

@@ -63,6 +63,7 @@ export const thermalReceiptDataSchema = z.object({
   cashierName: z.string(),
   pricingMode: z.enum(['retail', 'wholesale']),
   items: z.array(thermalReceiptItemSchema).min(1),
+  technicianNotes: z.string().nullable().optional(),
   subtotal: z.number().min(0),
   discountType: z.string().nullable().optional(),
   discountRate: z.number().min(0).max(1),
