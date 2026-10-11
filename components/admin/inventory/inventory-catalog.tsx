@@ -21,17 +21,28 @@ import {
   createProductAction
 } from '@/lib/admin/product-actions';
 import { useInventoryRealtime } from '@/lib/hooks/use-inventory-realtime';
+import { usePricingRulesRealtime } from '@/lib/hooks/use-pricing-rules-realtime';
+import type { PricingRules } from '@/lib/types/pricing';
 
 export interface InventoryCatalogProps {
   initialProducts?: Product[];
+  initialPricingRules?: PricingRules;
   showHeader?: boolean;
 }
 
 export function InventoryCatalog({
   initialProducts,
+  initialPricingRules,
   showHeader = false
 }: InventoryCatalogProps = {}) {
   const { products, adjustStock, rollbackStock, registerProduct, hydrateProducts } = useInventoryStore();
+  const [pricingRules, setPricingRules] = useState<PricingRules | undefined>(initialPricingRules);
+
+  usePricingRulesRealtime({
+    onUpdate: (updated) => {
+      setPricingRules(updated);
+    }
+  });
 
   // Hydrate store on mount if server pre-fetched products are provided
   React.useEffect(() => {
@@ -353,6 +364,7 @@ export function InventoryCatalog({
         onClose={() => setIsAddProductModalOpen(false)}
         onSubmit={handleRegisterProduct}
         existingSkus={products.map((p) => p.sku)}
+        pricingRules={pricingRules}
       />
     </div>
   );

@@ -299,7 +299,7 @@ export default function AdminRatesPage() {
           if (updated.hourlyLaborRate) {
             setHourlyRate(updated.hourlyLaborRate);
           }
-          showNotification("Saved global pricing markup rules successfully!");
+          showNotification("Global pricing rules saved!");
         }}
       />
 
