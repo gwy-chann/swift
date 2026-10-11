@@ -31,6 +31,7 @@ export interface CartTotals {
   subtotal: number;
   discountRate: number;
   discountAmount: number;
+  discountType?: string;
   total: number;
   itemCount: number;
 }
