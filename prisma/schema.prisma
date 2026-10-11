@@ -53,8 +53,9 @@ model Product {
   oem          Boolean  @default(false)
   imageUrl     String?  @map("image_url")
   description  String?
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  stockAdjustments StockAdjustmentLog[]
 
   @@index([sku])
   @@index([category])
@@ -62,5 +63,25 @@ model Product {
   @@index([model])
   @@index([location])
   @@map("products")
+}
+
+model StockAdjustmentLog {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sku            String
+  adjustmentType String    @map("adjustment_type")
+  quantityDelta  Int       @map("quantity_delta")
+  previousStock  Int       @map("previous_stock")
+  newStock       Int       @map("new_stock")
+  reason         String    @default("")
+  userId         String?   @map("user_id") @db.Uuid
+  userName       String    @default("Staff Member") @map("user_name")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product        Product   @relation(fields: [sku], references: [sku], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([sku])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("stock_adjustment_logs")
 }
 
