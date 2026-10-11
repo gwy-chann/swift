@@ -65,6 +65,41 @@ export function calculateMarkupPrices(
   return { wholesale, retail };
 }
 
+function validateNumericConstraints(
+  input: Partial<ProductRegistrationInput>,
+  errors: Record<string, string>
+): void {
+  if (typeof input.cost !== 'number' || isNaN(input.cost) || input.cost <= 0) {
+    errors.cost = 'Unit cost must be greater than ₱0.00.';
+  }
+
+  if (
+    typeof input.stock !== 'number' ||
+    isNaN(input.stock) ||
+    input.stock < 0 ||
+    !Number.isInteger(input.stock)
+  ) {
+    errors.stock = 'Initial stock must be a non-negative whole number.';
+  }
+
+  if (
+    typeof input.minThreshold !== 'number' ||
+    isNaN(input.minThreshold) ||
+    input.minThreshold < 1 ||
+    !Number.isInteger(input.minThreshold)
+  ) {
+    errors.minThreshold = 'Low stock alert level must be at least 1.';
+  }
+
+  if (input.wholesale !== undefined && (typeof input.wholesale !== 'number' || isNaN(input.wholesale) || input.wholesale <= 0)) {
+    errors.wholesale = 'Wholesale price must be greater than ₱0.00.';
+  }
+
+  if (input.retail !== undefined && (typeof input.retail !== 'number' || isNaN(input.retail) || input.retail <= 0)) {
+    errors.retail = 'Retail price must be greater than ₱0.00.';
+  }
+}
+
 /**
  * Validates product registration input for mandatory fields, numeric constraints,
  * and case-insensitive SKU duplicate collisions against existing catalog SKUs.
@@ -108,35 +143,7 @@ export function validateProductRegistration(
     errors.location = 'Shelf location is required.';
   }
 
-  if (typeof input.cost !== 'number' || isNaN(input.cost) || input.cost <= 0) {
-    errors.cost = 'Unit cost must be greater than ₱0.00.';
-  }
-
-  if (
-    typeof input.stock !== 'number' ||
-    isNaN(input.stock) ||
-    input.stock < 0 ||
-    !Number.isInteger(input.stock)
-  ) {
-    errors.stock = 'Initial stock must be a non-negative whole number.';
-  }
-
-  if (
-    typeof input.minThreshold !== 'number' ||
-    isNaN(input.minThreshold) ||
-    input.minThreshold < 1 ||
-    !Number.isInteger(input.minThreshold)
-  ) {
-    errors.minThreshold = 'Low stock alert level must be at least 1.';
-  }
-
-  if (input.wholesale !== undefined && (typeof input.wholesale !== 'number' || isNaN(input.wholesale) || input.wholesale <= 0)) {
-    errors.wholesale = 'Wholesale price must be greater than ₱0.00.';
-  }
-
-  if (input.retail !== undefined && (typeof input.retail !== 'number' || isNaN(input.retail) || input.retail <= 0)) {
-    errors.retail = 'Retail price must be greater than ₱0.00.';
-  }
+  validateNumericConstraints(input, errors);
 
   return {
     isValid: Object.keys(errors).length === 0,

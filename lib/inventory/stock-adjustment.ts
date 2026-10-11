@@ -51,7 +51,7 @@ export function calculateStockAdjustmentDelta(
   const { currentStock, type, quantity, mode } = params;
   const absQty = Math.max(0, Math.floor(quantity));
 
-  let isDeduct = false;
+  let isDeduct: boolean;
   if (mode === 'deduct') {
     isDeduct = true;
   } else if (mode === 'add') {
