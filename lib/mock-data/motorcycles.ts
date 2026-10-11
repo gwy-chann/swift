@@ -1,5 +1,4 @@
-import type { MotorcycleModel, CompatibilityRule } from '../types/product.ts';
-
+import type { MotorcycleModel, CompatibilityRule, MotorcycleModelRecord } from '../types/product.ts';
 
 export const MOCK_MOTORCYCLE_MODELS: MotorcycleModel[] = [
   'Yamaha NMAX 155',
@@ -8,6 +7,61 @@ export const MOCK_MOTORCYCLE_MODELS: MotorcycleModel[] = [
   'Honda ADV 160',
   'Suzuki Raider 150 Fi'
 ];
+
+export const MOCK_MOTORCYCLE_MODEL_RECORDS: MotorcycleModelRecord[] = [
+  {
+    id: 'b0000000-0000-0000-0000-000000000001',
+    make: 'Yamaha',
+    model: 'NMAX 155',
+    displacement_cc: 155,
+    year_start: 2020,
+    year_end: 2026,
+    category: 'Scooter',
+    image_url: null
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000002',
+    make: 'Yamaha',
+    model: 'Aerox 155',
+    displacement_cc: 155,
+    year_start: 2019,
+    year_end: 2026,
+    category: 'Scooter',
+    image_url: null
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000003',
+    make: 'Honda',
+    model: 'Click 125i/150i',
+    displacement_cc: 150,
+    year_start: 2018,
+    year_end: 2026,
+    category: 'Scooter',
+    image_url: null
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000004',
+    make: 'Honda',
+    model: 'ADV 160',
+    displacement_cc: 160,
+    year_start: 2022,
+    year_end: 2026,
+    category: 'Scooter',
+    image_url: null
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000005',
+    make: 'Suzuki',
+    model: 'Raider 150 Fi',
+    displacement_cc: 150,
+    year_start: 2017,
+    year_end: 2026,
+    category: 'Underbone',
+    image_url: null
+  }
+];
+
+
 
 export const MOCK_COMPATIBILITY_RULES: CompatibilityRule[] = [
   { sku: 'YAM-NMAX-BL01', model: 'Yamaha NMAX 155', yearRange: '2020-2026', notes: 'Front caliper OEM direct fit' },
