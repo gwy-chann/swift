@@ -1,6 +1,40 @@
 import type { Product, ProductCategory } from '../types/product.ts';
 import type { DbProductRow } from '../types/realtime.ts';
 
+const parseNumber = (val: unknown): number | undefined =>
+  val !== undefined && val !== null ? Number(val) : undefined;
+
+function extractPricingAndStock(raw: Record<string, unknown>) {
+  const cost = parseNumber(raw.cost);
+  const wholesale = parseNumber(raw.wholesale);
+  const retail = parseNumber(raw.retail);
+  const rawStock = parseNumber(raw.stock);
+  const rawMinThreshold = parseNumber(raw.min_threshold ?? raw.minThreshold);
+
+  return {
+    ...(cost !== undefined && { cost }),
+    ...(wholesale !== undefined && { wholesale }),
+    ...(retail !== undefined && { retail }),
+    ...(rawStock !== undefined && { stock: Math.max(0, rawStock) }),
+    ...(rawMinThreshold !== undefined && { minThreshold: Math.max(0, rawMinThreshold) })
+  };
+}
+
+function extractMetadata(raw: Record<string, unknown>) {
+  const rawImg = raw.image_url ?? raw.imageUrl;
+  const rawCreatedAt = raw.created_at ?? raw.createdAt;
+  const rawUpdatedAt = raw.updated_at ?? raw.updatedAt;
+
+  return {
+    ...(raw.location !== undefined && { location: raw.location ? String(raw.location) : '' }),
+    ...(raw.oem !== undefined && { oem: Boolean(raw.oem) }),
+    ...(rawImg !== undefined && { imageUrl: rawImg ? String(rawImg) : undefined }),
+    ...(raw.description !== undefined && { description: raw.description ? String(raw.description) : undefined }),
+    ...(rawCreatedAt !== undefined && { createdAt: rawCreatedAt as string | Date }),
+    ...(rawUpdatedAt !== undefined && { updatedAt: rawUpdatedAt as string | Date })
+  };
+}
+
 /**
  * Maps a raw Supabase PostgreSQL row or partial update payload (snake_case)
  * to a type-safe canonical domain Product (camelCase).
@@ -15,68 +49,19 @@ export function mapRealtimeDbProductToProduct(
     throw new Error('[mapRealtimeDbProductToProduct] Payload must include a valid SKU identifier');
   }
 
-  const result: Partial<Product> & { sku: string } = {
-    sku: String(row.sku).trim().toUpperCase()
+  const raw = row as Record<string, unknown>;
+  const sku = String(raw.sku).trim().toUpperCase();
+
+  return {
+    sku,
+    ...(raw.id !== undefined && { id: String(raw.id) }),
+    ...(raw.name !== undefined && { name: String(raw.name) }),
+    ...(raw.category !== undefined && { category: raw.category as ProductCategory }),
+    ...(raw.brand !== undefined && { brand: String(raw.brand) }),
+    ...(raw.model !== undefined && { model: String(raw.model) }),
+    ...extractPricingAndStock(raw),
+    ...extractMetadata(raw)
   };
-
-  if ('id' in row && row.id !== undefined) {
-    result.id = String(row.id);
-  }
-  if ('name' in row && row.name !== undefined) {
-    result.name = String(row.name);
-  }
-  if ('category' in row && row.category !== undefined) {
-    result.category = row.category as ProductCategory;
-  }
-  if ('brand' in row && row.brand !== undefined) {
-    result.brand = String(row.brand);
-  }
-  if ('model' in row && row.model !== undefined) {
-    result.model = String(row.model);
-  }
-  if ('cost' in row && row.cost !== undefined) {
-    result.cost = Number(row.cost);
-  }
-  if ('wholesale' in row && row.wholesale !== undefined) {
-    result.wholesale = Number(row.wholesale);
-  }
-  if ('retail' in row && row.retail !== undefined) {
-    result.retail = Number(row.retail);
-  }
-  if ('stock' in row && row.stock !== undefined) {
-    result.stock = Math.max(0, Number(row.stock));
-  }
-  if ('min_threshold' in row && row.min_threshold !== undefined) {
-    result.minThreshold = Math.max(0, Number(row.min_threshold));
-  } else if ('minThreshold' in row && row.minThreshold !== undefined) {
-    result.minThreshold = Math.max(0, Number(row.minThreshold));
-  }
-  if ('location' in row && row.location !== undefined) {
-    result.location = row.location ? String(row.location) : '';
-  }
-  if ('oem' in row && row.oem !== undefined) {
-    result.oem = Boolean(row.oem);
-  }
-  if ('image_url' in row && row.image_url !== undefined) {
-    result.imageUrl = row.image_url ? String(row.image_url) : undefined;
-  } else if ('imageUrl' in row && row.imageUrl !== undefined) {
-    result.imageUrl = row.imageUrl ? String(row.imageUrl) : undefined;
-  }
-  if ('description' in row && row.description !== undefined) {
-    result.description = row.description ? String(row.description) : undefined;
-  }
-  if ('created_at' in row && row.created_at !== undefined) {
-    result.createdAt = row.created_at ? String(row.created_at) : undefined;
-  } else if ('createdAt' in row && row.createdAt !== undefined) {
-    result.createdAt = row.createdAt ? (row.createdAt as string | Date) : undefined;
-  }
-  if ('updated_at' in row && row.updated_at !== undefined) {
-    result.updatedAt = row.updated_at ? String(row.updated_at) : undefined;
-  } else if ('updatedAt' in row && row.updatedAt !== undefined) {
-    result.updatedAt = row.updatedAt ? (row.updatedAt as string | Date) : undefined;
-  }
-
-  return result;
 }
 
 /**
