@@ -35,7 +35,7 @@ export function StockAdjustmentModal({
   isSubmitting = false,
   onClose,
   onSubmit
-}: StockAdjustmentModalProps) {
+}: Readonly<StockAdjustmentModalProps>) {
   const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('Restock Inbound');
   const [quantityInput, setQuantityInput] = useState<string>('1');
   const [reasonInput, setReasonInput] = useState<string>('');
