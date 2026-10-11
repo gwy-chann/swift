@@ -44,6 +44,20 @@ export const MOCK_PRODUCTS: Product[] = [
     brand: 'Honda OEM'
   },
   {
+    sku: 'HON-ADV-CVTB',
+    name: 'OEM Drive Belt (Gates Bando ADV 160)',
+    category: 'Drivetrain',
+    stock: 0,
+    minThreshold: 6,
+    location: 'Rack B-04 / Shelf 3',
+    cost: 520,
+    wholesale: 720,
+    retail: 850,
+    oem: true,
+    model: 'Honda ADV 160',
+    brand: 'Honda OEM'
+  },
+  {
     sku: 'UMA-CLK-CVTR',
     name: 'Uma Racing Kevlar High-Tension Belt',
     category: 'Drivetrain',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, Filter, RotateCcw } from 'lucide-react';
+import { Search, X, Filter, RotateCcw, AlertTriangle } from 'lucide-react';
 import { StockFilterOption } from '@/lib/inventory/catalog-filter';
 
 interface CatalogFilterBarProps {
@@ -10,6 +10,9 @@ interface CatalogFilterBarProps {
   categories: string[];
   stockFilter: StockFilterOption;
   onStockFilterChange: (value: StockFilterOption) => void;
+  lowStockOnly?: boolean;
+  onToggleLowStockOnly?: () => void;
+  criticalLowStockCount?: number;
   onResetFilters: () => void;
   totalCount: number;
   filteredCount: number;
@@ -23,6 +26,9 @@ export function CatalogFilterBar({
   categories,
   stockFilter,
   onStockFilterChange,
+  lowStockOnly = false,
+  onToggleLowStockOnly,
+  criticalLowStockCount,
   onResetFilters,
   totalCount,
   filteredCount
@@ -30,7 +36,8 @@ export function CatalogFilterBar({
   const isFiltered =
     searchQuery.trim().length > 0 ||
     (selectedCategory !== 'All' && selectedCategory !== 'All Categories') ||
-    stockFilter !== 'all';
+    stockFilter !== 'all' ||
+    lowStockOnly;
 
   return (
     <div className="p-4 rounded-lg bg-bg-card border border-border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
@@ -77,6 +84,37 @@ export function CatalogFilterBar({
             ))}
           </select>
         </div>
+
+        {/* Low Stock Alerts Quick-Filter Toggle Button */}
+        <button
+          type="button"
+          onClick={onToggleLowStockOnly}
+          aria-pressed={lowStockOnly}
+          aria-label="Toggle low stock alerts quick-filter"
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold rounded-md border transition-all cursor-pointer shadow-2xs ${
+            lowStockOnly
+              ? 'bg-danger text-text-light border-danger ring-2 ring-danger/30'
+              : 'bg-bg-input hover:bg-bg-hover text-text-primary border-border hover:border-danger/40'
+          }`}
+        >
+          <AlertTriangle
+            className={`w-3.5 h-3.5 shrink-0 ${
+              lowStockOnly ? 'text-text-light' : 'text-danger'
+            }`}
+          />
+          <span>Low Stock Alerts</span>
+          {typeof criticalLowStockCount === 'number' && (
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                lowStockOnly
+                  ? 'bg-black/30 text-text-light'
+                  : 'bg-danger-light text-danger'
+              }`}
+            >
+              {criticalLowStockCount}
+            </span>
+          )}
+        </button>
 
         {/* Stock Status Dropdown */}
         <div className="relative flex-1 sm:flex-initial">

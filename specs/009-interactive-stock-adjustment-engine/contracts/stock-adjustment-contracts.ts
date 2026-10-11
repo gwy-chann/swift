@@ -3,7 +3,6 @@
  */
 
 import type { Product } from '@/lib/types/product';
-import type { StockAdjustmentLog } from '@/lib/types/logs';
 
 export type AdjustmentActionType =
   | 'Restock Inbound'

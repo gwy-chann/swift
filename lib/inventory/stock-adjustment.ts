@@ -1,5 +1,3 @@
-import type { StockAdjustmentLog } from '../types/logs';
-
 export type AdjustmentType =
   | 'Restock Inbound'
   | 'Damaged Goods'
