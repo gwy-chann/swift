@@ -258,9 +258,14 @@ class CartStore {
     // Recalculate physical part line item unit prices
     const updatedItems = this.state.items.map((item) => {
       if (item.type === 'part') {
-        const newPrice = mode === 'wholesale' ? (item.wholesalePrice ?? item.price) : (item.retailPrice ?? item.price);
+        const product = inventoryStore.getProductBySku(item.sku);
+        const wholesalePrice = item.wholesalePrice ?? product?.wholesale ?? item.price;
+        const retailPrice = item.retailPrice ?? product?.retail ?? item.price;
+        const newPrice = mode === 'wholesale' ? wholesalePrice : retailPrice;
         return {
           ...item,
+          wholesalePrice,
+          retailPrice,
           price: newPrice
         };
       }
