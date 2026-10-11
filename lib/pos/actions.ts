@@ -136,12 +136,33 @@ function handleCheckoutRpcError(
   };
 }
 
+async function triggerCheckoutRevalidation(): Promise<void> {
+  try {
+    const nextCache = await import('next/cache');
+    if (typeof nextCache.updateTag === 'function') {
+      nextCache.updateTag('pos-cart');
+      nextCache.updateTag('inventory-catalog');
+    }
+    if (typeof nextCache.revalidateTag === 'function') {
+      (nextCache.revalidateTag as (tag: string, profile?: unknown) => void)('pos-cart', { expire: 0 });
+      (nextCache.revalidateTag as (tag: string, profile?: unknown) => void)('inventory-catalog', { expire: 0 });
+    }
+    if (typeof nextCache.revalidatePath === 'function') {
+      nextCache.revalidatePath('/admin');
+    }
+  } catch {
+    // Graceful fallback when executed outside Next.js server request context (e.g. test runner)
+  }
+}
+
+
 /**
  * Executes atomic POS checkout:
  * 1. Validates payload via Zod contract schema.
  * 2. Invokes Supabase RPC public.process_pos_checkout (transaction + items + stock decrements + audit log).
  * 3. Handles PostgreSQL exceptions (INSUFFICIENT_STOCK, PRODUCT_NOT_FOUND).
  * 4. Falls back to mock store engine when running offline or without database connection.
+ * 5. Revalidates Next.js cache tags (pos-cart, inventory-catalog) and admin overview route.
  *
  * @param payload CheckoutPayload
  * @returns Promise<CheckoutActionResult>
@@ -224,6 +245,7 @@ export async function processCheckoutAction(
           parts_decremented?: number;
           created_at?: string;
         };
+        await triggerCheckoutRevalidation();
 
         return {
           success: true,
@@ -291,6 +313,8 @@ export async function processCheckoutAction(
     }
   }
 
+
+  await triggerCheckoutRevalidation();
 
   return {
     success: true,
