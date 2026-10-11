@@ -4,8 +4,12 @@ import React, { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, Bike, PackageOpen } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
+import { getMotorcycleModelsAction } from "@/lib/actions/motomatcher-actions";
+import type { MotorcycleModelRecord } from "@/lib/types/product";
+import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 
 export default function StaffCompatPage() {
+  const [motorcycleModels, setMotorcycleModels] = useState<MotorcycleModelRecord[]>(MOCK_MOTORCYCLE_MODEL_RECORDS);
   const [make, setMake] = useState("Yamaha");
   const [model, setModel] = useState("Yamaha NMAX 155");
   const [systemCategory, setSystemCategory] = useState("ALL");
@@ -22,10 +26,33 @@ export default function StaffCompatPage() {
       .catch((error) => {
         console.error("Failed to load products for compatibility check:", error);
       });
+
+    getMotorcycleModelsAction()
+      .then((fetchedModels) => {
+        if (isMounted && fetchedModels.length > 0) {
+          setMotorcycleModels(fetchedModels);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load motorcycle models:", error);
+      });
+
     return () => {
       isMounted = false;
     };
   }, [hydrateProducts]);
+
+  const makes = useMemo(() => {
+    const uniqueMakes = Array.from(new Set(motorcycleModels.map((m) => m.make)));
+    return [...uniqueMakes, "Universal"];
+  }, [motorcycleModels]);
+
+  const modelsForSelectedMake = useMemo(() => {
+    if (make === "Universal") return ["Universal"];
+    return motorcycleModels
+      .filter((m) => m.make === make)
+      .map((m) => `${m.make} ${m.model}`);
+  }, [motorcycleModels, make]);
 
   const compatibleParts = useMemo(() => {
     return products.filter((p) => {
@@ -64,17 +91,22 @@ export default function StaffCompatPage() {
               onChange={(e) => {
                 const newMake = e.target.value;
                 setMake(newMake);
-                if (newMake === "Yamaha") setModel("Yamaha NMAX 155");
-                else if (newMake === "Honda") setModel("Honda Click 125i/150i");
-                else if (newMake === "Suzuki") setModel("Suzuki Raider 150 Fi");
-                else setModel("Universal");
+                if (newMake === "Universal") {
+                  setModel("Universal");
+                } else {
+                  const firstModel = motorcycleModels.find((m) => m.make === newMake);
+                  if (firstModel) {
+                    setModel(`${firstModel.make} ${firstModel.model}`);
+                  }
+                }
               }}
               className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
             >
-              <option value="Yamaha">Yamaha</option>
-              <option value="Honda">Honda</option>
-              <option value="Suzuki">Suzuki</option>
-              <option value="Universal">Universal / Multi-Fit</option>
+              {makes.map((m) => (
+                <option key={m} value={m}>
+                  {m === "Universal" ? "Universal / Multi-Fit" : m}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -85,24 +117,11 @@ export default function StaffCompatPage() {
               onChange={(e) => setModel(e.target.value)}
               className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
             >
-              {make === "Yamaha" && (
-                <>
-                  <option value="Yamaha NMAX 155">Yamaha NMAX 155</option>
-                  <option value="Yamaha Aerox 155">Yamaha Aerox 155</option>
-                </>
-              )}
-              {make === "Honda" && (
-                <>
-                  <option value="Honda Click 125i/150i">Honda Click 125i / 150i</option>
-                  <option value="Honda ADV 160">Honda ADV 160</option>
-                </>
-              )}
-              {make === "Suzuki" && (
-                <option value="Suzuki Raider 150 Fi">Suzuki Raider 150 Fi</option>
-              )}
-              {make === "Universal" && (
-                <option value="Universal">Universal Parts</option>
-              )}
+              {modelsForSelectedMake.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
           </div>
 
