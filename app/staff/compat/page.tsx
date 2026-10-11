@@ -1,11 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
-import { CheckCircle2, Bike } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { CheckCircle2, Bike, PackageOpen } from "lucide-react";
+import { useInventoryStore } from "@/lib/store/inventory-store";
+import { getProductsAction } from "@/lib/admin/product-actions";
 
 export default function StaffCompatPage() {
   const [make, setMake] = useState("Yamaha");
-  const [model, setModel] = useState("NMAX 155");
+  const [model, setModel] = useState("Yamaha NMAX 155");
+  const [systemCategory, setSystemCategory] = useState("ALL");
+  const { products, hydrateProducts } = useInventoryStore();
+
+  useEffect(() => {
+    let isMounted = true;
+    getProductsAction().then((fetched) => {
+      if (isMounted && fetched.length > 0) {
+        hydrateProducts(fetched);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [hydrateProducts]);
+
+  const compatibleParts = useMemo(() => {
+    return products.filter((p) => {
+      const modelMatch =
+        p.model === model ||
+        p.model === "Universal" ||
+        (p.model && p.model.toLowerCase().includes(model.toLowerCase()));
+
+      const categoryMatch =
+        systemCategory === "ALL" ||
+        (p.category && p.category.toLowerCase() === systemCategory.toLowerCase());
+
+      return modelMatch && categoryMatch;
+    });
+  }, [products, model, systemCategory]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -17,7 +48,7 @@ export default function StaffCompatPage() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-text-primary">MotoMatcher Floor Compatibility Finder</h3>
-            <p className="text-xs text-text-muted">Select customer motorcycle to filter 100% verified parts</p>
+            <p className="text-xs text-text-muted">Select customer motorcycle to filter 100% verified parts from live inventory</p>
           </div>
         </div>
 
@@ -26,38 +57,65 @@ export default function StaffCompatPage() {
             <label className="block text-[11px] font-bold text-text-muted uppercase mb-1">Make</label>
             <select
               value={make}
-              onChange={(e) => setMake(e.target.value)}
+              onChange={(e) => {
+                const newMake = e.target.value;
+                setMake(newMake);
+                if (newMake === "Yamaha") setModel("Yamaha NMAX 155");
+                else if (newMake === "Honda") setModel("Honda Click 125i/150i");
+                else if (newMake === "Suzuki") setModel("Suzuki Raider 150 Fi");
+                else setModel("Universal");
+              }}
               className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
             >
               <option value="Yamaha">Yamaha</option>
               <option value="Honda">Honda</option>
               <option value="Suzuki">Suzuki</option>
-              <option value="Kawasaki">Kawasaki</option>
+              <option value="Universal">Universal / Multi-Fit</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-text-muted uppercase mb-1">Model & Year</label>
+            <label className="block text-[11px] font-bold text-text-muted uppercase mb-1">Model & Platform</label>
             <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
             >
-              <option value="NMAX 155">NMAX 155 (2020-2024)</option>
-              <option value="Aerox 155">Aerox 155 V1 / V2</option>
-              <option value="Sniper 155">Sniper 155 / R</option>
-              <option value="Mio Gravis">Mio Gravis 125</option>
+              {make === "Yamaha" && (
+                <>
+                  <option value="Yamaha NMAX 155">Yamaha NMAX 155</option>
+                  <option value="Yamaha Aerox 155">Yamaha Aerox 155</option>
+                </>
+              )}
+              {make === "Honda" && (
+                <>
+                  <option value="Honda Click 125i/150i">Honda Click 125i / 150i</option>
+                  <option value="Honda ADV 160">Honda ADV 160</option>
+                </>
+              )}
+              {make === "Suzuki" && (
+                <option value="Suzuki Raider 150 Fi">Suzuki Raider 150 Fi</option>
+              )}
+              {make === "Universal" && (
+                <option value="Universal">Universal Parts</option>
+              )}
             </select>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-text-muted uppercase mb-1">Engine / System</label>
-            <select className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer">
-              <option>All Systems (Full Bike)</option>
-              <option>Drive & Transmission (CVT)</option>
-              <option>Braking System</option>
-              <option>Ignition & Electrical</option>
-              <option>Engine & Lubrication</option>
+            <label className="block text-[11px] font-bold text-text-muted uppercase mb-1">System / Category</label>
+            <select
+              value={systemCategory}
+              onChange={(e) => setSystemCategory(e.target.value)}
+              className="w-full py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
+            >
+              <option value="ALL">All Systems & Categories</option>
+              <option value="Brakes">Braking System</option>
+              <option value="Drivetrain">Drive & Transmission (CVT)</option>
+              <option value="Fluids">Engine Oils & Fluids</option>
+              <option value="Ignition">Ignition & Electrical</option>
+              <option value="Engine">Clutch & Engine Parts</option>
+              <option value="Tires">Tires & Wheels</option>
             </select>
           </div>
         </div>
@@ -69,33 +127,49 @@ export default function StaffCompatPage() {
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-success" />
             <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-              Verified Fitment Results for {make} {model}
+              Verified Fitment Results for {model} ({compatibleParts.length} Parts Available)
             </h4>
           </div>
           <span className="text-xs font-bold text-success bg-success-light px-2 py-0.5 rounded">
-            Direct Bolt-On Verified
+            Live Database Verified
           </span>
         </div>
 
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="p-3.5 bg-bg-card border border-border rounded-lg flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-mono text-text-muted">IGN-NGK-CR8</span>
-              <p className="text-xs font-bold text-text-primary">NGK Laser Iridium Spark Plug CR8EIA-9</p>
-              <span className="text-[10px] text-secondary font-semibold">Shelf: Aisle 2 - Shelf A</span>
-            </div>
-            <span className="text-sm font-bold font-mono text-primary">₱420.00</span>
+        {compatibleParts.length > 0 ? (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {compatibleParts.map((part) => (
+              <div
+                key={part.sku}
+                className="p-3.5 bg-bg-card border border-border rounded-lg flex items-center justify-between hover:border-primary transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-text-muted font-bold">{part.sku}</span>
+                    {part.oem && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary-light text-primary font-bold">
+                        OEM
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-text-primary mt-0.5">{part.name}</p>
+                  <span className="text-[10px] text-secondary font-semibold">
+                    Shelf: {part.location || "Floor Stock"} • Stock: {part.stock}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold font-mono text-primary">₱{part.retail.toFixed(2)}</span>
+                  <span className="block text-[10px] text-text-muted font-mono">Wholesale: ₱{part.wholesale.toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div className="p-3.5 bg-bg-card border border-border rounded-lg flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-mono text-text-muted">FL-MOT-10W40</span>
-              <p className="text-xs font-bold text-text-primary">Motul 7100 4T 10W-40 1L (1.0L Engine Cap)</p>
-              <span className="text-[10px] text-secondary font-semibold">Shelf: Aisle 3 - Shelf B</span>
-            </div>
-            <span className="text-sm font-bold font-mono text-primary">₱650.00</span>
+        ) : (
+          <div className="p-8 text-center space-y-2">
+            <PackageOpen className="w-8 h-8 text-text-muted mx-auto" />
+            <p className="text-sm font-bold text-text-primary">No Matching Parts in Stock for {model}</p>
+            <p className="text-xs text-text-muted">Try selecting &quot;All Systems&quot; or check universal inventory.</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

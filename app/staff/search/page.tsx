@@ -1,29 +1,49 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PackageSearch, Search, MapPin } from "lucide-react";
+import { useInventoryStore } from "@/lib/store/inventory-store";
+import { getProductsAction } from "@/lib/admin/product-actions";
 
 export default function StaffSearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
+  const { products, hydrateProducts } = useInventoryStore();
 
-  const mockInventory = [
-    { sku: "FL-MOT-10W40", name: "Motul 7100 4T 10W-40 1L", model: "Universal 4-Stroke", shelf: "Aisle 3 - Shelf B", stock: 24, price: 650, cat: "Fluids" },
-    { sku: "BR-BRE-001", name: "Brembo Front Brake Pads", model: "Honda Click 125/150, Vario", shelf: "Aisle 1 - Shelf D", stock: 12, price: 850, cat: "Brakes" },
-    { sku: "DRV-DID-428HD", name: "DID 428HD Roller Drive Chain 120L", model: "Yamaha Sniper 150/155, Raider 150", shelf: "Aisle 4 - Shelf C", stock: 8, price: 1250, cat: "Drivetrain" },
-    { sku: "IGN-NGK-CR8", name: "NGK Laser Iridium Spark Plug CR8EIA-9", model: "Yamaha NMAX 155, Aerox 155", shelf: "Aisle 2 - Shelf A", stock: 35, price: 420, cat: "Ignition" },
-    { sku: "TIR-MIC-CTY2", name: "Michelin City Extra Front Tire 90/80-14", model: "Honda Beat, Click, Yamaha Mio", shelf: "Rack T-02", stock: 6, price: 1850, cat: "Tires" },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    getProductsAction().then((fetched) => {
+      if (isMounted && fetched.length > 0) {
+        hydrateProducts(fetched);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [hydrateProducts]);
 
-  const filtered = mockInventory.filter((item) => {
-    const matchCat = category === "ALL" || item.cat === category;
-    const matchSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.shelf.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    set.add("ALL");
+    for (const p of products) {
+      if (p.category) set.add(p.category);
+    }
+    return Array.from(set);
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return products.filter((item) => {
+      const matchCat = category === "ALL" || item.category === category;
+      const matchSearch =
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        item.sku.toLowerCase().includes(q) ||
+        (item.model && item.model.toLowerCase().includes(q)) ||
+        (item.location && item.location.toLowerCase().includes(q));
+      return matchCat && matchSearch;
+    });
+  }, [products, category, searchTerm]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -46,12 +66,11 @@ export default function StaffSearchPage() {
           onChange={(e) => setCategory(e.target.value)}
           className="w-full sm:w-64 py-2 px-3 text-xs bg-bg-input border border-border rounded-lg text-text-primary outline-hidden cursor-pointer"
         >
-          <option value="ALL">All Categories (Parts & Accessories)</option>
-          <option value="Brakes">Brakes</option>
-          <option value="Drivetrain">Drivetrain</option>
-          <option value="Fluids">Fluids</option>
-          <option value="Ignition">Ignition</option>
-          <option value="Tires">Tires</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat === "ALL" ? "All Categories (Parts & Accessories)" : cat}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -86,11 +105,11 @@ export default function StaffSearchPage() {
                   <td className="py-3 px-4">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/15 text-secondary font-bold">
                       <MapPin className="w-3 h-3" />
-                      <span>{item.shelf}</span>
+                      <span>{item.location || "Floor Stock"}</span>
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right font-mono font-bold text-text-primary">{item.stock}</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-primary">₱{item.price.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right font-mono font-bold text-primary">₱{item.retail.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>

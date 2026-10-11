@@ -1,4 +1,3 @@
-import React from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { Product } from '@/lib/types/product';
 import { formatPeso } from '@/lib/inventory/catalog-filter';
@@ -10,7 +9,7 @@ interface CatalogTableProps {
   onAdjustStock?: (sku: string) => void;
 }
 
-export function CatalogTable({ products, onAdjustStock }: CatalogTableProps) {
+export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableProps>) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-bg-card shadow-xs">
       <table className="w-full text-left border-collapse min-w-[850px]">

@@ -16,13 +16,14 @@ import { CatalogTable } from './catalog-table';
 import { CatalogEmptyState } from './catalog-empty-state';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
+import { adjustProductStockAction } from '@/lib/admin/product-actions';
 
 export interface InventoryCatalogProps {
   initialProducts?: Product[];
 }
 
 export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}) {
-  const { products, adjustStock, registerProduct, hydrateProducts } = useInventoryStore();
+  const { products, adjustStock, rollbackStock, registerProduct, hydrateProducts } = useInventoryStore();
 
   // Hydrate store on mount if server pre-fetched products are provided
   React.useEffect(() => {
@@ -38,6 +39,7 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -84,7 +86,7 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
     }
   };
 
-  const handleConfirmAdjustment = ({
+  const handleConfirmAdjustment = async ({
     sku,
     type,
     delta,
@@ -95,13 +97,69 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
     delta: number;
     reason: string;
   }) => {
-    adjustStock({
+    // 1. Instant Optimistic State Update (<16ms)
+    const snapshot = adjustStock({
       sku,
       type,
       units: delta,
       reason,
       user: 'Inventory Supervisor (Admin)'
     });
+
+    setIsAdjustSubmitting(true);
+
+    try {
+      // 2. Invoke Server Action calling Supabase RPC adjust_product_stock
+      const result = await adjustProductStockAction({
+        sku,
+        type,
+        delta,
+        reason,
+        userName: 'Inventory Supervisor (Admin)'
+      });
+
+      if (result.success) {
+        setToastMessage({
+          type: 'success',
+          text: `Stock adjusted successfully for part ${sku} (${delta > 0 ? '+' : ''}${delta} units). New on-hand: ${result.newStock}.`
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 5000);
+      } else {
+        // 3. Rollback on Rejection (e.g. INSUFFICIENT_STOCK)
+        rollbackStock({
+          sku,
+          previousStock: snapshot.previousStock,
+          logId: snapshot.logId
+        });
+
+        setToastMessage({
+          type: 'error',
+          text: result.error || `Stock adjustment failed for ${sku}. Count reverted.`
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 6000);
+      }
+    } catch {
+      // 4. Rollback on Network Error or Unhandled Exception
+      rollbackStock({
+        sku,
+        previousStock: snapshot.previousStock,
+        logId: snapshot.logId
+      });
+
+      setToastMessage({
+        type: 'error',
+        text: `Network error adjusting stock for ${sku}. Count reverted to previous quantity.`
+      });
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 6000);
+    } finally {
+      setIsAdjustSubmitting(false);
+    }
   };
 
   const handleRegisterProduct = (newProduct: Product) => {
@@ -195,6 +253,7 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
       <StockAdjustmentModal
         isOpen={isAdjustModalOpen}
         product={adjustingProduct}
+        isSubmitting={isAdjustSubmitting}
         onClose={() => {
           setIsAdjustModalOpen(false);
           setAdjustingProduct(null);
