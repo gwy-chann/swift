@@ -275,6 +275,10 @@ export default function AdminPosPage() {
       <ThermalReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={closeReceiptModal}
+        onFinish={() => {
+          closeReceiptModal();
+          showToast("success", "Receipt printed & checkout session finalized.");
+        }}
         receiptData={activeReceiptData}
       />
     </div>
