@@ -16,7 +16,9 @@ const eslintConfig = defineConfig([
     "supabase/**",
     "graphify-out/**",
     "mockup/**",
+    ".worktrees/**",
   ]),
+
 ]);
 
 export default eslintConfig;
