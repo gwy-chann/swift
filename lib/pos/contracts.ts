@@ -14,8 +14,9 @@ export const checkoutItemSchema = z.object({
 
 export const checkoutPayloadSchema = z.object({
   receiptNumber: z.string().optional(),
-  cashierId: z.string().uuid().nullable().optional(),
+  cashierId: z.string().nullable().optional(),
   cashierName: z.string().min(1).default('Cashier'),
+
   pricingMode: z.enum(['retail', 'wholesale']),
   subtotal: z.number().min(0, 'Subtotal must be non-negative'),
   discountType: z.string().nullable().optional(),
