@@ -85,3 +85,20 @@ model StockAdjustmentLog {
   @@map("stock_adjustment_logs")
 }
 
+model LaborService {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String   @unique
+  name        String
+  bay         String
+  rate        Decimal  @db.Decimal(10, 2)
+  duration    String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([code])
+  @@index([active])
+  @@map("labor_services")
+}
+
