@@ -7,7 +7,7 @@ import {
   generateReceiptBarcodePattern
 } from '../thermal-receipt.ts';
 import { validateThermalReceiptData } from '../contracts.ts';
-import type { ThermalReceiptData, ThermalReceiptItem } from '../../types/transaction.ts';
+import type { ThermalReceiptData } from '../../types/transaction.ts';
 
 describe('Thermal Receipt Generation & Printable Modal (SIAA-22)', () => {
   const sampleHybridReceipt: ThermalReceiptData = {

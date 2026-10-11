@@ -1,4 +1,4 @@
-import type { ThermalRollWidth, ThermalReceiptItem } from '../types/transaction.ts';
+import type { ThermalRollWidth } from '../types/transaction.ts';
 
 export const STORE_RECEIPT_CONFIG = {
   storeName: 'SWIFT MOTO SERVICE',

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { CheckoutPayload, CheckoutItemPayload } from '../types/transaction.ts';
+import type { CheckoutPayload } from '../types/transaction.ts';
 
 export const checkoutItemSchema = z.object({
   itemType: z.enum(['part', 'service']),
