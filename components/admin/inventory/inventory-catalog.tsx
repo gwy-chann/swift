@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Boxes, Plus } from 'lucide-react';
 import { useInventoryStore } from '@/lib/store/inventory-store';
 import {
   filterCatalogProducts,
@@ -16,14 +16,21 @@ import { CatalogTable } from './catalog-table';
 import { CatalogEmptyState } from './catalog-empty-state';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
-import { adjustProductStockAction } from '@/lib/admin/product-actions';
+import {
+  adjustProductStockAction,
+  createProductAction
+} from '@/lib/admin/product-actions';
 import { useInventoryRealtime } from '@/lib/hooks/use-inventory-realtime';
 
 export interface InventoryCatalogProps {
   initialProducts?: Product[];
+  showHeader?: boolean;
 }
 
-export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}) {
+export function InventoryCatalog({
+  initialProducts,
+  showHeader = false
+}: InventoryCatalogProps = {}) {
   const { products, adjustStock, rollbackStock, registerProduct, hydrateProducts } = useInventoryStore();
 
   // Hydrate store on mount if server pre-fetched products are provided
@@ -176,30 +183,96 @@ export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}
     }
   };
 
-  const handleRegisterProduct = (newProduct: Product) => {
-    const res = registerProduct({
-      product: newProduct,
-      user: 'Carlos Rodriguez (Admin)'
-    });
+  const handleRegisterProduct = async (
+    newProduct: Product
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await createProductAction({
+        sku: newProduct.sku,
+        name: newProduct.name,
+        category: newProduct.category,
+        brand: newProduct.brand,
+        model: newProduct.model,
+        cost: newProduct.cost,
+        wholesale: newProduct.wholesale,
+        retail: newProduct.retail,
+        stock: newProduct.stock,
+        minThreshold: newProduct.minThreshold,
+        location: newProduct.location,
+        oem: newProduct.oem,
+        imageUrl: newProduct.imageUrl,
+        description: newProduct.description,
+        userName: 'Carlos Rodriguez (Admin)'
+      });
 
-    if (res.success) {
+      if (result.success && result.product) {
+        registerProduct({
+          product: result.product,
+          user: 'Carlos Rodriguez (Admin)'
+        });
+
+        setToastMessage({
+          type: 'success',
+          text: `Product "${result.product.name}" (${result.product.sku}) registered successfully!`
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 5000);
+        return { success: true };
+      } else {
+        const errorMsg = result.error || 'Failed to register product.';
+        setToastMessage({
+          type: 'error',
+          text: errorMsg
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 6000);
+        return { success: false, error: errorMsg };
+      }
+    } catch {
+      const errorMsg = 'Network error while registering product.';
       setToastMessage({
-        type: 'success',
-        text: `Product "${newProduct.name}" (${newProduct.sku}) registered successfully!`
+        type: 'error',
+        text: errorMsg
       });
       setTimeout(() => {
         setToastMessage(null);
-      }, 5000);
-    } else {
-      setToastMessage({
-        type: 'error',
-        text: res.error || 'Failed to register product.'
-      });
+      }, 6000);
+      return { success: false, error: errorMsg };
     }
   };
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Top Header with Add Part Action */}
+      {showHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
+              <Boxes className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+                Inventory & Warehouse Stock
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
+                Master parts catalog, warehouse shelf locator mapping, and stock adjustments.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAddProductModalOpen(true)}
+            aria-label="Add new part to catalog"
+            className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-bold rounded-lg bg-primary hover:bg-primary-hover text-text-light shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Part</span>
+          </button>
+        </div>
+      )}
+
       {/* Toast Notification Banner */}
       {toastMessage && (
         <output

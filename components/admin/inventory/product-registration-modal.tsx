@@ -20,7 +20,7 @@ import {
 export interface ProductRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (product: Product) => void;
+  onSubmit: (product: Product) => void | Promise<{ success: boolean; error?: string } | void>;
   existingSkus: string[];
   pricingRules?: Partial<PricingRules>;
 }
@@ -43,7 +43,17 @@ const MOTORCYCLE_MODELS = [
   'Universal Fitment'
 ];
 
-export function ProductRegistrationModal({
+function getRetailMarkupNote(manualOverride: boolean, isOem: boolean): string {
+  if (manualOverride) {
+    return 'Manual override';
+  }
+  if (isOem) {
+    return 'Auto (+35%)';
+  }
+  return 'Auto (+40%)';
+}
+
+function useProductRegistrationForm({
   isOpen,
   onClose,
   onSubmit,
@@ -114,8 +124,6 @@ export function ProductRegistrationModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   // Handle Cost Change with Auto-Calculation
   const handleCostChange = (val: string) => {
@@ -196,7 +204,7 @@ export function ProductRegistrationModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const parsedCost = parseFloat(cost);
@@ -245,9 +253,92 @@ export function ProductRegistrationModal({
       brand: brand.trim()
     };
 
-    onSubmit(newProduct);
-    onClose();
+    try {
+      const res = await onSubmit(newProduct);
+      if (res && typeof res === 'object' && res.success === false) {
+        if (res.error?.includes('already exists') || res.error?.includes('SKU')) {
+          setErrors({ sku: res.error });
+        } else {
+          setErrors({ general: res.error || 'Failed to register product.' });
+        }
+        return;
+      }
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  return {
+    sku,
+    name,
+    setName,
+    category,
+    setCategory,
+    brand,
+    setBrand,
+    model,
+    setModel,
+    location,
+    setLocation,
+    specType,
+    stock,
+    setStock,
+    minThreshold,
+    setMinThreshold,
+    cost,
+    wholesale,
+    retail,
+    manualWholesaleOverride,
+    manualRetailOverride,
+    errors,
+    isSubmitting,
+    skuInputRef,
+    handleCostChange,
+    handleSpecTypeChange,
+    handleWholesaleChange,
+    handleRetailChange,
+    handleSkuChange,
+    handleSubmit
+  };
+}
+
+export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
+  const { isOpen, onClose } = props;
+  const {
+    sku,
+    name,
+    setName,
+    category,
+    setCategory,
+    brand,
+    setBrand,
+    model,
+    setModel,
+    location,
+    setLocation,
+    specType,
+    stock,
+    setStock,
+    minThreshold,
+    setMinThreshold,
+    cost,
+    wholesale,
+    retail,
+    manualWholesaleOverride,
+    manualRetailOverride,
+    errors,
+    isSubmitting,
+    skuInputRef,
+    handleCostChange,
+    handleSpecTypeChange,
+    handleWholesaleChange,
+    handleRetailChange,
+    handleSkuChange,
+    handleSubmit
+  } = useProductRegistrationForm(props);
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -301,6 +392,14 @@ export function ProductRegistrationModal({
             <div className="p-3 rounded-lg bg-danger-light border border-danger/30 text-danger flex items-center gap-2.5 text-xs sm:text-sm animate-fadeIn">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errors.sku}</span>
+            </div>
+          )}
+
+          {/* General Submission Error Alert */}
+          {errors.general && (
+            <div className="p-3 rounded-lg bg-danger-light border border-danger/30 text-danger flex items-center gap-2.5 text-xs sm:text-sm animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errors.general}</span>
             </div>
           )}
 
@@ -612,11 +711,7 @@ export function ProductRegistrationModal({
                   required
                 />
                 <span className="text-[10px] text-text-muted mt-0.5 block">
-                  {manualRetailOverride
-                    ? 'Manual override'
-                    : specType === 'oem'
-                    ? 'Auto (+35%)'
-                    : 'Auto (+40%)'}
+                  {getRetailMarkupNote(manualRetailOverride, specType === 'oem')}
                 </span>
               </div>
             </div>
@@ -639,11 +734,22 @@ export function ProductRegistrationModal({
             disabled={isSubmitting}
             className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-primary hover:bg-primary-hover text-text-light shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            Save & Register Product
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-text-light border-t-transparent rounded-full animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Save & Register Product</span>
+              </>
+            )}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+export { ProductRegistrationModal as NewProductModal };
