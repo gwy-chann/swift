@@ -174,33 +174,80 @@ git diff origin/main..HEAD
 
 ---
 
-## 🚀 Opening the PR with GitHub CLI (`gh`)
+## 🚀 Automated PR Description Synthesis & Opening with `gh`
 
-### 1. Push Branch
-Push the rebased branch to remote. If the branch was previously pushed or rebased against upstream, use `--force-with-lease` to safely update remote history:
+### 1. Mandatory Automated Synthesis (Never Leave Empty)
+When executing `/create-pr`, the agent MUST automatically synthesize a complete, populated PR title and description based on:
+- Jira ticket details (fetched via Jira MCP or branch name)
+- Atomic commit history (`git log origin/main..HEAD --oneline`)
+- SpecKit artifacts (`specs/<feature>/spec.md`, `tasks.md`, test suites)
+- Template standard (`.github/pull_request_template.md`)
+
+**CRITICAL RULES:**
+- **Zero Empty Placeholders**: Never leave `[SWIFT-XXX]`, blank bullet points, or unedited template comments in the PR body.
+- **Zero Tracked PR Files**: **NEVER** write or commit standalone PR description markdown files into the repository (e.g., `.github/PULL_REQUEST_*.md`). Keep git history and workspace clean.
+- **Always Output to Conversation**: Always output the full synthesized Title and Description in the conversation response so the user can review or paste it into GitHub Web UI if needed.
+
+### 2. Push Branch to Remote
+Push the rebased branch to remote. If the branch was previously pushed or rebased against upstream, use `--force-with-lease`:
 ```bash
 git push -u origin <branch-name> --force-with-lease
 ```
 
-### 2. Create the PR Using Template
+### 3. Automatically Create or Update PR via GitHub CLI (`gh`)
 
-#### Option A: Interactive (Recommended)
-```bash
-gh pr create
+#### Case A: PR Does Not Exist Yet
+Pass the synthesized description directly via stdin (or a temporary `.git/PR_DESCRIPTION.md` which is git-ignored):
+```powershell
+# PowerShell: Pipe synthesized markdown via standard input
+$body = @"
+<SYNTHESIZED_FULL_PR_BODY>
+"@
+$body | gh pr create --base main --head <branch-name> --title "<type>(<scope>): [<JIRA-KEY>] <summary>" --body-file -
 ```
 
-#### Option B: Automated via Body File
 ```bash
+# Bash / Linux / macOS:
 gh pr create \
   --base main \
-  --head feat/SWIFT-101-supabase-auth-flow \
-  --title "feat(auth): [SWIFT-101] implement Supabase session middleware" \
-  --body-file .github/pull_request_template.md
+  --head <branch-name> \
+  --title "<type>(<scope>): [<JIRA-KEY>] <summary>" \
+  --body "$SYNTHESIZED_BODY"
 ```
 
-#### Option C: Draft Mode (Work In Progress)
-```bash
-gh pr create --draft \
-  --title "feat(auth): [SWIFT-101] [WIP] implement Supabase session middleware" \
-  --body "Work in progress. Do not merge yet."
+#### Case B: PR Already Opened (e.g., via Web UI or Draft)
+If a PR already exists for the branch (detect via `gh pr list --head <branch-name>`), automatically update the existing PR's title and description so it is never left empty:
+```powershell
+$body | gh pr edit <pr-number> --title "<type>(<scope>): [<JIRA-KEY>] <summary>" --body-file -
 ```
+
+#### Case C: Web UI / Manual Update
+If GitHub CLI lacks write permissions for the authenticated account, immediately supply the user with:
+1. The exact PR URL (e.g., `https://github.com/gwy-chann/swift/pull/<pr-number>`)
+2. The exact formatted Title to paste into the title field
+3. The exact complete Markdown Description to paste into the description body box
+
+---
+
+### 4. Mandatory Jira Issue Synchronization
+
+Whenever `/create-pr` is executed or a PR is opened:
+1. **Mandatory Jira Completion Comment**:
+   The agent MUST automatically post a formatted completion comment to the Jira ticket using the Atlassian MCP tool `addOrEditJiraIssueComment`:
+   ```markdown
+   ✅ **SpecKit Implementation Complete & PR Opened**
+   - **Pull Request**: [{PR_TITLE}]({PR_URL})
+   - **Branch**: `{BRANCH_NAME}`
+   - **SpecKit Deliverables**: All canonical artifacts generated under `specs/<feature>/`
+   - **Core Changes**: Bullet points of key domain logic, components, and schema changes
+   - **Quality Verification**:
+     - Typecheck: PASSED (`npx tsc --noEmit`)
+     - Unit & Integration Tests: PASSED (`npm test`)
+     - Linting: PASSED (`npm run lint`)
+     - Knowledge Graph: Synced via `/graphify . --update`
+     - SWIFT Design Tokens: 100% compliant with semantic tokens
+   ```
+2. **Workflow Transition**:
+   Transition the ticket status to `In Review` (if available via `transitionJiraIssue`).
+
+
