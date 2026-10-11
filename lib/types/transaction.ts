@@ -1,4 +1,4 @@
-import { CartItem, PricingMode } from './cart';
+import type { CartItem, PricingMode } from './cart.ts';
 
 export type TransactionPaymentMethod = 'Cash' | 'GCash' | 'Card' | 'Maya' | string;
 export type TransactionDiscountType = 'none' | 'senior' | 'pwd' | 'vip' | string;
