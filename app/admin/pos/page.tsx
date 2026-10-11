@@ -6,6 +6,7 @@ import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
+import { CashTenderModal } from "@/components/pos/cash-tender-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
@@ -21,6 +22,9 @@ export default function AdminPosPage() {
     totals,
     addPart,
     addService,
+    isPaymentModalOpen,
+    openPaymentModal,
+    closePaymentModal,
     isReceiptModalOpen,
     activeReceiptData,
     closeReceiptModal,
@@ -135,19 +139,25 @@ export default function AdminPosPage() {
     setIsOverrideModalOpen(true);
   }, []);
 
-  const handleCompleteSale = useCallback(async () => {
+  const handleOpenPayment = useCallback(() => {
+    if (items.length === 0 || isProcessing) return;
+    openPaymentModal();
+  }, [items.length, isProcessing, openPaymentModal]);
+
+  const handleConfirmPayment = useCallback(async (cashTendered: number) => {
     if (items.length === 0 || isProcessing) return;
     setIsProcessing(true);
 
     try {
       const result = await checkout({
         cashier: "Admin Cashier",
-        cashTendered: totals.total,
+        cashTendered,
         paymentMethod: "Cash"
       });
 
       if (!result.success) {
-        showToast("error", `Cannot complete checkout: ${result.error || `Insufficient stock for SKU ${result.sku}`}`);
+        const errorDetail = result.error || (result.sku ? `Insufficient stock for SKU ${result.sku}` : 'Checkout failed');
+        showToast("error", `Cannot complete checkout: ${errorDetail}`);
         return;
       }
 
@@ -163,19 +173,19 @@ export default function AdminPosPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [items, isProcessing, totals, checkout, showToast, hydrateProducts]);
+  }, [items, isProcessing, checkout, showToast, hydrateProducts]);
 
-  // Keyboard shortcut F12 checkout
+  // Keyboard shortcut F12 checkout: if modal is not open, open payment modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F12") {
+      if (e.key === "F12" && !isPaymentModalOpen) {
         e.preventDefault();
-        handleCompleteSale();
+        handleOpenPayment();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleCompleteSale]);
+  }, [isPaymentModalOpen, handleOpenPayment]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -236,7 +246,7 @@ export default function AdminPosPage() {
           ticketNumber="TX-ADMIN-01"
           catalogProducts={products}
           onRequireOverride={handleRequireOverride}
-          onCompleteSale={handleCompleteSale}
+          onCompleteSale={handleOpenPayment}
           isProcessing={isProcessing}
         />
       </div>
@@ -250,6 +260,15 @@ export default function AdminPosPage() {
           setPendingOverrideProduct(null);
         }}
         onAuthorize={handleAuthorizedOverride}
+      />
+
+      {/* Cash Tender & Change Calculation Modal (SIAA-21) */}
+      <CashTenderModal
+        isOpen={isPaymentModalOpen}
+        totalDue={totals.total}
+        isProcessing={isProcessing}
+        onClose={closePaymentModal}
+        onConfirmPayment={handleConfirmPayment}
       />
 
       {/* Printable Thermal Receipt Modal */}
