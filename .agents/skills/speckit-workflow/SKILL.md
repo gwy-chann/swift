@@ -14,14 +14,15 @@ This skill orchestrates the entire Spec-Driven Development (SDD) lifecycle for S
 
 ```mermaid
 flowchart TD
-    A[1. Bootstrap & Spec\nspeckit-specify\nspec.md, research.md] --> B[2. Clarification\nspeckit-clarify]
+    Z[0. Worktree Provisioning\ngit worktree add .worktrees/KEY\nisolated environment] --> A[1. Bootstrap & Spec\nspeckit-specify\nspec.md, research.md]
+    A --> B[2. Clarification\nspeckit-clarify]
     B --> C[3. Quality Checklist\nspeckit-checklist\nchecklists/requirements.md]
     C --> D[4. Architecture Planning\nspeckit-plan\ndata-model.md, contracts/, quickstart.md, plan.md]
     D --> E[5. Task Generation\nspeckit-tasks\ntasks.md]
     E --> F[6. Artifact Analysis\nspeckit-analyze]
     F --> G[7. Implementation\nspeckit-implement]
     G --> H[8. Convergence & Verification\nspeckit-converge]
-    H --> I[9. Post-Execution & Sync\ngraphify-auto-sync + atomic-commit]
+    H --> I[9. PR Creation & Teardown\ncreate-pr + git worktree remove]
 ```
 
 ---
@@ -42,6 +43,16 @@ Every feature in `specs/<feature-number-and-slug>/` MUST produce all 8 artifacts
 ---
 
 ## Phase-by-Phase Execution Guide
+
+### Phase 0: Git Worktree & Branch Provisioning (Parallel Feature Guard)
+To prevent git index lock collisions, branch clobbering, and uncommitted file contamination when working on features concurrently:
+1. **Detect Context**: Check if current working directory is already an isolated worktree under `.worktrees/<feature-or-key>`.
+2. **Provision Worktree**: If in the repository root or switching to a new ticket/feature, create a separate worktree off `origin/main`:
+   ```bash
+   git fetch origin main
+   git worktree add .worktrees/<JIRA-KEY-or-slug> -b feat/<JIRA-KEY-or-slug> origin/main
+   ```
+3. **Confine Execution**: All subsequent steps (file generation in `specs/`, source code modifications, tests, and git commits) **MUST** execute within `.worktrees/<JIRA-KEY-or-slug>`.
 
 ### Phase 1: Bootstrap & Specification
 1. Initialize feature directory under `specs/<feature-number-and-slug>/` (e.g. `specs/007-barcode-fast-lane-pos/`).
@@ -75,5 +86,17 @@ Every feature in `specs/<feature-number-and-slug>/` MUST produce all 8 artifacts
 3. Adhere strictly to **SWIFT Design Tokens** (`lib/tokens.ts`, `app/globals.css`, zero hardcoded hex/rgb).
 
 ### Phase 8: Convergence & Verification
-1. Run `npm run typecheck`, `npm run lint`, and `npm test`.
+1. Run `npm run typecheck`, `npm run lint`, and `npm test` inside the worktree.
 2. Trigger `graphify-auto-sync` (`graphify . --update`) to maintain an accurate AST map without circular dependencies.
+
+### Phase 9: Pull Request & Worktree Teardown
+1. Push the branch to upstream:
+   ```bash
+   git push -u origin <branch-name>
+   ```
+2. Open Pull Request via `gh pr create` (following the `create-pr` skill).
+3. Safely remove and prune the worktree after review / completion:
+   ```bash
+   git worktree remove .worktrees/<JIRA-KEY-or-slug> --force
+   git worktree prune
+   ```
