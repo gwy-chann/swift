@@ -26,19 +26,20 @@ export function ThermalReceiptModal({
   initialRollWidth = '80mm'
 }: Readonly<ThermalReceiptModalProps>) {
   const [rollWidth, setRollWidth] = useState<ThermalRollWidth>(initialRollWidth);
-  const [activeReceipt, setActiveReceipt] = useState<ThermalReceiptData | null>(initialReceiptData || null);
+  const [searchedReceipt, setSearchedReceipt] = useState<ThermalReceiptData | null>(null);
   const [lookupQuery, setLookupQuery] = useState('');
   const [isLoadingLookup, setIsLoadingLookup] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const titleId = useId();
 
-  // Sync active receipt whenever initialReceiptData changes
-  useEffect(() => {
-    if (initialReceiptData) {
-      setActiveReceipt(initialReceiptData);
-      setLookupError(null);
-    }
-  }, [initialReceiptData]);
+  const activeReceipt = searchedReceipt ?? initialReceiptData ?? null;
+
+  const handleClose = useCallback(() => {
+    setSearchedReceipt(null);
+    setLookupError(null);
+    setLookupQuery('');
+    onClose();
+  }, [onClose]);
 
   // Keyboard shortcut listener for Esc key
   useEffect(() => {
@@ -47,13 +48,13 @@ export function ThermalReceiptModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        handleClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   const handlePrint = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -64,11 +65,14 @@ export function ThermalReceiptModal({
   const handlePrintAndFinish = useCallback(() => {
     handlePrint();
     if (onFinish) {
+      setSearchedReceipt(null);
+      setLookupError(null);
+      setLookupQuery('');
       onFinish();
     } else {
-      onClose();
+      handleClose();
     }
-  }, [handlePrint, onFinish, onClose]);
+  }, [handlePrint, onFinish, handleClose]);
 
   const handleLookup = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -81,7 +85,7 @@ export function ThermalReceiptModal({
     try {
       const found = await getThermalReceiptByReceiptAction(query);
       if (found) {
-        setActiveReceipt(found);
+        setSearchedReceipt(found);
       } else {
         setLookupError(`Receipt "${query}" was not found in transaction logs.`);
       }
