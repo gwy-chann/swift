@@ -5,6 +5,48 @@ import { AuthResult, LoginCredentials, UserSession } from "./types";
 import { DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants";
 import { createClient } from "@/lib/supabase/server";
 
+function setSessionCookies(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  role: string,
+  name: string,
+  rememberTerminal: boolean
+) {
+  const maxAge = rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
+  cookieStore.set("swift-session-role", role, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge,
+  });
+  cookieStore.set("swift-user-name", name, {
+    path: "/",
+    httpOnly: false,
+    sameSite: "lax",
+    maxAge,
+  });
+}
+
+function resolveDemoAccount(normalizedEmail: string) {
+  const adminDemo = DEMO_ACCOUNTS.admin.email.toLowerCase();
+  const staffDemo = DEMO_ACCOUNTS.staff.email.toLowerCase();
+
+  if (normalizedEmail === adminDemo) {
+    return {
+      id: "00000000-0000-0000-0000-000000000001",
+      role: "admin" as const,
+      name: "Shop Administrator",
+    };
+  }
+  if (normalizedEmail === staffDemo) {
+    return {
+      id: "00000000-0000-0000-0000-000000000002",
+      role: "staff" as const,
+      name: "Shop Floor Cashier",
+    };
+  }
+  return null;
+}
+
 /**
  * Authenticates a user against Supabase Auth with fallback to demo accounts
  * Replicates the role routing and demo flow defined in mockup/index.html & SIAA-8
@@ -15,7 +57,7 @@ export async function authenticateUserAction(
   const { email, password, selectedRole, rememberTerminal } = credentials;
 
   // 1. Basic validation
-  if (!email || !email.trim()) {
+  if (!email?.trim()) {
     return {
       success: false,
       error: "Username or email is required.",
@@ -28,35 +70,17 @@ export async function authenticateUserAction(
   const cookieStore = await cookies();
 
   // 2. Demo account bypass check
-  const adminDemo = DEMO_ACCOUNTS.admin.email.toLowerCase();
-  const staffDemo = DEMO_ACCOUNTS.staff.email.toLowerCase();
-
-  if (normalizedEmail === adminDemo || normalizedEmail === staffDemo) {
-    const role = normalizedEmail === adminDemo ? "admin" : "staff";
-    const name = role === "admin" ? "Shop Administrator" : "Shop Floor Cashier";
-
+  const demoAccount = resolveDemoAccount(normalizedEmail);
+  if (demoAccount) {
     const session: UserSession = {
-      id: role === "admin" ? "00000000-0000-0000-0000-000000000001" : "00000000-0000-0000-0000-000000000002",
+      id: demoAccount.id,
       email: normalizedEmail,
-      name,
-      role,
+      name: demoAccount.name,
+      role: demoAccount.role,
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    // Store session role cookie
-    cookieStore.set("swift-session-role", role, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
-    });
-
-    cookieStore.set("swift-user-name", name, {
-      path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-      maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
-    });
+    setSessionCookies(cookieStore, demoAccount.role, demoAccount.name, rememberTerminal);
 
     return {
       success: true,
@@ -92,19 +116,7 @@ export async function authenticateUserAction(
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    cookieStore.set("swift-session-role", role, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
-    });
-
-    cookieStore.set("swift-user-name", name, {
-      path: "/",
-      httpOnly: false,
-      sameSite: "lax",
-      maxAge: rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
-    });
+    setSessionCookies(cookieStore, role, name, rememberTerminal);
 
     return {
       success: true,
@@ -138,6 +150,6 @@ export async function logoutAction(): Promise<{ success: boolean; redirectTo: st
 
   return {
     success: true,
-    redirectTo: "/login",
+    redirectTo: "/",
   };
 }

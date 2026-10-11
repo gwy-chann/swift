@@ -28,7 +28,7 @@ export function AdminSidebar({ onItemClick, className = "" }: Readonly<AdminSide
       router.push(result.redirectTo);
     } catch (err) {
       console.error("Logout error:", err);
-      router.push("/login");
+      router.push("/");
     }
   }
 
