@@ -202,7 +202,8 @@ export async function getServerSession(): Promise<ResolvedSession> {
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       try {
-        const { createClient } = await import("@/lib/supabase/server");
+        const { createClient } = await import("../supabase/server.ts");
+
         const supabase = await createClient();
         const { data } = await supabase.auth.getUser();
         user = data?.user ?? null;

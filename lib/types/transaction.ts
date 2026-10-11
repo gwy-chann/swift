@@ -93,3 +93,36 @@ export type CheckoutActionResult =
       error: string;
     };
 
+export interface ThermalReceiptItem {
+  id: string;
+  itemType: TransactionItemType;
+  skuOrCode: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  shelfLocation?: string | null;
+  bay?: string | null;
+  duration?: string | null;
+}
+
+export interface ThermalReceiptData {
+  id: string;
+  receiptNumber: string;
+  timestamp: string;
+  cashierName: string;
+  pricingMode: PricingMode;
+  items: ThermalReceiptItem[];
+  subtotal: number;
+  discountType?: string | null;
+  discountRate: number;
+  discountAmount: number;
+  totalDue: number;
+  cashTendered: number;
+  changeDue: number;
+  paymentMethod: TransactionPaymentMethod;
+}
+
+export type ThermalRollWidth = '58mm' | '80mm';
+
+

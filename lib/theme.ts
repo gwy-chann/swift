@@ -1,4 +1,5 @@
-import { ThemeMode, DEFAULT_THEME } from "@/lib/tokens";
+import { ThemeMode, DEFAULT_THEME } from "./tokens.ts";
+
 
 export const THEME_STORAGE_KEY = "swift-theme";
 

@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getPricingRulesAction,
@@ -7,6 +7,15 @@ import {
 } from '../pricing-actions.ts';
 
 describe('Admin Pricing Rules & Standard Hourly Labor Benchmark (SIAA-40 & SIAA-57)', () => {
+  before(async () => {
+    await updatePricingRulesAction({
+      retailMarkup: 35,
+      wholesaleMarkup: 18,
+      aftermarketMarkup: 40,
+      hourlyLaborRate: 450
+    });
+  });
+
   it('retrieves default pricing rules including benchmark hourly labor rate', async () => {
     const rules = await getPricingRulesAction();
     assert.ok(rules, 'Pricing rules must be defined');

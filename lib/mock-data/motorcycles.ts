@@ -1,4 +1,5 @@
-import { MotorcycleModel, CompatibilityRule } from '@/lib/types/product';
+import type { MotorcycleModel, CompatibilityRule } from '../types/product.ts';
+
 
 export const MOCK_MOTORCYCLE_MODELS: MotorcycleModel[] = [
   'Yamaha NMAX 155',

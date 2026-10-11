@@ -1,4 +1,5 @@
-import { UserSession } from '@/lib/types/auth';
+import type { UserSession } from '../types/auth.ts';
+
 
 export const MOCK_USERS: UserSession[] = [
   {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { PunchLog } from '@/lib/types/logs';
-import { MOCK_PUNCH_LOGS } from '@/lib/mock-data';
+import type { PunchLog } from '../types/logs.ts';
+import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
+
 
 export interface PunchStoreState {
   isShiftActive: boolean;

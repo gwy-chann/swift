@@ -42,3 +42,46 @@ export function validateCheckoutPayload(payload: unknown): {
 
   return { success: true, data: result.data as unknown as CheckoutPayload };
 }
+
+export const thermalReceiptItemSchema = z.object({
+  id: z.string(),
+  itemType: z.enum(['part', 'service']),
+  skuOrCode: z.string(),
+  name: z.string(),
+  unitPrice: z.number().min(0),
+  quantity: z.number().int().positive(),
+  subtotal: z.number().min(0),
+  shelfLocation: z.string().nullable().optional(),
+  bay: z.string().nullable().optional(),
+  duration: z.string().nullable().optional()
+});
+
+export const thermalReceiptDataSchema = z.object({
+  id: z.string(),
+  receiptNumber: z.string().min(1),
+  timestamp: z.string(),
+  cashierName: z.string(),
+  pricingMode: z.enum(['retail', 'wholesale']),
+  items: z.array(thermalReceiptItemSchema).min(1),
+  subtotal: z.number().min(0),
+  discountType: z.string().nullable().optional(),
+  discountRate: z.number().min(0).max(1),
+  discountAmount: z.number().min(0),
+  totalDue: z.number().min(0),
+  cashTendered: z.number().min(0),
+  changeDue: z.number().min(0),
+  paymentMethod: z.string()
+});
+
+export function validateThermalReceiptData(data: unknown): {
+  success: boolean;
+  error?: string;
+} {
+  const result = thermalReceiptDataSchema.safeParse(data);
+  if (!result.success) {
+    const errorMsg = result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return { success: false, error: errorMsg };
+  }
+  return { success: true };
+}
+

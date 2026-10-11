@@ -149,5 +149,13 @@ describe('STORY-7.2: Global Markup Rules Configuration (SIAA-39)', () => {
       'Audit log action must detail the previous vs updated Wholesale markup'
     );
     assert.ok(latestLog.timestamp, 'Audit log must contain a valid timestamp');
+
+    // Reset back to defaults for clean test environment
+    await updatePricingRulesAction({
+      retailMarkup: 35,
+      wholesaleMarkup: 18,
+      aftermarketMarkup: 40,
+      hourlyLaborRate: 450
+    });
   });
 });
