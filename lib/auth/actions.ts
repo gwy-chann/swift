@@ -3,7 +3,8 @@
 import { cookies } from "next/headers";
 import { AuthResult, LoginCredentials, UserSession } from "./types";
 import { DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "../supabase/server.ts";
+
 
 function setSessionCookies(
   cookieStore: Awaited<ReturnType<typeof cookies>>,
