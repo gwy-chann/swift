@@ -10,16 +10,24 @@ import type {
   Product,
   LaborService,
   Transaction,
-  TransactionPaymentMethod
+  TransactionPaymentMethod,
+  ThermalReceiptData,
+  CheckoutPayload
 } from '../types/index.ts';
 import { inventoryStore } from './inventory-store.ts';
+import { processCheckoutAction } from '../pos/actions.ts';
 
 export interface CartStoreState {
   items: CartItem[];
   pricingMode: PricingMode;
   discountRate: number;
   totals: CartTotals;
+  isProcessingCheckout: boolean;
+  isReceiptModalOpen: boolean;
+  activeReceiptData: ThermalReceiptData | null;
+  lastCheckoutError: string | null;
 }
+
 
 // Initial seed cart state derived directly from mockup/app.js (lines 76-83)
 const INITIAL_CART_ITEMS: CartItem[] = [
@@ -70,7 +78,11 @@ class CartStore {
       items: INITIAL_CART_ITEMS,
       pricingMode: 'retail',
       discountRate,
-      totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate)
+      totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate),
+      isProcessingCheckout: false,
+      isReceiptModalOpen: false,
+      activeReceiptData: null,
+      lastCheckoutError: null
     };
   }
 
@@ -248,7 +260,21 @@ class CartStore {
   public clearCart = (): void => {
     this.updateState({
       items: [],
-      discountRate: 0
+      discountRate: 0,
+      lastCheckoutError: null
+    });
+  };
+
+  public openReceiptModal = (receiptData?: ThermalReceiptData | null): void => {
+    this.updateState({
+      isReceiptModalOpen: true,
+      ...(receiptData !== undefined ? { activeReceiptData: receiptData } : {})
+    });
+  };
+
+  public closeReceiptModal = (): void => {
+    this.updateState({
+      isReceiptModalOpen: false
     });
   };
 
@@ -287,46 +313,151 @@ class CartStore {
     this.updateState({ discountRate: Math.max(0, rate) });
   };
 
-  public checkout = (params: {
+  public checkout = async (params: {
     cashier: string;
     cashTendered?: number;
     paymentMethod?: TransactionPaymentMethod;
-  }): Transaction => {
-    const { cashier, cashTendered, paymentMethod = 'Cash' } = params;
+    discountType?: string;
+  }): Promise<{
+    success: boolean;
+    receiptNumber?: string;
+    transactionId?: string;
+    receiptData?: ThermalReceiptData;
+    error?: string;
+    code?: string;
+    sku?: string;
+  }> => {
+    const { cashier, cashTendered, paymentMethod = 'Cash', discountType } = params;
     const totals = this.state.totals;
     const tendered = cashTendered ?? totals.total;
     const change = Math.max(0, Math.round((tendered - totals.total) * 100) / 100);
 
-    const randomSuffix = typeof crypto !== 'undefined' && crypto.getRandomValues
-      ? (crypto.getRandomValues(new Uint16Array(1))[0] % 9000) + 1000
-      : (Date.now() % 9000) + 1000;
-
-    const transaction: Transaction = {
-      id: `TX-${randomSuffix}`,
-      timestamp: new Date().toISOString(),
-      cashier,
-      items: [...this.state.items],
-      pricingMode: this.state.pricingMode,
-      subtotal: totals.subtotal,
-      discountRate: totals.discountRate,
-      discountAmount: totals.discountAmount,
-      total: totals.total,
-      cashTendered: tendered,
-      change,
-      paymentMethod
-    };
-
-    // Decrement inventory stock for all physical parts
-    for (const item of this.state.items) {
-      if (item.type === 'part' && item.sku) {
-        inventoryStore.decrementStock(item.sku, item.qty);
-      }
+    if (this.state.items.length === 0) {
+      return { success: false, error: 'Cart is empty' };
     }
 
-    // Clear cart upon successful transaction
-    this.clearCart();
+    this.updateState({ isProcessingCheckout: true, lastCheckoutError: null });
 
-    return transaction;
+    try {
+      const payload: CheckoutPayload = {
+        cashierName: cashier,
+        pricingMode: this.state.pricingMode,
+        subtotal: totals.subtotal,
+        discountType: discountType || (this.state.discountRate > 0 ? 'discount' : 'none'),
+        discountRate: totals.discountRate,
+        discountAmount: totals.discountAmount,
+        totalDue: totals.total,
+        cashTendered: tendered,
+        changeDue: change,
+        paymentMethod,
+        items: this.state.items.map((item) => {
+          if (item.type === 'part') {
+            return {
+              itemType: 'part' as const,
+              itemSkuOrCode: item.sku,
+              itemName: item.name,
+              unitPrice: item.price,
+              quantity: item.qty,
+              subtotal: item.price * item.qty,
+              shelfLocation: item.location || null,
+              bay: null
+            };
+          }
+          return {
+            itemType: 'service' as const,
+            itemSkuOrCode: item.code,
+            itemName: item.name,
+            unitPrice: item.price,
+            quantity: item.qty,
+            subtotal: item.price * item.qty,
+            shelfLocation: null,
+            bay: item.bay || null
+          };
+        })
+      };
+
+      const result = await processCheckoutAction(payload);
+
+      if (!result.success) {
+        this.updateState({
+          isProcessingCheckout: false,
+          lastCheckoutError: result.error
+        });
+        return {
+          success: false,
+          error: result.error,
+          code: result.code,
+          sku: result.sku
+        };
+      }
+
+      // Build standardized thermal receipt data
+      const receiptData: ThermalReceiptData = {
+        id: result.transactionId,
+        receiptNumber: result.receiptNumber,
+        timestamp: result.createdAt,
+        cashierName: cashier,
+        pricingMode: this.state.pricingMode,
+        subtotal: totals.subtotal,
+        discountType: payload.discountType,
+        discountRate: totals.discountRate,
+        discountAmount: totals.discountAmount,
+        totalDue: totals.total,
+        cashTendered: tendered,
+        changeDue: change,
+        paymentMethod,
+        items: this.state.items.map((item, idx) => ({
+          id: `item-${idx}`,
+          itemType: item.type,
+          skuOrCode: item.type === 'part' ? item.sku : item.code,
+          name: item.name,
+          unitPrice: item.price,
+          quantity: item.qty,
+          subtotal: item.price * item.qty,
+          shelfLocation: item.type === 'part' ? item.location : null,
+          bay: item.type === 'service' ? item.bay : null,
+          duration: item.type === 'service' ? (item as ServiceCartItem).duration || '15m' : undefined
+        }))
+      };
+
+      // Clear active cart upon successful transaction and open receipt modal
+      this.updateState({
+        items: [],
+        discountRate: 0,
+        isProcessingCheckout: false,
+        isReceiptModalOpen: true,
+        activeReceiptData: receiptData,
+        lastCheckoutError: null
+      });
+
+      // Broadcast local event for realtime UI listeners
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('swift:pos:checkout', {
+            detail: {
+              totalDue: totals.total,
+              receiptNumber: result.receiptNumber,
+              transactionId: result.transactionId
+            }
+          })
+        );
+      }
+
+      return {
+        success: true,
+        receiptNumber: result.receiptNumber,
+        transactionId: result.transactionId,
+        receiptData
+      };
+
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown checkout error';
+      this.updateState({
+        isProcessingCheckout: false,
+        lastCheckoutError: errorMsg
+      });
+      return { success: false, error: errorMsg };
+    }
   };
 }
 
@@ -341,6 +472,8 @@ export function useCartStore(): CartStoreState & {
   setPricingMode: typeof cartStore.setPricingMode;
   setDiscountRate: typeof cartStore.setDiscountRate;
   checkout: typeof cartStore.checkout;
+  openReceiptModal: typeof cartStore.openReceiptModal;
+  closeReceiptModal: typeof cartStore.closeReceiptModal;
 } {
   const state = useSyncExternalStore(
     cartStore.subscribe,
@@ -357,6 +490,9 @@ export function useCartStore(): CartStoreState & {
     clearCart: cartStore.clearCart,
     setPricingMode: cartStore.setPricingMode,
     setDiscountRate: cartStore.setDiscountRate,
-    checkout: cartStore.checkout
+    checkout: cartStore.checkout,
+    openReceiptModal: cartStore.openReceiptModal,
+    closeReceiptModal: cartStore.closeReceiptModal
   };
 }
+
