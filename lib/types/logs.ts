@@ -24,4 +24,69 @@ export interface PunchLog {
   timeOut: string;
   duration: string;
   status: 'On Shift' | 'Completed' | 'Break' | string;
+  terminal?: string;
+}
+
+/** Raw database row shape for the public.staff_shifts table (SIAA-60). */
+export interface DbStaffShift {
+  id: string;
+  profile_id: string;
+  staff_name: string;
+  terminal_id: string;
+  clock_in: string; // ISO 8601 UTC
+  clock_out: string | null;
+  duration_seconds: number | null;
+  status: 'on_shift' | 'break' | 'completed';
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const STATUS_LABELS: Record<DbStaffShift['status'], string> = {
+  on_shift: 'On Shift',
+  break: 'Break',
+  completed: 'Completed',
+};
+
+const ACTIVE_PLACEHOLDER = '—';
+
+/** Formats an ISO 8601 timestamp as a YYYY-MM-DD date (UTC). */
+function formatShiftDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return ACTIVE_PLACEHOLDER;
+  return date.toISOString().slice(0, 10);
+}
+
+/** Formats an ISO 8601 timestamp as HH:mm wall-clock time (UTC). */
+function formatClockTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return ACTIVE_PLACEHOLDER;
+  return date.toISOString().slice(11, 16);
+}
+
+/** Formats a shift duration in seconds as "HHh MMm"; null or zero renders the placeholder. */
+function formatShiftDuration(seconds: number | null): string {
+  if (seconds === null || seconds <= 0) return ACTIVE_PLACEHOLDER;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`;
+}
+
+/**
+ * Translates a raw public.staff_shifts row into the UI PunchLog display item.
+ * Total function: defined for every DbStaffShift value and never throws.
+ */
+export function mapStaffShiftRow(row: DbStaffShift): PunchLog {
+  const hasClockedOut = row.clock_out !== null && row.clock_out !== undefined;
+
+  return {
+    id: row.id,
+    date: formatShiftDate(row.clock_in),
+    staff: row.staff_name,
+    timeIn: formatClockTime(row.clock_in),
+    timeOut: hasClockedOut ? formatClockTime(row.clock_out as string) : ACTIVE_PLACEHOLDER,
+    duration: formatShiftDuration(row.duration_seconds),
+    status: STATUS_LABELS[row.status] ?? row.status,
+    terminal: row.terminal_id,
+  };
 }
