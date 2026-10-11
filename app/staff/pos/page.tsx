@@ -7,6 +7,8 @@ import { Product } from "@/lib/types/product";
 import { StockBadge } from "@/components/inventory/stock-badge";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
+import { getLaborServicesAction } from "@/lib/pos/actions";
+import type { LaborService } from "@/lib/types/service";
 
 interface PosCartItem {
   product: Product;
@@ -14,47 +16,28 @@ interface PosCartItem {
   isOverridden?: boolean;
 }
 
-const LABOR_SERVICES: Product[] = [
-  {
-    sku: "SRV-OIL-01",
-    name: "Standard Bay Oil Change Labor",
-    category: "SERVICES",
-    stock: 999,
-    minThreshold: 0,
-    location: "Service Bay 1",
-    cost: 50,
-    wholesale: 120,
-    retail: 150,
-    oem: false,
-    model: "Universal",
-    brand: "Swift Workshop"
-  },
-  {
-    sku: "SRV-TIRE-02",
-    name: "Tire Vulcanizing & Wheel Balancing",
-    category: "SERVICES",
-    stock: 999,
-    minThreshold: 0,
-    location: "Service Bay 2",
-    cost: 60,
-    wholesale: 160,
-    retail: 200,
-    oem: false,
-    model: "Universal",
-    brand: "Swift Workshop"
-  }
-];
-
 export default function StaffPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
+  const [laborServices, setLaborServices] = useState<LaborService[]>([]);
 
   useEffect(() => {
     let isMounted = true;
-    getProductsAction().then((fetched) => {
-      if (isMounted && fetched.length > 0) {
-        hydrateProducts(fetched);
-      }
-    });
+    getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch(() => {});
+
+    getLaborServicesAction()
+      .then((services) => {
+        if (isMounted && services.length > 0) {
+          setLaborServices(services);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -73,10 +56,29 @@ export default function StaffPosPage() {
   const [pendingOverrideProduct, setPendingOverrideProduct] = useState<Product | null>(null);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
 
-  // Combine store products with labor services
+  // Map labor services to Product shape for unified POS catalog rendering
+  const mappedLaborServices = useMemo<Product[]>(() => {
+    return laborServices.map((srv) => ({
+      sku: srv.code,
+      name: srv.name,
+      category: "SERVICES",
+      stock: 999,
+      minThreshold: 0,
+      location: srv.bay,
+      cost: srv.rate * 0.5,
+      wholesale: srv.rate,
+      retail: srv.rate,
+      oem: false,
+      model: srv.duration,
+      brand: "Swift Workshop",
+      description: srv.description
+    }));
+  }, [laborServices]);
+
+  // Combine store products with dynamically hydrated labor services
   const allPosItems = useMemo(() => {
-    return [...products, ...LABOR_SERVICES];
-  }, [products]);
+    return [...products, ...mappedLaborServices];
+  }, [products, mappedLaborServices]);
 
   // Dynamic categories
   const categories = useMemo(() => {
@@ -345,9 +347,16 @@ export default function StaffPosPage() {
                       {!isService ? (
                         <StockBadge stock={item.stock} minThreshold={item.minThreshold} compact />
                       ) : (
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-light text-primary border border-primary/20">
-                          Workshop Service
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-light text-primary border border-primary/20">
+                            Workshop Service
+                          </span>
+                          {item.model && (
+                            <span className="text-[10px] text-text-muted font-medium">
+                              Est: {item.model}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

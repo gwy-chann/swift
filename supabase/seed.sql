@@ -165,3 +165,30 @@ VALUES
     ('MIC-PILOT-ST', 'Michelin Pilot Street 2 (110/80-14)', 'Tires', 'Michelin', 'Honda ADV 160', 1450, 1850, 2150, 6, 4, 'Tire Rack 2 / Floor', false)
 ON CONFLICT (sku) DO NOTHING;
 
+-- 5. Seed Canonical Workshop Labor Services (6 Baseline Services)
+-- Matching mockup/app.js & lib/mock-data/services.ts
+INSERT INTO public.labor_services (
+    code,
+    name,
+    bay,
+    rate,
+    duration,
+    description,
+    active
+)
+VALUES
+    ('SRV-OIL-01', 'Standard Oil & Gear Oil Change', 'Bay 1 / Quick Bay', 100.00, '15 mins', 'Includes engine oil drain and refill, final drive gear oil top-up, and waste disposal.', true),
+    ('SRV-CVT-01', 'CVT Cleaning & Regreasing', 'Bay 2 / Scooter Bay', 350.00, '45 mins', 'Variator, clutch bell, torque drive degreasing, roller weight inspection, and high-temp regreasing.', true),
+    ('SRV-TIRE-01', 'Tubeless Tire Mounting & Bead Sealing', 'Bay 1 / Quick Bay', 150.00, '20 mins', 'Pneumatic machine dismounting, rim bead cleaning, sealant application, and high-pressure inflation.', true),
+    ('SRV-BRK-01', 'Brake Caliper Flush & Bleeding', 'Bay 3 / Mechanical Bay', 250.00, '30 mins', 'DOT 4 hydraulic fluid flush, piston slide lubrication, and vacuum air purge.', true),
+    ('SRV-TUNE-01', 'Full FI Throttle Body Cleaning & Reset', 'Bay 3 / Mechanical Bay', 650.00, '60 mins', 'Ultrasonic injector spray cleaning, throttle body carbon removal, and TPS / IACV calibration.', true),
+    ('SRV-FORK-01', 'Front Shock Re-oil & Seal Replacement', 'Bay 4 / Heavy Repair', 800.00, '90 mins', 'Telescopic fork disassembly, inner tube polishing, dual oil seal replacement, and 10W fork oil calibration.', true)
+ON CONFLICT (code) DO UPDATE
+SET name = EXCLUDED.name,
+    bay = EXCLUDED.bay,
+    rate = EXCLUDED.rate,
+    duration = EXCLUDED.duration,
+    description = EXCLUDED.description,
+    active = EXCLUDED.active,
+    updated_at = timezone('utc'::text, now());
+
