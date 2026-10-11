@@ -2,12 +2,13 @@
 
 import { useSyncExternalStore } from 'react';
 import { Product } from '@/lib/types/product';
-import { StockAdjustmentLog } from '@/lib/types/logs';
-import { MOCK_PRODUCTS, MOCK_STOCK_ADJUSTMENT_LOGS } from '@/lib/mock-data';
+import { StockAdjustmentLog, AuditLog } from '@/lib/types/logs';
+import { MOCK_PRODUCTS, MOCK_STOCK_ADJUSTMENT_LOGS, MOCK_AUDIT_LOGS } from '@/lib/mock-data';
 
 export interface InventoryStoreState {
   products: Product[];
   adjustmentLogs: StockAdjustmentLog[];
+  auditLogs: AuditLog[];
 }
 
 export class InventoryStore {
@@ -17,7 +18,8 @@ export class InventoryStore {
   constructor() {
     this.state = {
       products: [...MOCK_PRODUCTS.map((p) => ({ ...p }))],
-      adjustmentLogs: [...MOCK_STOCK_ADJUSTMENT_LOGS]
+      adjustmentLogs: [...MOCK_STOCK_ADJUSTMENT_LOGS],
+      auditLogs: [...MOCK_AUDIT_LOGS]
     };
   }
 
@@ -129,6 +131,68 @@ export class InventoryStore {
     };
     this.notify();
   };
+
+  public registerProduct = (params: {
+    product: Product;
+    user?: string;
+  }): { success: boolean; error?: string } => {
+    const { product, user = 'Carlos Rodriguez (Admin)' } = params;
+    const normalizedSku = product.sku.trim().toUpperCase();
+
+    // Guard against case-insensitive duplicate SKU collision
+    if (this.state.products.some((p) => p.sku.trim().toUpperCase() === normalizedSku)) {
+      return {
+        success: false,
+        error: `SKU "${normalizedSku}" already exists in the inventory.`
+      };
+    }
+
+    const newProduct: Product = {
+      ...product,
+      sku: normalizedSku
+    };
+
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const randomSuffix = typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? (crypto.getRandomValues(new Uint16Array(1))[0] % 9000) + 1000
+      : (Date.now() % 9000) + 1000;
+
+    // Dual Audit Logging: 1. Inbound Stock Adjustment (if stock > 0)
+    let updatedAdjustmentLogs = this.state.adjustmentLogs;
+    if (newProduct.stock > 0) {
+      const newAdjLog: StockAdjustmentLog = {
+        id: `ADJ-${randomSuffix}`,
+        timestamp: formattedDate,
+        sku: newProduct.sku,
+        type: 'Restock Inbound',
+        change: `+${newProduct.stock} Unit${newProduct.stock === 1 ? '' : 's'}`,
+        reason: 'New product master registration',
+        user
+      };
+      updatedAdjustmentLogs = [newAdjLog, ...this.state.adjustmentLogs];
+    }
+
+    // Dual Audit Logging: 2. Administrative Action Log
+    const newAuditLog: AuditLog = {
+      id: `AUD-${randomSuffix}`,
+      timestamp: formattedDate,
+      user: user.replace(' (Admin)', ''),
+      action: `Created new inventory product SKU: ${newProduct.sku} (${newProduct.name})`,
+      ip: '192.168.1.100 (Admin PC)'
+    };
+
+    this.state = {
+      ...this.state,
+      products: [newProduct, ...this.state.products],
+      adjustmentLogs: updatedAdjustmentLogs,
+      auditLogs: [newAuditLog, ...(this.state.auditLogs || [])]
+    };
+    this.notify();
+
+    return { success: true };
+  };
 }
 
 export const inventoryStore = new InventoryStore();
@@ -140,6 +204,7 @@ export function useInventoryStore(): InventoryStoreState & {
   searchProducts: typeof inventoryStore.searchProducts;
   decrementStock: typeof inventoryStore.decrementStock;
   adjustStock: typeof inventoryStore.adjustStock;
+  registerProduct: typeof inventoryStore.registerProduct;
 } {
   const state = useSyncExternalStore(
     inventoryStore.subscribe,
@@ -154,6 +219,7 @@ export function useInventoryStore(): InventoryStoreState & {
     filterByCategory: inventoryStore.filterByCategory,
     searchProducts: inventoryStore.searchProducts,
     decrementStock: inventoryStore.decrementStock,
-    adjustStock: inventoryStore.adjustStock
+    adjustStock: inventoryStore.adjustStock,
+    registerProduct: inventoryStore.registerProduct
   };
 }

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, X, Filter, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Search, X, Filter, RotateCcw, AlertTriangle, Plus } from 'lucide-react';
 import { StockFilterOption } from '@/lib/inventory/catalog-filter';
 
 interface CatalogFilterBarProps {
@@ -16,6 +15,7 @@ interface CatalogFilterBarProps {
   onResetFilters: () => void;
   totalCount: number;
   filteredCount: number;
+  onAddPart?: () => void;
 }
 
 export function CatalogFilterBar({
@@ -31,7 +31,8 @@ export function CatalogFilterBar({
   criticalLowStockCount,
   onResetFilters,
   totalCount,
-  filteredCount
+  filteredCount,
+  onAddPart
 }: CatalogFilterBarProps) {
   const isFiltered =
     searchQuery.trim().length > 0 ||
@@ -151,6 +152,19 @@ export function CatalogFilterBar({
             {filteredCount} of {totalCount} parts
           </span>
         </div>
+
+        {/* Add New Part Trigger */}
+        {onAddPart && (
+          <button
+            type="button"
+            onClick={onAddPart}
+            aria-label="Add new part to catalog"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-md bg-primary hover:bg-primary-hover text-text-light shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Part</span>
+          </button>
+        )}
       </div>
     </div>
   );
