@@ -10,8 +10,8 @@
 
 **Purpose**: Project database migration directory initialization and TypeScript domain types baseline.
 
-- [ ] T001 Ensure Supabase configuration and migration directory structure exist in `supabase/config.toml`
-- [ ] T002 [P] Update domain product types and interfaces to support database timestamps and ID in `lib/types/product.ts`
+- [X] T001 Ensure Supabase configuration and migration directory structure exist in `supabase/config.toml`
+- [X] T002 [P] Update domain product types and interfaces to support database timestamps and ID in `lib/types/product.ts`
 
 ---
 
@@ -21,8 +21,8 @@
 
 **⚠️ CRITICAL**: No user story tasks can begin until this foundational schema phase is complete.
 
-- [ ] T003 Create core database migration file establishing `public.products` table with UUID primary key and column constraints in `supabase/migrations/20261010000000_inventory_products.sql`
-- [ ] T004 [P] Implement automated timestamp trigger function `update_products_updated_at()` and bind `BEFORE UPDATE` trigger on `public.products` in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T003 Create core database migration file establishing `public.products` table with UUID primary key and column constraints in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T004 [P] Implement automated timestamp trigger function `update_products_updated_at()` and bind `BEFORE UPDATE` trigger on `public.products` in `supabase/migrations/20261010000000_inventory_products.sql`
 
 **Checkpoint**: Core database schema and automatic timestamp triggers ready — user story implementation can proceed.
 
@@ -36,8 +36,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Define B-tree indexes (`idx_products_sku`, `idx_products_category`, `idx_products_brand`, `idx_products_model`, `idx_products_location`) in `supabase/migrations/20261010000000_inventory_products.sql`
-- [ ] T006 [US1] Add table check constraints for non-negative values (`cost >= 0`, `wholesale >= 0`, `retail >= 0`, `stock >= 0`, `min_threshold >= 0`) in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T005 [US1] Define B-tree indexes (`idx_products_sku`, `idx_products_category`, `idx_products_brand`, `idx_products_model`, `idx_products_location`) in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T006 [US1] Add table check constraints for non-negative values (`cost >= 0`, `wholesale >= 0`, `retail >= 0`, `stock >= 0`, `min_threshold >= 0`) in `supabase/migrations/20261010000000_inventory_products.sql`
 
 **Checkpoint**: Database schema and B-tree indexes are established idempotently and testable independently.
 
@@ -51,8 +51,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Implement idempotent seed script for the 12 canonical motorcycle parts using `INSERT INTO public.products ... ON CONFLICT (sku) DO NOTHING` in `supabase/seed.sql`
-- [ ] T008 [P] [US2] Verify attribute fidelity (shelf locators, prices, fitment models) for all 12 seed parts against `mockup/app.js` in `supabase/seed.sql`
+- [X] T007 [US2] Implement idempotent seed script for the 12 canonical motorcycle parts using `INSERT INTO public.products ... ON CONFLICT (sku) DO NOTHING` in `supabase/seed.sql`
+- [X] T008 [P] [US2] Verify attribute fidelity (shelf locators, prices, fitment models) for all 12 seed parts against `mockup/app.js` in `supabase/seed.sql`
 
 **Checkpoint**: Canonical motorcycle parts exist with exact shelf locators and can be queried immediately.
 
@@ -66,9 +66,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Enable Row-Level Security on `public.products` in `supabase/migrations/20261010000000_inventory_products.sql`
-- [ ] T010 [P] [US3] Configure public SELECT read policy (`Allow public read access on products`) in `supabase/migrations/20261010000000_inventory_products.sql`
-- [ ] T011 [US3] Configure admin-only ALL policy (`Allow admin full access on products`) using scalar subquery on `public.profiles` in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T009 [US3] Enable Row-Level Security on `public.products` in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T010 [P] [US3] Configure public SELECT read policy (`Allow public read access on products`) in `supabase/migrations/20261010000000_inventory_products.sql`
+- [X] T011 [US3] Configure admin-only ALL policy (`Allow admin full access on products`) using scalar subquery on `public.profiles` in `supabase/migrations/20261010000000_inventory_products.sql`
 
 **Checkpoint**: RLS policies enforce public read and protect parts costs and SKUs from non-admin modification.
 
@@ -82,12 +82,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T012 [P] [US4] Add `Product` model to `prisma/schema.prisma` mapped to `public.products` with indexes and snake_case column mapping in `prisma/schema.prisma`
-- [ ] T013 [US4] Run Prisma schema validation (`npx prisma validate`) and generate updated client types (`npx prisma generate`) in `prisma/schema.prisma`
-- [ ] T014 [US4] Implement `getProductsAction()` server action querying catalog items with mock fallback in `lib/admin/product-actions.ts`
-- [ ] T015 [US4] Implement `hydrateProducts()` method in `InventoryStore` to initialize client state from server payload in `lib/store/inventory-store.ts`
-- [ ] T016 [US4] Update `app/admin/inventory/page.tsx` to pre-fetch products on server and pass `initialProducts` to `<InventoryCatalog />`
-- [ ] T017 [US4] Update `<InventoryCatalog />` in `components/admin/inventory/inventory-catalog.tsx` to accept `initialProducts` and hydrate `InventoryStore` on mount
+- [X] T012 [P] [US4] Add `Product` model to `prisma/schema.prisma` mapped to `public.products` with indexes and snake_case column mapping in `prisma/schema.prisma`
+- [X] T013 [US4] Run Prisma schema validation (`npx prisma validate`) and generate updated client types (`npx prisma generate`) in `prisma/schema.prisma`
+- [X] T014 [US4] Implement `getProductsAction()` server action querying catalog items with mock fallback in `lib/admin/product-actions.ts`
+- [X] T015 [US4] Implement `hydrateProducts()` method in `InventoryStore` to initialize client state from server payload in `lib/store/inventory-store.ts`
+- [X] T016 [US4] Update `app/admin/inventory/page.tsx` to pre-fetch products on server and pass `initialProducts` to `<InventoryCatalog />`
+- [X] T017 [US4] Update `<InventoryCatalog />` in `components/admin/inventory/inventory-catalog.tsx` to accept `initialProducts` and hydrate `InventoryStore` on mount
 
 **Checkpoint**: Prisma ORM schema aligns 1:1 with database, and Admin Inventory page hydrates with pre-fetched server catalog data.
 
@@ -97,9 +97,9 @@
 
 **Purpose**: Verification, linting, and end-to-end integration across all stories.
 
-- [ ] T018 [P] Verify documentation links and verification commands in `specs/012-parts-catalog-schema-seed/quickstart.md`
-- [ ] T019 Run TypeScript type verification (`npx tsc --noEmit`) to verify 0 type errors across all updated components
-- [ ] T020 Run linting (`npm run lint`) to ensure zero formatting or static analysis regressions
+- [X] T018 [P] Verify documentation links and verification commands in `specs/012-parts-catalog-schema-seed/quickstart.md`
+- [X] T019 Run TypeScript type verification (`npx tsc --noEmit`) to verify 0 type errors across all updated components
+- [X] T020 Run linting (`npm run lint`) to ensure zero formatting or static analysis regressions
 
 ---
 
