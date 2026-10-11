@@ -17,7 +17,7 @@
 ### T1 — SQL Migration: `staff_shifts` Table, Constraints, Indexes & RLS 🔴→🟢
 
 - **Depends on**: none
-- **Files**: `supabase/migrations/20261011000000_staff_shifts.sql` (new)
+- **Files**: `supabase/migrations/20261015000000_staff_shifts.sql` (new)
 - **Deliverable**:
   - `CREATE TABLE IF NOT EXISTS public.staff_shifts` with all 11 columns and correct types/defaults/nullability
   - `profile_id` FK → `public.profiles(id)` `ON DELETE CASCADE`
@@ -45,7 +45,7 @@
 - **Depends on**: none (pure TS, no DB)
 - **Files**: `lib/pos/__tests__/staff-shift-mapper.test.ts` (new)
 - **Deliverable**: `node:test` suite covering:
-  - `status` normalization: `on_shift` → `On Shift`, `break` → `On Break`, `completed` → `Completed`
+  - `status` normalization: `on_shift` → `On Shift`, `break` → `Break`, `completed` → `Completed`
   - `clock_out === null` → `timeOut` renders `"—"` and duration placeholder
   - `duration_seconds = 32340` → `"08h 59m"`
   - `duration_seconds = null` / `0` → `"—"`
