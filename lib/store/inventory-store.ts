@@ -242,6 +242,67 @@ export class InventoryStore {
     };
     this.notify();
   };
+
+  /**
+   * Updates an existing product in the store reactively.
+   * If product is not found by SKU, appends it as an upsert.
+   * Notifies all store listeners to trigger instant re-renders in CatalogTable and InventoryStatsCards.
+   *
+   * @param partialProduct Partial or complete product updates containing sku
+   * @returns The updated product
+   */
+  public updateProduct = (
+    partialProduct: Partial<Product> & { sku: string }
+  ): Product | undefined => {
+    if (!partialProduct || !partialProduct.sku) return undefined;
+    const normalizedSku = partialProduct.sku.trim().toUpperCase();
+
+    let updatedTarget: Product | undefined;
+    const existingIndex = this.state.products.findIndex(
+      (p) => p.sku.trim().toUpperCase() === normalizedSku
+    );
+
+    let updatedProducts: Product[];
+
+    if (existingIndex >= 0) {
+      const current = this.state.products[existingIndex];
+      updatedTarget = {
+        ...current,
+        ...partialProduct,
+        sku: normalizedSku
+      };
+      updatedProducts = [
+        ...this.state.products.slice(0, existingIndex),
+        updatedTarget,
+        ...this.state.products.slice(existingIndex + 1)
+      ];
+    } else {
+      updatedTarget = {
+        name: partialProduct.name || normalizedSku,
+        category: partialProduct.category || 'Accessories',
+        stock: partialProduct.stock ?? 0,
+        minThreshold: partialProduct.minThreshold ?? 0,
+        location: partialProduct.location || '',
+        cost: partialProduct.cost ?? 0,
+        wholesale: partialProduct.wholesale ?? 0,
+        retail: partialProduct.retail ?? 0,
+        oem: Boolean(partialProduct.oem),
+        model: partialProduct.model || 'Universal',
+        brand: partialProduct.brand || 'Aftermarket',
+        ...partialProduct,
+        sku: normalizedSku
+      };
+      updatedProducts = [updatedTarget, ...this.state.products];
+    }
+
+    this.state = {
+      ...this.state,
+      products: updatedProducts
+    };
+    this.notify();
+
+    return updatedTarget;
+  };
 }
 
 export const inventoryStore = new InventoryStore();
@@ -256,6 +317,7 @@ export function useInventoryStore(): InventoryStoreState & {
   rollbackStock: typeof inventoryStore.rollbackStock;
   registerProduct: typeof inventoryStore.registerProduct;
   hydrateProducts: typeof inventoryStore.hydrateProducts;
+  updateProduct: typeof inventoryStore.updateProduct;
 } {
   const state = useSyncExternalStore(
     inventoryStore.subscribe,
@@ -273,6 +335,7 @@ export function useInventoryStore(): InventoryStoreState & {
     adjustStock: inventoryStore.adjustStock,
     rollbackStock: inventoryStore.rollbackStock,
     registerProduct: inventoryStore.registerProduct,
-    hydrateProducts: inventoryStore.hydrateProducts
+    hydrateProducts: inventoryStore.hydrateProducts,
+    updateProduct: inventoryStore.updateProduct
   };
 }
