@@ -37,5 +37,5 @@
 - [x] **TASK-52.12**: Run `npm run typecheck`, `npm run lint`, and `npm test` inside `.worktrees/SIAA-52`.
 
 ## Phase 7: Atomic Commits & Pull Request
-- [ ] **TASK-52.13**: Apply atomic commits according to `.agents/rules/atomic-commit.md`.
-- [ ] **TASK-52.14**: Trigger Graphify auto-sync and synthesize Pull Request via `gh pr create`.
+- [x] **TASK-52.13**: Apply atomic commits according to `.agents/rules/atomic-commit.md`.
+- [x] **TASK-52.14**: Trigger Graphify auto-sync and synthesize Pull Request via `gh pr create`.
