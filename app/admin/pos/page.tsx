@@ -1,23 +1,35 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
-import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
-import { getLaborServicesAction } from "@/lib/pos/actions";
+import { getProductsAction } from "@/lib/admin/product-actions";
+import { getLaborServicesAction, processCheckoutAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
+import type { CheckoutPayload } from "@/lib/types/transaction";
 
 export default function AdminPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
-  const { items, addPart, addService, clearCart } = useCartStore();
+  const { items, pricingMode, totals, addPart, addService, clearCart } = useCartStore();
   const [laborServices, setLaborServices] = useState<LaborService[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const showToast = useCallback((type: "success" | "error", text: string) => {
+    setToastMessage({ type, text });
+    setTimeout(() => {
+      setToastMessage((prev) => (prev?.text === text ? null : prev));
+    }, 5000);
+  }, []);
 
   // Manager override modal state
   const [pendingOverrideProduct, setPendingOverrideProduct] = useState<Product | null>(null);
@@ -118,32 +130,65 @@ export default function AdminPosPage() {
     setIsProcessing(true);
 
     try {
-      // Execute atomic stock deduction in Supabase for physical catalog parts sold
-      for (const item of items) {
-        if (item.type === "part" && item.sku) {
-          await adjustProductStockAction({
-            sku: item.sku,
-            type: "Sale Outbound",
-            delta: -item.qty,
-            reason: "Admin POS hybrid sale checkout",
-            userName: "Admin Cashier"
-          });
-        }
+      const payload: CheckoutPayload = {
+        pricingMode,
+        subtotal: totals.subtotal,
+        discountRate: totals.discountRate,
+        discountAmount: totals.discountAmount,
+        totalDue: totals.total,
+        cashTendered: totals.total,
+        changeDue: 0,
+        paymentMethod: "Cash",
+        cashierName: "Admin Cashier",
+        items: items.map((item) => {
+          if (item.type === "part") {
+            return {
+              itemType: "part" as const,
+              itemSkuOrCode: item.sku,
+              itemName: item.name,
+              unitPrice: item.price,
+              quantity: item.qty,
+              subtotal: item.price * item.qty,
+              shelfLocation: item.location || null,
+              bay: null
+            };
+          }
+          return {
+            itemType: "service" as const,
+            itemSkuOrCode: item.code,
+            itemName: item.name,
+            unitPrice: item.price,
+            quantity: item.qty,
+            subtotal: item.price * item.qty,
+            shelfLocation: null,
+            bay: item.bay || null
+          };
+        })
+
+      };
+
+      const result = await processCheckoutAction(payload);
+
+      if (!result.success) {
+        showToast("error", `Cannot complete checkout: ${result.error || `Insufficient stock for SKU ${result.sku}`}`);
+        setIsProcessing(false);
+        return;
       }
+
+      showToast("success", `Sale completed successfully! Receipt #${result.receiptNumber}`);
+      clearCart();
 
       const updated = await getProductsAction();
       if (updated.length > 0) {
         hydrateProducts(updated);
       }
     } catch (err) {
-      console.error("[Admin POS] Stock adjustment error on sale:", err);
+      console.error("[Admin POS] Checkout error:", err);
+      showToast("error", "Unexpected error occurred during checkout processing.");
     } finally {
-      setTimeout(() => {
-        setIsProcessing(false);
-        clearCart();
-      }, 1200);
+      setIsProcessing(false);
     }
-  }, [items, isProcessing, hydrateProducts, clearCart]);
+  }, [items, isProcessing, pricingMode, totals, showToast, clearCart, hydrateProducts]);
 
   // Keyboard shortcut F12 checkout
   useEffect(() => {
@@ -172,8 +217,36 @@ export default function AdminPosPage() {
         </div>
       </div>
 
+      {/* High-Contrast Toast Notification Banner */}
+      {toastMessage && (
+        <output
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all ${
+            toastMessage.type === "success"
+              ? "bg-success-light text-success border-success/30"
+              : "bg-danger-light text-danger border-danger/30"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {toastMessage.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
+            aria-label="Dismiss toast"
+          >
+            ✕
+          </button>
+        </output>
+      )}
+
       {/* POS Terminal Workspace */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-11rem)]">
+      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-13rem)]">
         {/* Left Pane: Catalog */}
         <HybridCatalogPane
           products={products}
