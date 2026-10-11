@@ -10,7 +10,7 @@
 
 **Purpose**: Define the pure route classification and guard decision contracts in `lib/auth/session-guards.ts`.
 
-- [ ] T001 Implement route classification, session resolution, and access evaluation engine in `lib/auth/session-guards.ts`
+- [X] T001 Implement route classification, session resolution, and access evaluation engine in `lib/auth/session-guards.ts`
 
 ---
 
@@ -18,7 +18,7 @@
 
 **Purpose**: Build unit tests covering the matrix of route categories, roles, and auth states before wiring into middleware.
 
-- [ ] T002 Implement unit tests in `lib/auth/__tests__/session-guards.test.ts` verifying all route guard permutations
+- [X] T002 Implement unit tests in `lib/auth/__tests__/session-guards.test.ts` verifying all route guard permutations
 
 ---
 
@@ -26,8 +26,8 @@
 
 **Purpose**: Wire the guard engine into `lib/supabase/middleware.ts` and `proxy.ts` so requests are intercepted before component rendering.
 
-- [ ] T003 Update `lib/supabase/middleware.ts` to inspect sessions and return redirects according to `evaluateRouteAccess`
-- [ ] T004 Ensure `proxy.ts` executes the enhanced `updateSession` logic across all matching non-static paths
+- [X] T003 Update `lib/supabase/middleware.ts` to inspect sessions and return redirects according to `evaluateRouteAccess`
+- [X] T004 Ensure `proxy.ts` executes the enhanced `updateSession` logic across all matching non-static paths
 
 ---
 
@@ -35,10 +35,10 @@
 
 **Purpose**: Guard page entry points on the server side so direct renders or bypassed proxies still redirect appropriately.
 
-- [ ] T005 Add server-side session check and redirect logic in `app/page.tsx`
-- [ ] T006 Update `app/(auth)/login/page.tsx` with server-side session check and redirect logic
-- [ ] T007 Add server-side role and session check in `app/admin/layout.tsx`
-- [ ] T008 Add server-side session check in `app/staff/layout.tsx`
+- [X] T005 Add server-side session check and redirect logic in `app/page.tsx`
+- [X] T006 Update `app/(auth)/login/page.tsx` with server-side session check and redirect logic
+- [X] T007 Add server-side role and session check in `app/admin/layout.tsx`
+- [X] T008 Add server-side session check in `app/staff/layout.tsx`
 
 ---
 
@@ -46,6 +46,6 @@
 
 **Purpose**: Verify all tests pass, TypeScript compiles with zero errors, and linting passes cleanly.
 
-- [ ] T009 Execute `npm test` to verify zero regressions and all new guard tests passing
-- [ ] T010 Run `npx tsc --noEmit` to verify type safety
-- [ ] T011 Run `npm run lint` to verify coding standards
+- [X] T009 Execute `npm test` to verify zero regressions and all new guard tests passing
+- [X] T010 Run `npx tsc --noEmit` to verify type safety
+- [X] T011 Run `npm run lint` to verify coding standards
