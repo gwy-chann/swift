@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useInventoryStore } from '@/lib/store/inventory-store';
 import {
   filterCatalogProducts,
@@ -14,9 +15,10 @@ import { CatalogFilterBar } from './catalog-filter-bar';
 import { CatalogTable } from './catalog-table';
 import { CatalogEmptyState } from './catalog-empty-state';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
+import { ProductRegistrationModal } from './product-registration-modal';
 
 export function InventoryCatalog() {
-  const { products, adjustStock } = useInventoryStore();
+  const { products, adjustStock, registerProduct } = useInventoryStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -24,6 +26,11 @@ export function InventoryCatalog() {
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Compute unique categories from current product catalog
   const categories = useMemo(() => {
@@ -86,8 +93,59 @@ export function InventoryCatalog() {
     });
   };
 
+  const handleRegisterProduct = (newProduct: Product) => {
+    const res = registerProduct({
+      product: newProduct,
+      user: 'Carlos Rodriguez (Admin)'
+    });
+
+    if (res.success) {
+      setToastMessage({
+        type: 'success',
+        text: `Product "${newProduct.name}" (${newProduct.sku}) registered successfully!`
+      });
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 5000);
+    } else {
+      setToastMessage({
+        type: 'error',
+        text: res.error || 'Failed to register product.'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div
+          role="status"
+          className={`p-3.5 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all animate-fadeIn ${
+            toastMessage.type === 'success'
+              ? 'bg-success-light text-success border-success/30'
+              : 'bg-danger-light text-danger border-danger/30'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {toastMessage.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity"
+            aria-label="Dismiss toast"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 4 Summary KPI Cards */}
       <InventoryStatsCards stats={stats} />
 
@@ -106,6 +164,7 @@ export function InventoryCatalog() {
         onResetFilters={handleResetFilters}
         totalCount={products.length}
         filteredCount={filteredProducts.length}
+        onAddPart={() => setIsAddProductModalOpen(true)}
       />
 
       {/* Catalog Grid Table or Empty State */}
@@ -130,6 +189,14 @@ export function InventoryCatalog() {
           setAdjustingProduct(null);
         }}
         onSubmit={handleConfirmAdjustment}
+      />
+
+      {/* New Product Registration Modal */}
+      <ProductRegistrationModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => setIsAddProductModalOpen(false)}
+        onSubmit={handleRegisterProduct}
+        existingSkus={products.map((p) => p.sku)}
       />
     </div>
   );
