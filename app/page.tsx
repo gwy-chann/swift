@@ -1,15 +1,23 @@
 import React from "react";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wrench } from "lucide-react";
+import { getServerSession, evaluateRouteAccess } from "@/lib/auth/session-guards";
 
 export const metadata: Metadata = {
   title: "SWIFT - Authentication Hub",
   description: "Role-Based Authentication Hub & Portal Login Switcher for SWIFT Workshop Management System",
 };
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession();
+  const decision = evaluateRouteAccess("/", session);
+  if (decision.action === "REDIRECT" && decision.destination) {
+    redirect(decision.destination);
+  }
+
   return (
     <main className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-4 sm:p-6 select-none relative">
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
