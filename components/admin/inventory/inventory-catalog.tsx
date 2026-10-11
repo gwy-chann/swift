@@ -17,8 +17,19 @@ import { CatalogEmptyState } from './catalog-empty-state';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
 
-export function InventoryCatalog() {
-  const { products, adjustStock, registerProduct } = useInventoryStore();
+export interface InventoryCatalogProps {
+  initialProducts?: Product[];
+}
+
+export function InventoryCatalog({ initialProducts }: InventoryCatalogProps = {}) {
+  const { products, adjustStock, registerProduct, hydrateProducts } = useInventoryStore();
+
+  // Hydrate store on mount if server pre-fetched products are provided
+  React.useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      hydrateProducts(initialProducts);
+    }
+  }, [initialProducts, hydrateProducts]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
