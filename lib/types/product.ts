@@ -45,3 +45,29 @@ export interface CompatibilityRule {
   yearRange?: string;
   notes?: string;
 }
+
+export type FitmentType = 'oem' | 'aftermarket' | 'universal';
+
+export interface MotorcycleModelRecord {
+  id: string;
+  make: string;
+  model: string;
+  displacement_cc: number;
+  year_start: number;
+  year_end?: number | null;
+  category: string;
+  image_url?: string | null;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+}
+
+export interface ProductFitmentRecord {
+  id: string;
+  product_id: string;
+  model_id: string;
+  fitment_type: FitmentType;
+  year_range?: string | null;
+  notes?: string | null;
+  created_at?: string | Date;
+}
+

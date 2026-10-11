@@ -748,3 +748,6 @@ export async function createProductAction(
     code: 'DATABASE_ERROR'
   };
 }
+
+export { getMotorcycleModelsAction } from '../actions/motomatcher-actions.ts';
+

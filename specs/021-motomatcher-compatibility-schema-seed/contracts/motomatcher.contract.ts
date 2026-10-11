@@ -1,15 +1,23 @@
 import { z } from "zod";
 
 /**
+ * PostgreSQL compatible 128-bit hex UUID string schema
+ */
+export const UuidSchema = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  "Invalid UUID format"
+);
+
+/**
  * Zod validation schema for MotorcycleModel
  */
 export const MotorcycleModelSchema = z.object({
-  id: z.string().uuid(),
+  id: UuidSchema,
   make: z.string().min(1),
   model: z.string().min(1),
   displacement_cc: z.number().int().positive(),
   year_start: z.number().int().min(1900),
-  year_end: z.number().int().min(1900).nullable(),
+  year_end: z.number().int().min(1900).nullable().optional(),
   category: z.string().min(1),
   image_url: z.string().url().nullable().optional(),
   created_at: z.string().datetime().or(z.date()).optional(),
@@ -25,9 +33,9 @@ export const FitmentTypeSchema = z.enum(["oem", "aftermarket", "universal"]);
 export type FitmentType = z.infer<typeof FitmentTypeSchema>;
 
 export const ProductFitmentSchema = z.object({
-  id: z.string().uuid(),
-  product_id: z.string().uuid(),
-  model_id: z.string().uuid(),
+  id: UuidSchema,
+  product_id: UuidSchema,
+  model_id: UuidSchema,
   fitment_type: FitmentTypeSchema,
   year_range: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
