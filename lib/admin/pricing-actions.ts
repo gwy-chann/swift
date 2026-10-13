@@ -28,21 +28,6 @@ async function safeRevalidatePaths(): Promise<void> {
 }
 
 /**
- * Pure calculation helper to compute dynamic time-pro-rated workshop labor charge.
- * Formula: round((minutes / 60) * hourlyRate, 2)
- */
-export function calculateProRatedLaborCharge(
-  durationMinutes: number,
-  hourlyRate: number
-): number {
-  if (durationMinutes <= 0 || hourlyRate <= 0) {
-    return 0;
-  }
-  const hours = durationMinutes / 60;
-  return Math.round(hours * hourlyRate * 100) / 100;
-}
-
-/**
  * Server action to retrieve the active shop pricing rules including benchmark hourly labor rate.
  * Queries public.pricing_rules (singleton row id=1) from Supabase with graceful fallback to memory.
  */

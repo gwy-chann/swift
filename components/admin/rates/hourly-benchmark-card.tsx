@@ -10,10 +10,8 @@ import {
   HelpCircle,
   Timer
 } from "lucide-react";
-import {
-  calculateProRatedLaborCharge,
-  updatePricingRulesAction
-} from "@/lib/admin/pricing-actions";
+import { updatePricingRulesAction } from "@/lib/admin/pricing-actions";
+import { calculateProRatedLaborCharge } from "@/lib/admin/pricing-utils";
 
 interface HourlyBenchmarkCardProps {
   initialHourlyRate: number;

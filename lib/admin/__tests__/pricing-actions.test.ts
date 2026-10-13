@@ -2,9 +2,9 @@ import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getPricingRulesAction,
-  updatePricingRulesAction,
-  calculateProRatedLaborCharge
+  updatePricingRulesAction
 } from '../pricing-actions.ts';
+import { calculateProRatedLaborCharge } from '../pricing-utils.ts';
 
 describe('Admin Pricing Rules & Standard Hourly Labor Benchmark (SIAA-40 & SIAA-57)', () => {
   before(async () => {
