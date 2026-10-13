@@ -1,7 +1,7 @@
 import React from "react";
-import { getMotorcycleModelsAction } from "@/lib/actions/motomatcher-actions";
+import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
 import { getProductsAction } from "@/lib/admin/product-actions";
-import { AdminMotoMatcherClient } from "./admin-motomatcher-client";
+import { MotoMatcherContainer } from "./admin-motomatcher-client";
 
 export default async function AdminMotoMatcherPage() {
   const [models, products] = await Promise.all([
@@ -10,7 +10,7 @@ export default async function AdminMotoMatcherPage() {
   ]);
 
   return (
-    <AdminMotoMatcherClient
+    <MotoMatcherContainer
       initialModels={models}
       initialProducts={products}
     />
