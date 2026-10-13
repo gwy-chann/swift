@@ -84,3 +84,35 @@ export function calculateUpsellDelta(
     badge,
   };
 }
+
+/**
+ * Standardized server action envelope for fitment matrix queries.
+ */
+export const FitmentMatrixActionResultSchema = z.object({
+  success: z.boolean(),
+  data: MotoMatcherMatrixPayloadSchema,
+  error: z.string().optional(),
+});
+
+export type FitmentMatrixActionResult = z.infer<typeof FitmentMatrixActionResultSchema>;
+
+/**
+ * Zod schema validating input for creating a new fitment compatibility rule.
+ */
+export const AddFitmentRuleInputSchema = z.object({
+  productId: z.string().min(1, 'Product ID or SKU is required'),
+  modelId: z.string().min(1, 'Motorcycle Model ID is required'),
+  fitmentType: z.enum(['oem', 'aftermarket', 'universal']).optional().default('aftermarket'),
+  yearRange: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export type AddFitmentRuleInput = z.infer<typeof AddFitmentRuleInputSchema>;
+
+export const AddFitmentRuleResultSchema = z.object({
+  success: z.boolean(),
+  ruleId: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type AddFitmentRuleResult = z.infer<typeof AddFitmentRuleResultSchema>;

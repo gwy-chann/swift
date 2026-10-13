@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client'
+type PrismaClientType = any;
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | null | undefined
-}
+  prisma: PrismaClientType | null | undefined
+};
 
-export function getPrismaClient(): PrismaClient | null {
+export function getPrismaClient(): PrismaClientType | null {
   if (globalForPrisma.prisma !== undefined) {
     return globalForPrisma.prisma;
   }
@@ -13,6 +13,10 @@ export function getPrismaClient(): PrismaClient | null {
     return null;
   }
   try {
+    // Lazy resolution to avoid crashing in environments without generated Prisma engine
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pkg = require('@prisma/client');
+    const PrismaClient = pkg?.PrismaClient ?? pkg;
     globalForPrisma.prisma = new PrismaClient();
   } catch {
     globalForPrisma.prisma = null;
@@ -20,7 +24,7 @@ export function getPrismaClient(): PrismaClient | null {
   return globalForPrisma.prisma;
 }
 
-export const prisma = new Proxy({} as PrismaClient, {
+export const prisma = new Proxy({} as PrismaClientType, {
   get(_target, prop) {
     const client = getPrismaClient();
     if (!client) {

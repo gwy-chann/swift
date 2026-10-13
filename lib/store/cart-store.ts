@@ -13,6 +13,7 @@ import type {
   ThermalReceiptData,
   CheckoutPayload
 } from '../types/index.ts';
+import type { MotoMatcherMatrixPart } from '../types/motomatcher.ts';
 import { inventoryStore } from './inventory-store.ts';
 import { processCheckoutAction } from '../pos/actions.ts';
 import {
@@ -81,8 +82,24 @@ class CartStore {
     };
   }
 
-  public getState = (): CartStoreState => {
-    return this.state;
+  public getState = () => {
+    return {
+      ...this.state,
+      addItem: this.addItem,
+      addPart: this.addPart,
+      addService: this.addService,
+      updateQuantity: this.updateQuantity,
+      removeItem: this.removeItem,
+      clearCart: this.clearCart,
+      setPricingMode: this.setPricingMode,
+      setDiscountRate: this.setDiscountRate,
+      setDiscountTier: this.setDiscountTier,
+      checkout: this.checkout,
+      openPaymentModal: this.openPaymentModal,
+      closePaymentModal: this.closePaymentModal,
+      openReceiptModal: this.openReceiptModal,
+      closeReceiptModal: this.closeReceiptModal,
+    };
   };
 
   public subscribe = (listener: () => void): (() => void) => {
@@ -115,6 +132,71 @@ class CartStore {
     this.state = updatedState;
     this.notify();
   }
+
+  public addItem = (
+    item: Product | MotoMatcherMatrixPart | CartItem,
+    qty: number = 1,
+    isOverridden: boolean = false
+  ): { success: boolean; reason?: 'out_of_stock' | 'exceeds_stock' } => {
+    // If item is a ServiceCartItem
+    if ('type' in item && item.type === 'service') {
+      return this.addService(
+        {
+          code: item.code,
+          name: item.name.replace(/^Labor:\s*/, ''),
+          rate: item.price,
+          bay: item.bay || 'General',
+          duration: item.duration || 30
+        },
+        qty
+      );
+    }
+
+    // If item is a MotoMatcherMatrixPart
+    if ('retail_price' in item && 'stock_level' in item) {
+      if (item.stock_level <= 0 && !isOverridden) {
+        return { success: false, reason: 'out_of_stock' };
+      }
+      const partProduct: Product = {
+        sku: item.sku,
+        name: item.name,
+        brand: item.brand,
+        category: item.category,
+        retail: item.retail_price,
+        wholesale: item.retail_price,
+        stock: item.stock_level,
+        minThreshold: item.min_threshold,
+        location: item.shelf_location || '',
+        oem: item.fitment_type === 'oem',
+        model: item.is_universal ? 'Universal' : undefined,
+        description: item.fitment_notes || ''
+      };
+      return this.addPart(partProduct, qty, isOverridden);
+    }
+
+    // If item is a standard Product
+    if ('retail' in item) {
+      return this.addPart(item as Product, qty, isOverridden);
+    }
+
+    // If item is already a PartCartItem
+    if ('sku' in item) {
+      const partProduct: Product = {
+        sku: item.sku,
+        name: item.name,
+        brand: '',
+        category: '',
+        retail: item.retailPrice ?? item.price,
+        wholesale: item.wholesalePrice ?? item.price,
+        stock: item.stock ?? 999,
+        minThreshold: item.minThreshold ?? 0,
+        location: item.location || ''
+      };
+      return this.addPart(partProduct, qty, isOverridden);
+    }
+
+    return { success: false, reason: 'out_of_stock' };
+  };
 
   public addPart = (
     product: Product,
@@ -519,6 +601,7 @@ class CartStore {
 export const cartStore = new CartStore();
 
 export function useCartStore(): CartStoreState & {
+  addItem: typeof cartStore.addItem;
   addPart: typeof cartStore.addPart;
   addService: typeof cartStore.addService;
   updateQuantity: typeof cartStore.updateQuantity;
@@ -541,6 +624,7 @@ export function useCartStore(): CartStoreState & {
 
   return {
     ...state,
+    addItem: cartStore.addItem,
     addPart: cartStore.addPart,
     addService: cartStore.addService,
     updateQuantity: cartStore.updateQuantity,
@@ -556,4 +640,7 @@ export function useCartStore(): CartStoreState & {
     closeReceiptModal: cartStore.closeReceiptModal
   };
 }
+
+useCartStore.getState = cartStore.getState;
+useCartStore.subscribe = cartStore.subscribe;
 
