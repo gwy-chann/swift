@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, PackageOpen, Plus, Check, MapPin, Filter } from "lucide-react";
+import { CheckCircle2, Filter } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
 import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
 import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
+import { ComparisonMatrix } from "@/components/motomatcher/comparison-matrix";
+import {
+  fromProductToComparisonPart,
+  type ComparisonPartItem,
+} from "@/lib/motomatcher/comparison-matrix-contracts";
 import { useCartStore } from "@/lib/store/cart-store";
 
 export default function StaffCompatPage() {
@@ -62,9 +67,9 @@ export default function StaffCompatPage() {
   };
 
   const activeModelDisplay = useMemo(() => {
-    if (isUniversal) return "Universal / Multi-Fit";
-    if (selectedModel) return `${selectedModel.make} ${selectedModel.model}`;
-    return "Universal";
+    if (isUniversal) return "Universal / Multi-Fit Components";
+    if (selectedModel) return `${selectedModel.make} ${selectedModel.model} (${selectedModel.displacement_cc}cc)`;
+    return "No Platform Selected";
   }, [isUniversal, selectedModel]);
 
   const compatibleParts = useMemo(() => {
@@ -95,15 +100,37 @@ export default function StaffCompatPage() {
     });
   }, [products, selectedModel, isUniversal, systemCategory]);
 
-  const handleAddToCart = (product: Product) => {
-    if (product.stock <= 0) return;
-    const res = useCartStore.getState().addItem(product);
-    if (res.success) {
-      setAddedSku(product.sku);
-      const shelfText = product.location ? ` (Shelf: ${product.location})` : "";
-      setToastMessage(`Added ${product.name} to POS Cart${shelfText}`);
-      setTimeout(() => setAddedSku(null), 1800);
-      setTimeout(() => setToastMessage(null), 3500);
+  const { oemComparisonParts, aftermarketComparisonParts } = useMemo(() => {
+    const oem: ComparisonPartItem[] = [];
+    const aftermarket: ComparisonPartItem[] = [];
+
+    for (const p of compatibleParts) {
+      const comp = fromProductToComparisonPart(p);
+      if (comp.isOem) {
+        oem.push(comp);
+      } else {
+        aftermarket.push(comp);
+      }
+    }
+
+    return {
+      oemComparisonParts: oem,
+      aftermarketComparisonParts: aftermarket,
+    };
+  }, [compatibleParts]);
+
+  const handleAddToCart = (item: ComparisonPartItem) => {
+    const raw = item.rawProduct as Product | undefined;
+    if (raw) {
+      if (raw.stock <= 0) return;
+      const res = useCartStore.getState().addItem(raw);
+      if (res.success) {
+        setAddedSku(item.sku);
+        const shelfText = raw.location ? ` (Shelf: ${raw.location})` : "";
+        setToastMessage(`Added ${raw.name} to POS Cart${shelfText}`);
+        setTimeout(() => setAddedSku(null), 1800);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
     }
   };
 
@@ -156,108 +183,38 @@ export default function StaffCompatPage() {
         </div>
       </div>
 
-      {/* Compatible Verified Parts List */}
-      <div className="bg-bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-success" />
-            <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-              Verified Fitment Results for {activeModelDisplay} ({compatibleParts.length} Parts Available)
-            </h4>
-          </div>
-          <span className="text-xs font-bold text-success bg-success-light px-2.5 py-0.5 rounded-full border border-success/20 self-start sm:self-auto">
-            Live Database Verified
+      {/* Verified Fitment Results Summary Banner */}
+      <div className="p-3 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+          <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+            Verified Fitment Results for {activeModelDisplay}
+          </h4>
+        </div>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="font-semibold text-text-secondary">
+            Total Matches: <strong className="text-text-primary font-mono">{compatibleParts.length}</strong>
+          </span>
+          <span className="text-text-muted">•</span>
+          <span className="font-semibold text-primary">
+            OEM: <strong className="font-mono">{oemComparisonParts.length}</strong>
+          </span>
+          <span className="text-text-muted">•</span>
+          <span className="font-semibold text-secondary">
+            Aftermarket: <strong className="font-mono">{aftermarketComparisonParts.length}</strong>
           </span>
         </div>
-
-        {compatibleParts.length > 0 ? (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {compatibleParts.map((part) => (
-              <div
-                key={part.sku}
-                className="p-3.5 bg-bg-card border border-border rounded-xl flex items-center justify-between hover:border-primary transition-all duration-150 shadow-xs"
-              >
-                <div className="space-y-0.5 min-w-0 pr-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-text-muted font-bold">
-                      {part.sku}
-                    </span>
-                    {part.oem ? (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary-light text-primary font-bold">
-                        OEM
-                      </span>
-                    ) : (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-secondary/15 text-secondary font-bold">
-                        AFTERMARKET
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-bold text-text-primary truncate">
-                    {part.name}
-                  </p>
-                  <span className="text-[10px] text-secondary font-semibold flex items-center gap-1">
-                    <MapPin className="w-2.5 h-2.5" />
-                    Shelf: {part.location || "Floor Stock"} • Stock: {part.stock}
-                  </span>
-                </div>
-
-                <div className="text-right shrink-0 space-y-1.5">
-                  <div>
-                    <span className="text-sm font-bold font-mono text-primary block">
-                      ₱{part.retail.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] text-text-muted font-mono block">
-                      Wholesale: ₱{part.wholesale.toFixed(2)}
-                    </span>
-                  </div>
-
-                  {part.stock <= 0 ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="px-2.5 py-1 text-xs font-semibold rounded-lg opacity-50 bg-bg-muted text-text-muted cursor-not-allowed border border-border"
-                    >
-                      Out of Stock
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleAddToCart(part)}
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
-                        addedSku === part.sku
-                          ? "bg-success text-white"
-                          : "bg-primary text-white hover:bg-primary-hover shadow-xs"
-                      }`}
-                    >
-                      {addedSku === part.sku ? (
-                        <>
-                          <Check className="w-3 h-3" />
-                          Added
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3 h-3" />
-                          + Add to Active POS Cart
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 text-center space-y-2">
-            <PackageOpen className="w-8 h-8 text-text-muted mx-auto" />
-            <p className="text-sm font-bold text-text-primary">
-              No Matching Parts in Stock for {activeModelDisplay}
-            </p>
-            <p className="text-xs text-text-muted">
-              Try selecting &quot;All Systems&quot; or check universal inventory.
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* Side-by-Side Dual-Column Comparison Matrix */}
+      <ComparisonMatrix
+        oemParts={oemComparisonParts}
+        aftermarketParts={aftermarketComparisonParts}
+        onAddToCart={handleAddToCart}
+        addedSku={addedSku}
+        emptyOemMessage="No OEM components found for this model in the selected system category."
+        emptyAftermarketMessage="No aftermarket performance parts found for this model in the selected system category."
+      />
 
       {/* Toast Notification Banner */}
       {toastMessage && (
