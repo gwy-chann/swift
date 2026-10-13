@@ -5,15 +5,14 @@ import {
   Search,
   Bike,
   CheckCircle2,
-  PackageOpen,
-  Plus,
-  ShieldCheck,
-  Zap,
-  MapPin,
-  Check,
 } from "lucide-react";
 import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
+import { ComparisonMatrix } from "@/components/motomatcher/comparison-matrix";
+import {
+  fromProductToComparisonPart,
+  type ComparisonPartItem,
+} from "@/lib/motomatcher/comparison-matrix-contracts";
 import { useCartStore } from "@/lib/store/cart-store";
 
 export interface AdminMotoMatcherClientProps {
@@ -68,19 +67,38 @@ export function AdminMotoMatcherClient({
     });
   }, [initialProducts, selectedModel, isUniversal]);
 
-  // Segregate into OEM Standard and Alternative Aftermarket
-  const oemParts = useMemo(() => matchingParts.filter((p) => p.oem), [matchingParts]);
-  const aftermarketParts = useMemo(() => matchingParts.filter((p) => !p.oem), [matchingParts]);
+  // Segregate into OEM Standard and Alternative Aftermarket comparison items
+  const { oemComparisonParts, aftermarketComparisonParts } = useMemo(() => {
+    const oem: ComparisonPartItem[] = [];
+    const aftermarket: ComparisonPartItem[] = [];
 
-  const handleAddToCart = (product: Product) => {
-    if (product.stock <= 0) return;
-    const res = useCartStore.getState().addItem(product);
-    if (res.success) {
-      setAddedSku(product.sku);
-      const shelfText = product.location ? ` (Shelf: ${product.location})` : "";
-      setToastMessage(`Added ${product.name} to POS Cart${shelfText}`);
-      setTimeout(() => setAddedSku(null), 1800);
-      setTimeout(() => setToastMessage(null), 3500);
+    for (const p of matchingParts) {
+      const comp = fromProductToComparisonPart(p);
+      if (comp.isOem) {
+        oem.push(comp);
+      } else {
+        aftermarket.push(comp);
+      }
+    }
+
+    return {
+      oemComparisonParts: oem,
+      aftermarketComparisonParts: aftermarket,
+    };
+  }, [matchingParts]);
+
+  const handleAddToCart = (item: ComparisonPartItem) => {
+    const raw = item.rawProduct as Product | undefined;
+    if (raw) {
+      if (raw.stock <= 0) return;
+      const res = useCartStore.getState().addItem(raw);
+      if (res.success) {
+        setAddedSku(item.sku);
+        const shelfText = raw.location ? ` (Shelf: ${raw.location})` : "";
+        setToastMessage(`Added ${raw.name} to POS Cart${shelfText}`);
+        setTimeout(() => setAddedSku(null), 1800);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
     }
   };
 
@@ -151,241 +169,22 @@ export function AdminMotoMatcherClient({
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-primary">
-            OEM: <strong className="font-mono">{oemParts.length}</strong>
+            OEM: <strong className="font-mono">{oemComparisonParts.length}</strong>
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-secondary">
-            Aftermarket: <strong className="font-mono">{aftermarketParts.length}</strong>
+            Aftermarket: <strong className="font-mono">{aftermarketComparisonParts.length}</strong>
           </span>
         </div>
       </div>
 
       {/* Side-by-Side Matrix Comparison Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Column 1: OEM Standard Replacement */}
-        <div className="space-y-3">
-          <div className="p-3 bg-primary-light border border-primary-border rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-                OEM Standard Replacement ({oemParts.length})
-              </h4>
-            </div>
-            <span className="text-[10px] font-semibold text-primary bg-bg-surface px-2 py-0.5 rounded border border-primary/20">
-              Genuine Factory Specs
-            </span>
-          </div>
-
-          {oemParts.length > 0 ? (
-            <div className="space-y-2.5">
-              {oemParts.map((part) => (
-                <div
-                  key={part.sku}
-                  className="p-3.5 bg-bg-surface border border-border rounded-xl hover:border-primary transition-all duration-150 space-y-2.5 shadow-xs"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold text-text-muted">
-                          {part.sku}
-                        </span>
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-light text-primary">
-                          OEM
-                        </span>
-                      </div>
-                      <h5 className="text-xs font-bold text-text-primary truncate">
-                        {part.name}
-                      </h5>
-                      <div className="flex items-center gap-2 text-[10px] text-text-secondary">
-                        <span>{part.brand}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-2.5 h-2.5 text-text-muted" />
-                          {part.location || "Floor Stock"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-bold font-mono text-primary">
-                        ₱{part.retail.toFixed(2)}
-                      </div>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
-                          part.stock <= part.minThreshold
-                            ? "bg-danger-light text-danger"
-                            : "bg-success-light text-success"
-                        }`}
-                      >
-                        {part.stock} in stock
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-1 flex items-center justify-between border-t border-border-subtle">
-                    <span className="text-[10px] text-text-muted font-mono">
-                      Wholesale: ₱{part.wholesale.toFixed(2)}
-                    </span>
-                    {part.stock <= 0 ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="px-2.5 py-1 text-xs font-semibold rounded-lg opacity-50 bg-bg-muted text-text-muted cursor-not-allowed border border-border"
-                      >
-                        Out of Stock
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(part)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          addedSku === part.sku
-                            ? "bg-success text-white"
-                            : "bg-primary text-white hover:bg-primary-hover shadow-xs"
-                        }`}
-                      >
-                        {addedSku === part.sku ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            Added to Cart
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3 h-3" />
-                            + Add to Active POS Cart
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
-              <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
-              <p className="text-xs font-bold text-text-primary">
-                No OEM matches in stock for this platform
-              </p>
-              <p className="text-[11px] text-text-muted">
-                Check alternative aftermarket parts or consult distributor catalog.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Column 2: Alternative / Performance Aftermarket */}
-        <div className="space-y-3">
-          <div className="p-3 bg-secondary/10 border border-secondary/20 rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-secondary" />
-              <h4 className="text-xs font-bold text-secondary uppercase tracking-wider">
-                Aftermarket & Performance ({aftermarketParts.length})
-              </h4>
-            </div>
-            <span className="text-[10px] font-semibold text-secondary bg-bg-surface px-2 py-0.5 rounded border border-secondary/20">
-              Enhanced Tuning / Value
-            </span>
-          </div>
-
-          {aftermarketParts.length > 0 ? (
-            <div className="space-y-2.5">
-              {aftermarketParts.map((part) => (
-                <div
-                  key={part.sku}
-                  className="p-3.5 bg-bg-surface border border-border rounded-xl hover:border-secondary transition-all duration-150 space-y-2.5 shadow-xs"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold text-text-muted">
-                          {part.sku}
-                        </span>
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-secondary/15 text-secondary">
-                          AFTERMARKET
-                        </span>
-                      </div>
-                      <h5 className="text-xs font-bold text-text-primary truncate">
-                        {part.name}
-                      </h5>
-                      <div className="flex items-center gap-2 text-[10px] text-text-secondary">
-                        <span>{part.brand}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-2.5 h-2.5 text-text-muted" />
-                          {part.location || "Floor Stock"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-bold font-mono text-secondary">
-                        ₱{part.retail.toFixed(2)}
-                      </div>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
-                          part.stock <= part.minThreshold
-                            ? "bg-danger-light text-danger"
-                            : "bg-success-light text-success"
-                        }`}
-                      >
-                        {part.stock} in stock
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-1 flex items-center justify-between border-t border-border-subtle">
-                    <span className="text-[10px] text-text-muted font-mono">
-                      Wholesale: ₱{part.wholesale.toFixed(2)}
-                    </span>
-                    {part.stock <= 0 ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="px-2.5 py-1 text-xs font-semibold rounded-lg opacity-50 bg-bg-muted text-text-muted cursor-not-allowed border border-border"
-                      >
-                        Out of Stock
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(part)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          addedSku === part.sku
-                            ? "bg-success text-white"
-                            : "bg-secondary text-white hover:bg-secondary-hover shadow-xs"
-                        }`}
-                      >
-                        {addedSku === part.sku ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            Added to Cart
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3 h-3" />
-                            + Add to Active POS Cart
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
-              <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
-              <p className="text-xs font-bold text-text-primary">
-                No Aftermarket matches in stock for this platform
-              </p>
-              <p className="text-[11px] text-text-muted">
-                Check universal components or request special order.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      <ComparisonMatrix
+        oemParts={oemComparisonParts}
+        aftermarketParts={aftermarketComparisonParts}
+        onAddToCart={handleAddToCart}
+        addedSku={addedSku}
+      />
 
       {/* Toast Notification Banner */}
       {toastMessage && (
