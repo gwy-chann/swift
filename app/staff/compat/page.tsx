@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, PackageOpen, Plus, Check, MapPin, Filter } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
-import { getMotorcycleModelsAction } from "@/lib/actions/motomatcher-actions";
+import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
 import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
 import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
-import { cartStore } from "@/lib/store/cart-store";
+import { useCartStore } from "@/lib/store/cart-store";
 
 export default function StaffCompatPage() {
   const [motorcycleModels, setMotorcycleModels] = useState<MotorcycleModelRecord[]>(
@@ -20,6 +20,7 @@ export default function StaffCompatPage() {
   const [isUniversal, setIsUniversal] = useState(false);
   const [systemCategory, setSystemCategory] = useState("ALL");
   const [addedSku, setAddedSku] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { products, hydrateProducts } = useInventoryStore();
 
   useEffect(() => {
@@ -95,10 +96,14 @@ export default function StaffCompatPage() {
   }, [products, selectedModel, isUniversal, systemCategory]);
 
   const handleAddToCart = (product: Product) => {
-    const res = cartStore.addPart(product, 1);
+    if (product.stock <= 0) return;
+    const res = useCartStore.getState().addItem(product);
     if (res.success) {
       setAddedSku(product.sku);
+      const shelfText = product.location ? ` (Shelf: ${product.location})` : "";
+      setToastMessage(`Added ${product.name} to POS Cart${shelfText}`);
       setTimeout(() => setAddedSku(null), 1800);
+      setTimeout(() => setToastMessage(null), 3500);
     }
   };
 
@@ -206,27 +211,37 @@ export default function StaffCompatPage() {
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(part)}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
-                      addedSku === part.sku
-                        ? "bg-success text-white"
-                        : "bg-primary text-white hover:bg-primary-hover shadow-xs"
-                    }`}
-                  >
-                    {addedSku === part.sku ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        Added
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-3 h-3" />
-                        Add to POS
-                      </>
-                    )}
-                  </button>
+                  {part.stock <= 0 ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg opacity-50 bg-bg-muted text-text-muted cursor-not-allowed border border-border"
+                    >
+                      Out of Stock
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleAddToCart(part)}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
+                        addedSku === part.sku
+                          ? "bg-success text-white"
+                          : "bg-primary text-white hover:bg-primary-hover shadow-xs"
+                      }`}
+                    >
+                      {addedSku === part.sku ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          Added
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3 h-3" />
+                          + Add to Active POS Cart
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -243,6 +258,27 @@ export default function StaffCompatPage() {
           </div>
         )}
       </div>
+
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div
+          role="status"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 bg-bg-surface text-text-primary border border-border shadow-lg rounded-xl animate-in slide-in-from-bottom-2 duration-200"
+        >
+          <div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-semibold">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-text-muted hover:text-text-primary ml-2 cursor-pointer"
+            aria-label="Close notification"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
