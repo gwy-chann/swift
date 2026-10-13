@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, sonarjs/redundant-type-aliases */
 type PrismaClientType = any;
 
 const globalForPrisma = globalThis as unknown as {
