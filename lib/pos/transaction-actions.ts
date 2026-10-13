@@ -2,6 +2,7 @@
 
 import { getPrismaClient } from '../prisma.ts';
 import type { DbTransaction, ThermalReceiptData } from '../types/transaction.ts';
+import { mapDbTransactionToThermalReceipt } from './contracts.ts';
 
 
 export const MOCK_TRANSACTIONS: DbTransaction[] = [
@@ -342,38 +343,6 @@ export async function getTransactionByReceiptAction(
   return all.find((t) => t.receipt_number === receiptNumber) || null;
 }
 
-/**
- * Normalizes a database transaction into the standardized ThermalReceiptData structure.
- */
-export function mapDbTransactionToThermalReceipt(t: DbTransaction): ThermalReceiptData {
-  return {
-    id: t.id || t.receipt_number,
-    receiptNumber: t.receipt_number,
-    timestamp: t.created_at || new Date().toISOString(),
-    cashierName: t.cashier_name,
-    pricingMode: t.pricing_mode,
-    subtotal: t.subtotal,
-    discountType: t.discount_type,
-    discountRate: t.discount_rate,
-    discountAmount: t.discount_amount,
-    totalDue: t.total_due,
-    cashTendered: t.cash_tendered,
-    changeDue: t.change_due,
-    paymentMethod: t.payment_method,
-    items: (t.items || []).map((item, idx) => ({
-      id: item.id || `item-${idx}`,
-      itemType: item.item_type,
-      skuOrCode: item.item_sku_or_code,
-      name: item.item_name,
-      unitPrice: item.unit_price,
-      quantity: item.quantity,
-      subtotal: item.subtotal,
-      shelfLocation: item.shelf_location,
-      bay: item.bay,
-      duration: item.item_type === 'service' ? '15m' : undefined
-    }))
-  };
-}
 
 /**
  * Server action to retrieve a normalized thermal receipt by receipt number.

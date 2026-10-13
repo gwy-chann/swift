@@ -2,8 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getTransactionByReceiptAction,
-  getThermalReceiptByReceiptAction,
-  mapDbTransactionToThermalReceipt
+  getThermalReceiptByReceiptAction
 } from '../transaction-actions.ts';
 import { processCheckoutAction } from '../actions.ts';
 import type { CheckoutPayload } from '../../types/transaction.ts';

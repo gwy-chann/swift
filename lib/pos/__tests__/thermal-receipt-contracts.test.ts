@@ -1,10 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  thermalReceiptItemSchema,
-  thermalReceiptDataSchema,
-  validateThermalReceiptData
-} from '../contracts.ts';
+import { validateThermalReceiptData } from '../contracts.ts';
 import type { ThermalReceiptData } from '../../types/transaction.ts';
 
 describe('Thermal Receipt Contracts & Schema Validation (SIAA-52)', () => {
