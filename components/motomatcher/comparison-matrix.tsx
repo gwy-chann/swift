@@ -114,7 +114,7 @@ export function ComparisonMatrix({
 
             <div className="mt-0.5">
               {isOutOfStock ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block bg-bg-muted text-text-muted">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block bg-danger-light text-danger border border-danger/20 badge badge-danger">
                   Out of Stock
                 </span>
               ) : isLowStock ? (
