@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, Filter } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { CheckCircle2, Filter, Wifi, WifiOff } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
+import { useMotoMatcherRealtime } from "@/lib/hooks/use-motomatcher-realtime";
 import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
 import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
@@ -14,6 +15,31 @@ import {
   type ComparisonPartItem,
 } from "@/lib/motomatcher/comparison-matrix-contracts";
 import { useCartStore } from "@/lib/store/cart-store";
+
+function renderSyncStatus(isConnected: boolean, status: string) {
+  if (isConnected) {
+    return (
+      <span className="text-xs font-bold text-success bg-success-light px-2.5 py-0.5 rounded-full border border-success/20 flex items-center gap-1.5">
+        <Wifi className="w-3 h-3 text-success animate-pulse" />
+        Live Realtime Sync
+      </span>
+    );
+  }
+  if (status === "CONNECTING") {
+    return (
+      <span className="text-xs font-bold text-accent bg-accent-light px-2.5 py-0.5 rounded-full border border-accent/20 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+        Connecting...
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs font-bold text-text-muted bg-bg-muted px-2.5 py-0.5 rounded-full border border-border flex items-center gap-1.5">
+      <WifiOff className="w-3 h-3 text-text-muted" />
+      Offline Mode
+    </span>
+  );
+}
 
 export default function StaffCompatPage() {
   const [motorcycleModels, setMotorcycleModels] = useState<MotorcycleModelRecord[]>(
@@ -28,17 +54,21 @@ export default function StaffCompatPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { products, hydrateProducts } = useInventoryStore();
 
-  useEffect(() => {
-    let isMounted = true;
+  const refreshProducts = useCallback(() => {
     getProductsAction()
       .then((fetched) => {
-        if (isMounted && fetched.length > 0) {
+        if (fetched.length > 0) {
           hydrateProducts(fetched);
         }
       })
       .catch((error) => {
         console.error("Failed to load products for compatibility check:", error);
       });
+  }, [hydrateProducts]);
+
+  useEffect(() => {
+    let isMounted = true;
+    refreshProducts();
 
     getMotorcycleModelsAction()
       .then((fetchedModels) => {
@@ -54,7 +84,12 @@ export default function StaffCompatPage() {
     return () => {
       isMounted = false;
     };
-  }, [hydrateProducts]);
+  }, [refreshProducts]);
+
+  // Supabase Realtime multi-terminal fitment updates & stock broadcast
+  const { isConnected, status } = useMotoMatcherRealtime(selectedModel?.id, {
+    onFitmentChange: refreshProducts,
+  });
 
   const handleSelectModel = (model: MotorcycleModelRecord | null) => {
     setIsUniversal(false);
@@ -191,7 +226,7 @@ export default function StaffCompatPage() {
             Verified Fitment Results for {activeModelDisplay}
           </h4>
         </div>
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex items-center gap-3 text-xs flex-wrap">
           <span className="font-semibold text-text-secondary">
             Total Matches: <strong className="text-text-primary font-mono">{compatibleParts.length}</strong>
           </span>
@@ -203,6 +238,8 @@ export default function StaffCompatPage() {
           <span className="font-semibold text-secondary">
             Aftermarket: <strong className="font-mono">{aftermarketComparisonParts.length}</strong>
           </span>
+          <span className="text-text-muted">•</span>
+          {renderSyncStatus(isConnected, status)}
         </div>
       </div>
 
