@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Search, X, Bike, CheckCircle2, RotateCcw, Sparkles } from "lucide-react";
 import type { MotorcycleModelRecord } from "@/lib/types/product";
 import {
@@ -43,6 +43,12 @@ export interface MotorcycleSelectorProps {
   subtitle?: string;
 }
 
+function getBrandLabel(brand: string): string {
+  if (brand === "ALL") return "All Brands";
+  if (brand === "Universal") return "Universal / Multi-Fit";
+  return brand;
+}
+
 export function MotorcycleSelector({
   models,
   selectedModelId,
@@ -53,27 +59,21 @@ export function MotorcycleSelector({
   title = "Select Motorcycle Make, Model & Displacement",
   subtitle = "Filter 100% verified motorcycle parts and compare OEM vs aftermarket compatibility.",
 }: MotorcycleSelectorProps) {
-  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(
-    selectedModelId ?? (models.length > 0 ? models[0].id : null)
-  );
+  // Uncontrolled state when selectedModelId is not provided
+  const [uncontrolledId, setUncontrolledId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMake, setSelectedMake] = useState<string>("ALL");
 
-  // Keep internal selected id in sync if controlled prop is provided
-  useEffect(() => {
+  // Derive active selection directly without useEffect setState to avoid cascading renders
+  const activeSelectedId = useMemo(() => {
     if (selectedModelId !== undefined) {
-      setInternalSelectedId(selectedModelId);
+      return selectedModelId;
     }
-  }, [selectedModelId]);
-
-  // Set default selection to first model upon mounting if none selected
-  useEffect(() => {
-    if (!internalSelectedId && models.length > 0) {
-      const defaultModel = models[0];
-      setInternalSelectedId(defaultModel.id);
-      onSelectModel(defaultModel);
+    if (uncontrolledId !== null) {
+      return uncontrolledId;
     }
-  }, [models, internalSelectedId, onSelectModel]);
+    return models.length > 0 ? models[0].id : null;
+  }, [selectedModelId, uncontrolledId, models]);
 
   // Instant in-memory filtering (< 50ms)
   const filteredModels = useMemo(() => {
@@ -85,16 +85,16 @@ export function MotorcycleSelector({
   // Handle card selection
   const handleSelectCard = useCallback(
     (model: MotorcycleModelRecord) => {
-      setInternalSelectedId(model.id);
+      setUncontrolledId(model.id);
       onSelectModel(model);
     },
     [onSelectModel]
   );
 
   // Handle brand pill click
-  const handleMakeClick = (make: string) => {
-    setSelectedMake(make);
-    if (make === "Universal" && onSelectUniversal) {
+  const handleMakeClick = (brand: string) => {
+    setSelectedMake(brand);
+    if (brand === "Universal" && onSelectUniversal) {
       onSelectUniversal();
     }
   };
@@ -190,11 +190,7 @@ export function MotorcycleSelector({
                     : "bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-primary/50"
                 }`}
               >
-                {brand === "ALL"
-                  ? "All Brands"
-                  : brand === "Universal"
-                  ? "Universal / Multi-Fit"
-                  : brand}
+                {getBrandLabel(brand)}
               </button>
             );
           })}
@@ -213,7 +209,7 @@ export function MotorcycleSelector({
           }`}
         >
           {filteredModels.map((model) => {
-            const isSelected = internalSelectedId === model.id;
+            const isSelected = activeSelectedId === model.id;
             return (
               <div
                 key={model.id}

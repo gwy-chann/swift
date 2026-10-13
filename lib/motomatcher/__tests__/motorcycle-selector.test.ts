@@ -79,6 +79,15 @@ describe('Motorcycle Selector Engine & Filtering (SIAA-23)', () => {
     assert.equal(emptyResults.length, 0, 'No matching models should be found');
   });
 
+  it('directly tests matchesMotorcycleFilter pure predicate function', () => {
+    const nmax = MOCK_MOTORCYCLE_MODEL_RECORDS[0];
+    assert.equal(matchesMotorcycleFilter(nmax, 'nmax', 'ALL', 'ALL'), true);
+    assert.equal(matchesMotorcycleFilter(nmax, '', 'Yamaha', 'ALL'), true);
+    assert.equal(matchesMotorcycleFilter(nmax, '', 'Honda', 'ALL'), false);
+    assert.equal(matchesMotorcycleFilter(nmax, '155', 'ALL', 'Scooter'), true);
+    assert.equal(matchesMotorcycleFilter(nmax, '155', 'ALL', 'Underbone'), false);
+  });
+
   it('supports POPULAR_PHILIPPINE_MAKES and default filter state contract', () => {
     assert.ok(POPULAR_PHILIPPINE_MAKES.includes('ALL'));
     assert.ok(POPULAR_PHILIPPINE_MAKES.includes('Yamaha'));
