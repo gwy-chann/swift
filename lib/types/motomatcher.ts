@@ -107,7 +107,7 @@ export const AddFitmentRuleInputSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
-export type AddFitmentRuleInput = z.infer<typeof AddFitmentRuleInputSchema>;
+export type AddFitmentRuleInput = z.input<typeof AddFitmentRuleInputSchema>;
 
 export const AddFitmentRuleResultSchema = z.object({
   success: z.boolean(),

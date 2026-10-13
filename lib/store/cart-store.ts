@@ -146,7 +146,7 @@ class CartStore {
           name: item.name.replace(/^Labor:\s*/, ''),
           rate: item.price,
           bay: item.bay || 'General',
-          duration: item.duration || 30
+          duration: typeof item.duration === 'string' ? item.duration : (item.duration ? `${item.duration} mins` : '30 mins')
         },
         qty
       );
@@ -164,11 +164,12 @@ class CartStore {
         category: item.category,
         retail: item.retail_price,
         wholesale: item.retail_price,
+        cost: item.retail_price,
         stock: item.stock_level,
         minThreshold: item.min_threshold,
         location: item.shelf_location || '',
         oem: item.fitment_type === 'oem',
-        model: item.is_universal ? 'Universal' : undefined,
+        model: item.is_universal ? 'Universal' : (item.oem_reference_sku || 'Universal'),
         description: item.fitment_notes || ''
       };
       return this.addPart(partProduct, qty, isOverridden);
@@ -188,9 +189,12 @@ class CartStore {
         category: '',
         retail: item.retailPrice ?? item.price,
         wholesale: item.wholesalePrice ?? item.price,
+        cost: item.wholesalePrice ?? item.price,
         stock: item.stock ?? 999,
         minThreshold: item.minThreshold ?? 0,
-        location: item.location || ''
+        location: item.location || '',
+        oem: false,
+        model: 'Universal',
       };
       return this.addPart(partProduct, qty, isOverridden);
     }

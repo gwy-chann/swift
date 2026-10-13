@@ -22,7 +22,6 @@ describe('ComparisonMatrix Domain & Contracts (SIAA-24)', () => {
     stock: 14,
     minThreshold: 5,
     location: 'Rack B-02 / Shelf 1',
-    barcode: '4988484112211',
     oem: true,
   };
 
@@ -38,7 +37,6 @@ describe('ComparisonMatrix Domain & Contracts (SIAA-24)', () => {
     stock: 4,
     minThreshold: 5, // low stock!
     location: 'Rack D-04 / Shelf 3',
-    barcode: '4712499102213',
     oem: false,
   };
 
@@ -54,7 +52,6 @@ describe('ComparisonMatrix Domain & Contracts (SIAA-24)', () => {
     stock: 35,
     minThreshold: 10,
     location: 'Rack F-01 / Shelf 1',
-    barcode: '3374650239112',
     oem: false,
   };
 
