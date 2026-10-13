@@ -116,3 +116,56 @@ export const AddFitmentRuleResultSchema = z.object({
 });
 
 export type AddFitmentRuleResult = z.infer<typeof AddFitmentRuleResultSchema>;
+
+import type { Product } from './product.ts';
+import type { RealtimeChannelStatus } from './realtime.ts';
+
+export interface UseMotoMatcherRealtimeOptions {
+  /**
+   * Whether subscription is active (defaults to true)
+   */
+  enabled?: boolean;
+
+  /**
+   * Callback fired whenever any product stock or attribute updates in realtime
+   */
+  onStockUpdate?: (product: Product) => void;
+
+  /**
+   * Callback fired when an item crosses below or reaches its low-stock threshold
+   */
+  onLowStock?: (product: Product) => void;
+
+  /**
+   * Callback fired when an item's stock reaches 0 (Out of Stock)
+   */
+  onOutOfStock?: (product: Product) => void;
+
+  /**
+   * Callback fired when fitment mappings change for the active motorcycle model
+   */
+  onFitmentChange?: () => void;
+}
+
+export interface UseMotoMatcherRealtimeResult {
+  /**
+   * Whether the WebSocket channel is currently connected and subscribed
+   */
+  isConnected: boolean;
+
+  /**
+   * Current channel status ('SUBSCRIBED' | 'CONNECTING' | 'CLOSED' | 'CHANNEL_ERROR' | 'TIMED_OUT')
+   */
+  status: RealtimeChannelStatus;
+
+  /**
+   * Timestamp of last successfully received Realtime message
+   */
+  lastSyncedAt: Date | null;
+
+  /**
+   * Imperative re-sync trigger for cache invalidation
+   */
+  invalidateCache: () => void;
+}
+
