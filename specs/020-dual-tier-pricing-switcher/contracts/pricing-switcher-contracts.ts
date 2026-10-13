@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { CartItem, PricingMode, CartTotals } from '@/lib/types';
+import type { CartItem, PricingMode } from '@/lib/types';
 
 export const pricingModeSchema = z.enum(['retail', 'wholesale']);
 
