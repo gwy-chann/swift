@@ -344,6 +344,7 @@ export async function getTransactionByReceiptAction(
 }
 
 
+
 /**
  * Server action to retrieve a normalized thermal receipt by receipt number.
  */

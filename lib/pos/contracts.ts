@@ -67,6 +67,7 @@ export const thermalReceiptDataSchema = z.object({
   cashierName: z.string(),
   pricingMode: z.enum(['retail', 'wholesale']),
   items: z.array(thermalReceiptItemSchema).min(1),
+  technicianNotes: z.string().nullable().optional(),
   subtotal: z.number().min(0),
   discountType: z.string().nullable().optional(),
   discountRate: z.number().min(0).max(1),
@@ -107,6 +108,7 @@ export function mapDbTransactionToThermalReceipt(t: DbTransaction): ThermalRecei
     cashTendered: t.cash_tendered,
     changeDue: t.change_due,
     paymentMethod: t.payment_method,
+    technicianNotes: t.technician_notes || null,
     items: (t.items || []).map((item, idx) => ({
       id: item.id || `item-${idx}`,
       itemType: item.item_type,

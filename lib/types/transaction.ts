@@ -31,6 +31,7 @@ export interface DbTransaction {
   cash_tendered: number;
   change_due: number;
   payment_method: TransactionPaymentMethod;
+  technician_notes?: string | null;
   created_at?: string;
   items?: DbTransactionItem[];
 }
@@ -49,6 +50,7 @@ export interface Transaction {
   cashTendered?: number;
   change?: number;
   paymentMethod?: TransactionPaymentMethod;
+  technicianNotes?: string | null;
 }
 
 export interface CheckoutItemPayload {
@@ -75,6 +77,7 @@ export interface CheckoutPayload {
   cashTendered: number;
   changeDue: number;
   paymentMethod: TransactionPaymentMethod;
+  technicianNotes?: string | null;
   items: CheckoutItemPayload[];
 }
 
@@ -114,6 +117,7 @@ export interface ThermalReceiptData {
   cashierName: string;
   pricingMode: PricingMode;
   items: ThermalReceiptItem[];
+  technicianNotes?: string | null;
   subtotal: number;
   discountType?: string | null;
   discountRate: number;
