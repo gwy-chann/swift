@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useId } from 'react';
-import { Printer, X, Check, Search, AlertCircle } from 'lucide-react';
+import { Printer, X, Search, AlertCircle } from 'lucide-react';
 import type { ThermalReceiptData, ThermalRollWidth } from '@/lib/types/transaction';
 import { getThermalReceiptByReceiptAction } from '@/lib/pos/transaction-actions';
 
 interface ThermalReceiptModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  receiptData?: ThermalReceiptData | null;
-  initialRollWidth?: ThermalRollWidth;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly receiptData?: ThermalReceiptData | null;
+  readonly initialRollWidth?: ThermalRollWidth;
 }
 
 export function ThermalReceiptModal({
@@ -20,18 +20,20 @@ export function ThermalReceiptModal({
 }: ThermalReceiptModalProps) {
   const [rollWidth, setRollWidth] = useState<ThermalRollWidth>(initialRollWidth);
   const [activeReceipt, setActiveReceipt] = useState<ThermalReceiptData | null>(initialReceiptData || null);
+  const [prevInitialReceiptData, setPrevInitialReceiptData] = useState(initialReceiptData);
   const [lookupQuery, setLookupQuery] = useState('');
   const [isLoadingLookup, setIsLoadingLookup] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const titleId = useId();
 
-  // Sync active receipt whenever initialReceiptData changes
-  useEffect(() => {
+  // Sync active receipt whenever initialReceiptData changes during render
+  if (initialReceiptData !== prevInitialReceiptData) {
+    setPrevInitialReceiptData(initialReceiptData);
     if (initialReceiptData) {
       setActiveReceipt(initialReceiptData);
       setLookupError(null);
     }
-  }, [initialReceiptData]);
+  }
 
   // Keyboard shortcut listener for Esc key
   useEffect(() => {
@@ -79,11 +81,11 @@ export function ThermalReceiptModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-bg-base/80 backdrop-blur-xs animate-fadeIn print:p-0 print:bg-transparent"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-bg-base/80 backdrop-blur-xs animate-fadeIn print:p-0 print:bg-transparent border-0 outline-none w-full h-full max-w-none max-h-none m-0"
     >
       {/* Modal Container */}
       <div className="relative flex flex-col w-full max-w-lg max-h-[92vh] bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-auto">
@@ -174,8 +176,8 @@ export function ThermalReceiptModal({
               id="thermal-receipt-print-area"
               className={`thermal-receipt-paper bg-bg-surface text-text-primary border border-dashed border-border rounded-xs p-4 sm:p-5 font-mono shadow-xs transition-all duration-150 print:border-none print:shadow-none print:p-0 print:w-full print:text-black print:bg-white ${
                 rollWidth === '58mm'
-                  ? 'w-[270px] max-w-[270px] text-[11px] leading-tight'
-                  : 'w-[350px] max-w-[350px] text-xs leading-normal'
+                  ? 'w-67.5 max-w-67.5 text-[11px] leading-tight'
+                  : 'w-87.5 max-w-87.5 text-xs leading-normal'
               }`}
             >
               {/* Receipt Header */}
@@ -228,7 +230,7 @@ export function ThermalReceiptModal({
                     {activeReceipt.items.map((item) => (
                       <tr key={item.id} className="align-top">
                         <td className="py-1.5 pr-1">
-                          <div className="font-medium text-text-primary print:text-black truncate max-w-[170px]">
+                          <div className="font-medium text-text-primary print:text-black truncate max-w-42.5">
                             {item.name}
                           </div>
                           {item.itemType === 'part' && item.shelfLocation && (
@@ -302,15 +304,21 @@ export function ThermalReceiptModal({
 
                 {/* Simulated Barcode */}
                 <div className="pt-2 flex flex-col items-center justify-center">
-                  <div className="h-7 w-40 flex items-center justify-center gap-[2px] opacity-80 print:opacity-100">
-                    {Array.from({ length: 32 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-full bg-text-primary print:bg-black ${
-                          i % 3 === 0 ? 'w-1' : i % 2 === 0 ? 'w-[2px]' : 'w-[1px]'
-                        }`}
-                      />
-                    ))}
+                  <div className="h-7 w-40 flex items-center justify-center gap-0.5 opacity-80 print:opacity-100">
+                    {Array.from({ length: 32 }).map((_, i) => {
+                      let barWidth = 'w-px';
+                      if (i % 3 === 0) {
+                        barWidth = 'w-1';
+                      } else if (i % 2 === 0) {
+                        barWidth = 'w-0.5';
+                      }
+                      return (
+                        <div
+                          key={i}
+                          className={`h-full bg-text-primary print:bg-black ${barWidth}`}
+                        />
+                      );
+                    })}
                   </div>
                   <div className="text-[9px] tracking-widest text-text-muted print:text-black mt-0.5">
                     *{activeReceipt.receiptNumber}*
@@ -350,6 +358,6 @@ export function ThermalReceiptModal({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
