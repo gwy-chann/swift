@@ -40,3 +40,8 @@ export async function getMotorcycleModelsAction(): Promise<MotorcycleModelRecord
 
   return MOCK_MOTORCYCLE_MODEL_RECORDS;
 }
+
+export {
+  getFitmentMatrixAction,
+  executeMockMotoMatcherMatrix,
+} from '../motomatcher/actions.ts';
