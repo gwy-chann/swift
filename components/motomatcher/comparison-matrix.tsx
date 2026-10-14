@@ -4,14 +4,18 @@ import React, { useState } from "react";
 import {
   ShieldCheck,
   Zap,
-  MapPin,
   PackageOpen,
   Plus,
   Check,
   TrendingUp,
   AlertTriangle,
 } from "lucide-react";
-import type { ComparisonPartItem, ComparisonMatrixProps } from "@/lib/motomatcher/comparison-matrix-contracts";
+import type {
+  ComparisonPartItem,
+  ComparisonMatrixProps,
+  ComparisonMatrixTab,
+} from "@/lib/motomatcher/comparison-matrix-contracts";
+import { ShelfLocationTag } from "@/components/inventory/shelf-location-tag";
 
 function renderPartTypeBadge(part: ComparisonPartItem) {
   if (part.isOem) {
@@ -75,7 +79,7 @@ function renderAddToCartButtonContent(isAdded: boolean, isOutOfStock: boolean) {
   if (isAdded) {
     return (
       <>
-        <Check className="w-3 h-3" />
+        <Check className="w-4 h-4" />
         <span>Added to Cart</span>
       </>
     );
@@ -85,7 +89,7 @@ function renderAddToCartButtonContent(isAdded: boolean, isOutOfStock: boolean) {
   }
   return (
     <>
-      <Plus className="w-3 h-3" />
+      <Plus className="w-4 h-4" />
       <span>Add to POS Cart</span>
     </>
   );
@@ -100,10 +104,23 @@ export function ComparisonMatrix({
   emptyOemMessage = "No OEM matches in stock for this platform. Check alternative aftermarket parts or consult distributor catalog.",
   emptyAftermarketMessage = "No Aftermarket matches in stock for this platform. Check universal components or request special order.",
   className = "",
+  touchOptimized = true,
+  activeMobileTab: externalActiveMobileTab,
+  onMobileTabChange: externalOnMobileTabChange,
 }: Readonly<ComparisonMatrixProps>) {
   const [internalAddedSku, setInternalAddedSku] = useState<string | null>(null);
+  const [internalMobileTab, setInternalMobileTab] = useState<ComparisonMatrixTab>("oem");
 
   const activeAddedSku = externalAddedSku !== undefined ? externalAddedSku : internalAddedSku;
+  const activeMobileTab = externalActiveMobileTab ?? internalMobileTab;
+
+  const handleMobileTabChange = (tab: ComparisonMatrixTab) => {
+    if (externalOnMobileTabChange) {
+      externalOnMobileTabChange(tab);
+    } else {
+      setInternalMobileTab(tab);
+    }
+  };
 
   const handleCardAddToCart = (part: ComparisonPartItem) => {
     if (onAddToCart) {
@@ -125,6 +142,7 @@ export function ComparisonMatrix({
   const renderPartCard = (part: ComparisonPartItem, isOemColumn: boolean) => {
     const isAdded = activeAddedSku === part.sku;
     const isOutOfStock = part.stockLevel <= 0;
+    const buttonTouchClass = touchOptimized ? "min-h-[44px]" : "min-h-[36px]";
     const buttonClasses = getAddToCartButtonClasses(isAdded, isOutOfStock, isOemColumn);
 
     return (
@@ -137,7 +155,7 @@ export function ComparisonMatrix({
         }`}
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1 min-w-0 flex-1">
+          <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[10px] font-mono font-bold text-text-muted">
                 {part.sku}
@@ -159,13 +177,11 @@ export function ComparisonMatrix({
               {part.name}
             </h5>
 
-            <div className="flex items-center gap-2 text-[10px] text-text-secondary flex-wrap">
-              <span className="font-semibold">{part.brand}</span>
+            {/* Warehouse Shelf Locator & Brand Metadata */}
+            <div className="flex items-center gap-2 text-xs text-text-secondary flex-wrap pt-0.5">
+              <span className="font-semibold text-text-secondary">{part.brand}</span>
               <span>•</span>
-              <span className="flex items-center gap-1">
-                <MapPin className="w-2.5 h-2.5 text-text-muted" />
-                {part.shelfLocation || "Floor Stock"}
-              </span>
+              <ShelfLocationTag location={part.shelfLocation} className="text-[11px] py-0.5" />
             </div>
           </div>
 
@@ -200,7 +216,7 @@ export function ComparisonMatrix({
             disabled={isOutOfStock}
             onClick={() => handleCardAddToCart(part)}
             aria-label={isOutOfStock ? `${part.name} is out of stock` : `Add ${part.name} to POS Cart`}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${buttonClasses}`}
+            className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${buttonTouchClass} active:scale-98 ${buttonClasses}`}
           >
             {renderAddToCartButtonContent(isAdded, isOutOfStock)}
           </button>
@@ -267,45 +283,90 @@ export function ComparisonMatrix({
 
   return (
     <div
-      className={`grid grid-cols-1 lg:grid-cols-2 gap-4 ${className}`}
+      className={`space-y-3 ${className}`}
       data-testid="comparison-matrix"
+      data-touch-optimized={touchOptimized}
     >
-      {/* Column 1: OEM Standard Replacement */}
-      <section className="space-y-3" aria-label="OEM Standard Factory Parts">
-        <header className="p-3 bg-primary-light border border-primary-border rounded-xl flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-              OEM Standard Factory Parts ({oemParts.length})
-            </h4>
-          </div>
-          <span className="text-[10px] font-semibold text-primary bg-bg-surface px-2 py-0.5 rounded border border-primary/20">
-            Original Spec
+      {/* Mobile Segmented Column Switcher (< 768px viewports) */}
+      <div className="md:hidden flex p-1 bg-bg-muted/80 rounded-xl border border-border gap-1">
+        <button
+          type="button"
+          onClick={() => handleMobileTabChange("oem")}
+          className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeMobileTab === "oem"
+              ? "bg-bg-surface text-primary shadow-xs border border-primary/20"
+              : "text-text-secondary hover:text-text-primary"
+          }`}
+          aria-label={`Show OEM Standard Factory Parts (${oemParts.length})`}
+          aria-pressed={activeMobileTab === "oem"}
+        >
+          <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
+          <span>OEM Factory</span>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-primary-light text-primary">
+            {oemParts.length}
           </span>
-        </header>
-
-        {renderOemContent()}
-      </section>
-
-      {/* Column 2: Alternative / Performance Aftermarket */}
-      <section
-        className="space-y-3"
-        aria-label="Performance and Alternative Aftermarket Parts"
-      >
-        <header className="p-3 bg-secondary/10 border border-secondary/20 rounded-xl flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-secondary" />
-            <h4 className="text-xs font-bold text-secondary uppercase tracking-wider">
-              Performance / Aftermarket ({aftermarketParts.length})
-            </h4>
-          </div>
-          <span className="text-[10px] font-semibold text-secondary bg-bg-surface px-2 py-0.5 rounded border border-secondary/20">
-            Upgrade Spec
+        </button>
+        <button
+          type="button"
+          onClick={() => handleMobileTabChange("aftermarket")}
+          className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeMobileTab === "aftermarket"
+              ? "bg-bg-surface text-secondary shadow-xs border border-secondary/20"
+              : "text-text-secondary hover:text-text-primary"
+          }`}
+          aria-label={`Show Performance and Aftermarket Parts (${aftermarketParts.length})`}
+          aria-pressed={activeMobileTab === "aftermarket"}
+        >
+          <Zap className="w-4 h-4 shrink-0 text-secondary" />
+          <span>Aftermarket</span>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary">
+            {aftermarketParts.length}
           </span>
-        </header>
+        </button>
+      </div>
 
-        {renderAftermarketContent()}
-      </section>
+      {/* Dual Column Layout (Desktop side-by-side, Mobile single-tab active) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Column 1: OEM Standard Replacement */}
+        <section
+          className={`space-y-3 ${activeMobileTab === "oem" ? "block" : "hidden md:block"}`}
+          aria-label="OEM Standard Factory Parts"
+        >
+          <header className="p-3 bg-primary-light border border-primary-border rounded-xl flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
+                OEM Standard Factory Parts ({oemParts.length})
+              </h4>
+            </div>
+            <span className="text-[10px] font-semibold text-primary bg-bg-surface px-2 py-0.5 rounded border border-primary/20">
+              Original Spec
+            </span>
+          </header>
+
+          {renderOemContent()}
+        </section>
+
+        {/* Column 2: Alternative / Performance Aftermarket */}
+        <section
+          className={`space-y-3 ${activeMobileTab === "aftermarket" ? "block" : "hidden md:block"}`}
+          aria-label="Performance and Alternative Aftermarket Parts"
+        >
+          <header className="p-3 bg-secondary/10 border border-secondary/20 rounded-xl flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-secondary" />
+              <h4 className="text-xs font-bold text-secondary uppercase tracking-wider">
+                Performance / Aftermarket ({aftermarketParts.length})
+              </h4>
+            </div>
+            <span className="text-[10px] font-semibold text-secondary bg-bg-surface px-2 py-0.5 rounded border border-secondary/20">
+              Upgrade Spec
+            </span>
+          </header>
+
+          {renderAftermarketContent()}
+        </section>
+      </div>
     </div>
   );
 }
