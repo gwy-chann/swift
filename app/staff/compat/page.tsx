@@ -185,6 +185,7 @@ export default function StaffCompatPage() {
         aftermarketParts={filteredSet.aftermarketParts}
         onAddToCart={handleAddToCart}
         addedSku={addedSku}
+        touchOptimized={true}
         emptyOemMessage="No OEM components found for this model in the selected system category."
         emptyAftermarketMessage="No aftermarket performance parts found for this model in the selected system category."
       />
