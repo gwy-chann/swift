@@ -52,12 +52,17 @@ export const SHIFT_RPC_ERROR_CODES = {
 export type ShiftRpcErrorCode = (typeof SHIFT_RPC_ERROR_CODES)[keyof typeof SHIFT_RPC_ERROR_CODES];
 
 export class ShiftRpcError extends Error {
+  readonly code: ShiftRpcErrorCode | string;
+  readonly status: number;
+
   constructor(
-    public readonly code: ShiftRpcErrorCode | string,
+    code: ShiftRpcErrorCode | string,
     message: string,
-    public readonly status: number = 400
+    status: number = 400
   ) {
     super(message);
     this.name = 'ShiftRpcError';
+    this.code = code;
+    this.status = status;
   }
 }
