@@ -250,7 +250,26 @@ model StaffShift {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
+  auditLogs       StaffShiftAuditLog[]
+
   @@index([profileId, clockIn(sort: Desc)])
   @@index([status, terminalId])
   @@map("staff_shifts")
 }
+
+model StaffShiftAuditLog {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shiftId    String     @map("shift_id") @db.Uuid
+  profileId  String     @map("profile_id") @db.Uuid
+  terminalId String     @default("Terminal #01") @map("terminal_id")
+  action     String
+  notes      String?
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  shift      StaffShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
+  @@index([profileId, createdAt(sort: Desc)])
+  @@map("staff_shift_audit_logs")
+}
+
