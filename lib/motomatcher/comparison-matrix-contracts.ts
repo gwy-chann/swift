@@ -28,6 +28,8 @@ export type ComparisonPartItem = z.infer<typeof ComparisonPartItemSchema> & {
   rawProduct?: Product | MotoMatcherMatrixPart | unknown;
 };
 
+export type ComparisonMatrixTab = 'oem' | 'aftermarket';
+
 /**
  * Props contract for the ComparisonMatrix presentation component.
  */
@@ -40,6 +42,9 @@ export interface ComparisonMatrixProps {
   emptyOemMessage?: string;
   emptyAftermarketMessage?: string;
   className?: string;
+  touchOptimized?: boolean;
+  activeMobileTab?: ComparisonMatrixTab;
+  onMobileTabChange?: (tab: ComparisonMatrixTab) => void;
 }
 
 /**
@@ -54,6 +59,11 @@ export function fromProductToComparisonPart(product: Product): ComparisonPartIte
     ? 'universal'
     : 'aftermarket';
 
+  const shelfLoc =
+    product.location ||
+    ((product as unknown as Record<string, unknown>).shelf_location as string) ||
+    null;
+
   return {
     id: product.sku,
     sku: product.sku,
@@ -64,7 +74,7 @@ export function fromProductToComparisonPart(product: Product): ComparisonPartIte
     wholesalePrice: product.wholesale,
     stockLevel: product.stock,
     minThreshold: product.minThreshold ?? 0,
-    shelfLocation: product.location || null,
+    shelfLocation: shelfLoc,
     isOem,
     isUniversal,
     fitmentType,
