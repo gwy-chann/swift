@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { CheckCircle2, Filter, Wifi, WifiOff, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Wifi, WifiOff, AlertTriangle } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
@@ -10,10 +10,9 @@ import type { MotorcycleModelRecord } from "@/lib/types/product";
 import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
 import { ComparisonMatrix } from "@/components/motomatcher/comparison-matrix";
-import {
-  fromProductToComparisonPart,
-  type ComparisonPartItem,
-} from "@/lib/motomatcher/comparison-matrix-contracts";
+import { SubsystemFilterBar } from "@/components/motomatcher/subsystem-filter-bar";
+import { getMotoMatcherFilteredSet } from "@/lib/motomatcher/subsystem-filter";
+import type { ComparisonPartItem } from "@/lib/motomatcher/comparison-matrix-contracts";
 import { dispatchMotoMatcherCartInsertion } from "@/lib/motomatcher/cart-dispatch";
 
 function renderSyncStatus(isConnected: boolean, status: string) {
@@ -50,6 +49,7 @@ export default function StaffCompatPage() {
   );
   const [isUniversal, setIsUniversal] = useState(false);
   const [systemCategory, setSystemCategory] = useState("ALL");
+  const [includeUniversal, setIncludeUniversal] = useState(true);
   const [addedSku, setAddedSku] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "warning">("success");
@@ -108,52 +108,14 @@ export default function StaffCompatPage() {
     return "No Platform Selected";
   }, [isUniversal, selectedModel]);
 
-  const compatibleParts = useMemo(() => {
-    return products.filter((p) => {
-      let modelMatch = false;
-
-      if (isUniversal) {
-        modelMatch = p.model?.toLowerCase() === "universal";
-      } else if (selectedModel) {
-        const queryModel = selectedModel.model.toLowerCase();
-        const queryFullName = `${selectedModel.make} ${selectedModel.model}`.toLowerCase();
-        const partModel = (p.model || "").toLowerCase();
-
-        modelMatch =
-          partModel === "universal" ||
-          partModel === queryModel ||
-          partModel === queryFullName ||
-          partModel.includes(queryModel);
-      } else {
-        modelMatch = p.model?.toLowerCase() === "universal";
-      }
-
-      const categoryMatch =
-        systemCategory === "ALL" ||
-        (p.category?.toLowerCase() === systemCategory.toLowerCase());
-
-      return modelMatch && categoryMatch;
+  const filteredSet = useMemo(() => {
+    return getMotoMatcherFilteredSet(products, {
+      selectedModel,
+      isUniversalPlatform: isUniversal,
+      systemCategory,
+      includeUniversal,
     });
-  }, [products, selectedModel, isUniversal, systemCategory]);
-
-  const { oemComparisonParts, aftermarketComparisonParts } = useMemo(() => {
-    const oem: ComparisonPartItem[] = [];
-    const aftermarket: ComparisonPartItem[] = [];
-
-    for (const p of compatibleParts) {
-      const comp = fromProductToComparisonPart(p);
-      if (comp.isOem) {
-        oem.push(comp);
-      } else {
-        aftermarket.push(comp);
-      }
-    }
-
-    return {
-      oemComparisonParts: oem,
-      aftermarketComparisonParts: aftermarket,
-    };
-  }, [compatibleParts]);
+  }, [products, selectedModel, isUniversal, systemCategory, includeUniversal]);
 
   const handleAddToCart = (item: ComparisonPartItem) => {
     const result = dispatchMotoMatcherCartInsertion({ part: item });
@@ -181,42 +143,16 @@ export default function StaffCompatPage() {
         subtitle="Select customer motorcycle platform to filter 100% verified parts from live inventory."
       />
 
-      {/* Category Subsystem Filter Bar */}
-      <div className="p-3 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5 text-text-muted" />
-          <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
-            System / Subsystem:
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { id: "ALL", label: "All Systems" },
-            { id: "Brakes", label: "Braking System" },
-            { id: "Drivetrain", label: "Drive & CVT" },
-            { id: "Fluids", label: "Oils & Fluids" },
-            { id: "Ignition", label: "Ignition & Electrical" },
-            { id: "Engine", label: "Engine & Clutch" },
-            { id: "Tires", label: "Tires & Wheels" },
-          ].map((cat) => {
-            const isActive = systemCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSystemCategory(cat.id)}
-                className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-                  isActive
-                    ? "bg-primary text-white shadow-xs"
-                    : "bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-primary/50"
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Subsystem Category & Universal Fitment Filter Bar */}
+      <SubsystemFilterBar
+        selectedCategory={systemCategory}
+        onSelectCategory={setSystemCategory}
+        includeUniversal={includeUniversal}
+        onToggleUniversal={setIncludeUniversal}
+        totalMatches={filteredSet.totalMatches}
+        oemCount={filteredSet.oemCount}
+        aftermarketCount={filteredSet.aftermarketCount}
+      />
 
       {/* Verified Fitment Results Summary Banner */}
       <div className="p-3 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -228,15 +164,15 @@ export default function StaffCompatPage() {
         </div>
         <div className="flex items-center gap-3 text-xs flex-wrap">
           <span className="font-semibold text-text-secondary">
-            Total Matches: <strong className="text-text-primary font-mono">{compatibleParts.length}</strong>
+            Total Matches: <strong className="text-text-primary font-mono">{filteredSet.totalMatches}</strong>
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-primary">
-            OEM: <strong className="font-mono">{oemComparisonParts.length}</strong>
+            OEM: <strong className="font-mono">{filteredSet.oemCount}</strong>
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-secondary">
-            Aftermarket: <strong className="font-mono">{aftermarketComparisonParts.length}</strong>
+            Aftermarket: <strong className="font-mono">{filteredSet.aftermarketCount}</strong>
           </span>
           <span className="text-text-muted">•</span>
           {renderSyncStatus(isConnected, status)}
@@ -245,8 +181,8 @@ export default function StaffCompatPage() {
 
       {/* Side-by-Side Dual-Column Comparison Matrix */}
       <ComparisonMatrix
-        oemParts={oemComparisonParts}
-        aftermarketParts={aftermarketComparisonParts}
+        oemParts={filteredSet.oemParts}
+        aftermarketParts={filteredSet.aftermarketParts}
         onAddToCart={handleAddToCart}
         addedSku={addedSku}
         emptyOemMessage="No OEM components found for this model in the selected system category."
