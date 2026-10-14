@@ -29,15 +29,15 @@ flowchart TD
 
 ## Phase 2: Contracts & Shelf Location Propagation
 
-- [ ] **TASK-2.1**: Update `lib/motomatcher/comparison-matrix-contracts.ts`:
+- [x] **TASK-2.1**: Update `lib/motomatcher/comparison-matrix-contracts.ts`:
   - Extend `ComparisonMatrixProps` with `touchOptimized?: boolean`, `activeMobileTab?: "oem" | "aftermarket"`, `onMobileTabChange?: (tab: "oem" | "aftermarket") => void`.
-- [ ] **TASK-2.2**: Ensure `lib/motomatcher/subsystem-filter.ts` (`toComparisonPartItem`) properly passes `product.shelf_location` (or `product.shelfLocation`) into `ComparisonPartItem.shelfLocation`.
+- [x] **TASK-2.2**: Ensure `lib/motomatcher/subsystem-filter.ts` (`toComparisonPartItem`) properly passes `product.shelf_location` (or `product.shelfLocation`) into `ComparisonPartItem.shelfLocation`.
 
 ---
 
 ## Phase 3: Automated Unit & Component Tests (TDD)
 
-- [ ] **TASK-3.1**: Create/update unit and component tests in `components/motomatcher/__tests__/comparison-matrix.test.tsx`:
+- [x] **TASK-3.1**: Create/update unit and component tests in `components/motomatcher/__tests__/comparison-matrix.test.tsx`:
   - Verify `<ShelfLocationTag />` renders storage bay coordinates (`Rack A-01 / Shelf 2`).
   - Verify unassigned bays render the amber warning badge.
   - Verify minimum 44px touch targets (`min-h-[44px]`) on interactive buttons.
@@ -48,7 +48,7 @@ flowchart TD
 
 ## Phase 4: Touch Ergonomics, Shelf Locator & Mobile Tab Switcher in `<ComparisonMatrix />`
 
-- [ ] **TASK-4.1**: Enhance `components/motomatcher/comparison-matrix.tsx`:
+- [x] **TASK-4.1**: Enhance `components/motomatcher/comparison-matrix.tsx`:
   - Replace inline map pin text with standardized `<ShelfLocationTag location={part.shelfLocation} />`.
   - Enforce touch-friendly `min-h-[44px]` height and adequate touch padding on action buttons.
   - Implement mobile segmented tab bar (`[ OEM Factory (X) ]` | `[ Performance / Aftermarket (Y) ]`) visible on mobile/tablet viewports (`block md:hidden`).
@@ -59,7 +59,7 @@ flowchart TD
 
 ## Phase 5: Staff Floor Terminal View Refinement
 
-- [ ] **TASK-5.1**: Enhance `app/staff/compat/page.tsx`:
+- [x] **TASK-5.1**: Enhance `app/staff/compat/page.tsx`:
   - Wire `touchOptimized={true}` into `<ComparisonMatrix />`.
   - Verify optimistic toast confirmation and shared floor cart handoff via `dispatchMotoMatcherCartInsertion`.
 
@@ -67,6 +67,6 @@ flowchart TD
 
 ## Phase 6: Verification Suite, Typecheck, and Linting
 
-- [ ] **TASK-6.1**: Run automated test suite: `npm test -- components/motomatcher/__tests__/comparison-matrix.test.tsx`.
-- [ ] **TASK-6.2**: Run full TypeScript compilation check: `npm run typecheck`.
-- [ ] **TASK-6.3**: Run linter check: `npm run lint`.
+- [x] **TASK-6.1**: Run automated test suite: `npm test -- components/motomatcher/__tests__/comparison-matrix.test.tsx`.
+- [x] **TASK-6.2**: Run full TypeScript compilation check: `npm run typecheck`.
+- [x] **TASK-6.3**: Run linter check: `npm run lint`.
