@@ -2,7 +2,6 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SUBSYSTEM_CATEGORIES,
-  filterMotoMatcherProducts,
   getMotoMatcherFilteredSet,
   type MotoMatcherFilterOptions,
 } from '../subsystem-filter.ts';

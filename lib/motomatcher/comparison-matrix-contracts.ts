@@ -53,11 +53,12 @@ export interface ComparisonMatrixProps {
 export function fromProductToComparisonPart(product: Product): ComparisonPartItem {
   const isOem = Boolean(product.oem);
   const isUniversal = product.model?.toLowerCase() === 'universal';
-  const fitmentType: 'oem' | 'aftermarket' | 'universal' = isOem
-    ? 'oem'
-    : isUniversal
-    ? 'universal'
-    : 'aftermarket';
+  let fitmentType: 'oem' | 'aftermarket' | 'universal' = 'aftermarket';
+  if (isOem) {
+    fitmentType = 'oem';
+  } else if (isUniversal) {
+    fitmentType = 'universal';
+  }
 
   const shelfLoc =
     product.location ||
