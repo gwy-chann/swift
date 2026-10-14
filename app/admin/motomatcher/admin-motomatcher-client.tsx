@@ -10,10 +10,9 @@ import {
 import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
 import { ComparisonMatrix } from "@/components/motomatcher/comparison-matrix";
-import {
-  fromProductToComparisonPart,
-  type ComparisonPartItem,
-} from "@/lib/motomatcher/comparison-matrix-contracts";
+import { SubsystemFilterBar } from "@/components/motomatcher/subsystem-filter-bar";
+import { getMotoMatcherFilteredSet } from "@/lib/motomatcher/subsystem-filter";
+import type { ComparisonPartItem } from "@/lib/motomatcher/comparison-matrix-contracts";
 import { dispatchMotoMatcherCartInsertion } from "@/lib/motomatcher/cart-dispatch";
 
 export interface AdminMotoMatcherClientProps {
@@ -29,6 +28,8 @@ export function AdminMotoMatcherClient({
     initialModels.length > 0 ? initialModels[0] : null
   );
   const [isUniversal, setIsUniversal] = useState(false);
+  const [systemCategory, setSystemCategory] = useState("ALL");
+  const [includeUniversal, setIncludeUniversal] = useState(true);
   const [addedSku, setAddedSku] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "warning">("success");
@@ -43,51 +44,14 @@ export function AdminMotoMatcherClient({
     setSelectedModel(null);
   };
 
-  // Filter products matching current motorcycle platform
-  const matchingParts = useMemo(() => {
-    if (isUniversal) {
-      return initialProducts.filter(
-        (p) => p.model?.toLowerCase() === "universal"
-      );
-    }
-
-    if (!selectedModel) {
-      return [];
-    }
-
-    const modelNameLower = selectedModel.model.toLowerCase();
-    const makeLower = selectedModel.make.toLowerCase();
-
-    return initialProducts.filter((p) => {
-      const partModelLower = (p.model || "").toLowerCase();
-      const isUniversalPart = partModelLower === "universal";
-      const directMatch = partModelLower === modelNameLower;
-      const combinedMatch = partModelLower === `${makeLower} ${modelNameLower}`;
-      const substringMatch = partModelLower.includes(modelNameLower);
-
-      return isUniversalPart || directMatch || combinedMatch || substringMatch;
+  const filteredSet = useMemo(() => {
+    return getMotoMatcherFilteredSet(initialProducts, {
+      selectedModel,
+      isUniversalPlatform: isUniversal,
+      systemCategory,
+      includeUniversal,
     });
-  }, [initialProducts, selectedModel, isUniversal]);
-
-  // Segregate into OEM Standard and Alternative Aftermarket comparison items
-  const { oemComparisonParts, aftermarketComparisonParts } = useMemo(() => {
-    const oem: ComparisonPartItem[] = [];
-    const aftermarket: ComparisonPartItem[] = [];
-
-    for (const p of matchingParts) {
-      const comp = fromProductToComparisonPart(p);
-      if (comp.isOem) {
-        oem.push(comp);
-      } else {
-        aftermarket.push(comp);
-      }
-    }
-
-    return {
-      oemComparisonParts: oem,
-      aftermarketComparisonParts: aftermarket,
-    };
-  }, [matchingParts]);
+  }, [initialProducts, selectedModel, isUniversal, systemCategory, includeUniversal]);
 
   const handleAddToCart = (item: ComparisonPartItem) => {
     const result = dispatchMotoMatcherCartInsertion({ part: item });
@@ -148,6 +112,17 @@ export function AdminMotoMatcherClient({
         onSelectUniversal={handleSelectUniversal}
       />
 
+      {/* Subsystem Category & Universal Fitment Filter Bar */}
+      <SubsystemFilterBar
+        selectedCategory={systemCategory}
+        onSelectCategory={setSystemCategory}
+        includeUniversal={includeUniversal}
+        onToggleUniversal={setIncludeUniversal}
+        totalMatches={filteredSet.totalMatches}
+        oemCount={filteredSet.oemCount}
+        aftermarketCount={filteredSet.aftermarketCount}
+      />
+
       {/* Active Platform Banner */}
       <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -166,23 +141,23 @@ export function AdminMotoMatcherClient({
 
         <div className="flex items-center gap-3 text-xs">
           <span className="font-semibold text-text-secondary">
-            Total Matches: <strong className="text-text-primary font-mono">{matchingParts.length}</strong>
+            Total Matches: <strong className="text-text-primary font-mono">{filteredSet.totalMatches}</strong>
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-primary">
-            OEM: <strong className="font-mono">{oemComparisonParts.length}</strong>
+            OEM: <strong className="font-mono">{filteredSet.oemCount}</strong>
           </span>
           <span className="text-text-muted">•</span>
           <span className="font-semibold text-secondary">
-            Aftermarket: <strong className="font-mono">{aftermarketComparisonParts.length}</strong>
+            Aftermarket: <strong className="font-mono">{filteredSet.aftermarketCount}</strong>
           </span>
         </div>
       </div>
 
       {/* Side-by-Side Matrix Comparison Grid */}
       <ComparisonMatrix
-        oemParts={oemComparisonParts}
-        aftermarketParts={aftermarketComparisonParts}
+        oemParts={filteredSet.oemParts}
+        aftermarketParts={filteredSet.aftermarketParts}
         onAddToCart={handleAddToCart}
         addedSku={addedSku}
       />
