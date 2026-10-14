@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getStaffViewTitle, DEFAULT_STAFF_SHIFT } from "@/lib/staff/navigation";
 import { ShiftDurationTimer } from "./shift-duration-timer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, ShieldCheck, Monitor } from "lucide-react";
+import { Menu, ShieldCheck, Monitor, ShoppingCart } from "lucide-react";
+import { useCartStore } from "@/lib/store/cart-store";
 
 interface StaffTopbarProps {
   onMenuToggle: () => void;
@@ -15,6 +17,8 @@ interface StaffTopbarProps {
 export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProps) {
   const pathname = usePathname();
   const currentTitle = getStaffViewTitle(pathname);
+  const { totals } = useCartStore();
+  const cartItemCount = totals?.itemCount ?? 0;
 
   return (
     <header className="h-16 bg-bg-surface border-b border-border px-4 lg:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20">
@@ -40,8 +44,21 @@ export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProp
         </div>
       </div>
 
-      {/* Right Area: Shift duration, theme toggle & Admin Portal Access */}
+      {/* Right Area: Shift duration, theme toggle, POS cart indicator & Admin Portal Access */}
       <div className="flex items-center gap-2.5 lg:gap-4">
+        {/* Quick-Access POS Cart Badge */}
+        {cartItemCount > 0 && (
+          <Link
+            href="/staff/pos"
+            aria-label={`View active POS Cart with ${cartItemCount} items`}
+            className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-md bg-primary-light border border-primary-border text-primary hover:bg-primary hover:text-white text-xs font-bold shadow-xs transition-all duration-150 cursor-pointer animate-in fade-in"
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+            <span className="font-mono text-xs font-black">{cartItemCount}</span>
+            <span className="hidden md:inline text-[11px] font-semibold">in Cart</span>
+          </Link>
+        )}
+
         {/* Shift Duration Timer */}
         <div className="px-2.5 py-1 rounded-md bg-bg-base border border-border">
           <ShiftDurationTimer initialSeconds={DEFAULT_STAFF_SHIFT.initialElapsedSeconds} />

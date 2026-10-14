@@ -8,17 +8,17 @@ interface StaffNavItemProps {
   onClick?: () => void;
 }
 
+function getBadgeStyle(variant?: string, isActive?: boolean): string {
+  if (variant === "success") return "bg-success text-white";
+  if (variant === "danger") return "bg-danger text-white";
+  if (variant === "warning") return "bg-accent text-white";
+  if (isActive) return "bg-white text-primary";
+  return "bg-primary text-white";
+}
+
 export function StaffNavItemComponent({ item, isActive, onClick }: StaffNavItemProps) {
   const Icon = item.icon;
-
-  const badgeStyle =
-    item.badge?.variant === "success"
-      ? "bg-success text-white"
-      : item.badge?.variant === "danger"
-      ? "bg-danger text-white"
-      : item.badge?.variant === "warning"
-      ? "bg-accent text-white"
-      : "bg-primary text-white";
+  const badgeStyle = getBadgeStyle(item.badge?.variant, isActive);
 
   return (
     <Link

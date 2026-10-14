@@ -20,7 +20,7 @@ export function HybridCartPane({
   onRequireOverride,
   onCompleteSale,
   isProcessing = false
-}: HybridCartPaneProps) {
+}: Readonly<HybridCartPaneProps>) {
   const {
     items,
     pricingMode,

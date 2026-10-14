@@ -16,20 +16,19 @@ export function ShelfLocationTag({
   location,
   className = '',
   showIcon = true
-}: ShelfLocationTagProps) {
+}: Readonly<ShelfLocationTagProps>) {
   const parsed = parseShelfLocation(location);
 
   if (!parsed.isAssigned) {
     return (
-      <span
+      <output
         className={`shelf-location-tag shelf-location-unassigned inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md bg-accent-light text-accent border border-accent/30 shadow-2xs select-none ${className}`}
-        role="status"
         aria-label="Unassigned storage bay warning"
         title="Unassigned storage bay: Please assign a rack and shelf location"
       >
         {showIcon && <AlertTriangle className="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true" />}
         <span>{parsed.formatted}</span>
-      </span>
+      </output>
     );
   }
 

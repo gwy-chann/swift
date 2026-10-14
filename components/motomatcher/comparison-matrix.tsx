@@ -13,6 +13,84 @@ import {
 } from "lucide-react";
 import type { ComparisonPartItem, ComparisonMatrixProps } from "@/lib/motomatcher/comparison-matrix-contracts";
 
+function renderPartTypeBadge(part: ComparisonPartItem) {
+  if (part.isOem) {
+    return (
+      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary-light text-primary">
+        OEM FACTORY
+      </span>
+    );
+  }
+  if (part.isUniversal) {
+    return (
+      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-bg-muted text-text-secondary border border-border">
+        UNIVERSAL
+      </span>
+    );
+  }
+  return (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary/15 text-secondary">
+      AFTERMARKET
+    </span>
+  );
+}
+
+function renderStockBadge(part: ComparisonPartItem) {
+  if (part.stockLevel <= 0) {
+    return (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block bg-danger-light text-danger border border-danger/20 badge badge-danger">
+        Out of Stock
+      </span>
+    );
+  }
+  if (part.stockLevel <= part.minThreshold) {
+    return (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 bg-danger-light text-danger">
+        <AlertTriangle className="w-2.5 h-2.5" />
+        Low Stock ({part.stockLevel})
+      </span>
+    );
+  }
+  return (
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block bg-success-light text-success">
+      {part.stockLevel} in stock
+    </span>
+  );
+}
+
+function getAddToCartButtonClasses(isAdded: boolean, isOutOfStock: boolean, isOemColumn: boolean): string {
+  if (isOutOfStock) {
+    return "bg-bg-muted text-text-muted border border-border";
+  }
+  if (isAdded) {
+    return "bg-success text-white shadow-xs";
+  }
+  if (isOemColumn) {
+    return "bg-primary text-white hover:bg-primary-hover shadow-xs";
+  }
+  return "bg-secondary text-white hover:bg-secondary-hover shadow-xs";
+}
+
+function renderAddToCartButtonContent(isAdded: boolean, isOutOfStock: boolean) {
+  if (isAdded) {
+    return (
+      <>
+        <Check className="w-3 h-3" />
+        <span>Added to Cart</span>
+      </>
+    );
+  }
+  if (isOutOfStock) {
+    return <span>Out of Stock</span>;
+  }
+  return (
+    <>
+      <Plus className="w-3 h-3" />
+      <span>Add to POS Cart</span>
+    </>
+  );
+}
+
 export function ComparisonMatrix({
   oemParts,
   aftermarketParts,
@@ -22,7 +100,7 @@ export function ComparisonMatrix({
   emptyOemMessage = "No OEM matches in stock for this platform. Check alternative aftermarket parts or consult distributor catalog.",
   emptyAftermarketMessage = "No Aftermarket matches in stock for this platform. Check universal components or request special order.",
   className = "",
-}: ComparisonMatrixProps) {
+}: Readonly<ComparisonMatrixProps>) {
   const [internalAddedSku, setInternalAddedSku] = useState<string | null>(null);
 
   const activeAddedSku = externalAddedSku !== undefined ? externalAddedSku : internalAddedSku;
@@ -46,8 +124,8 @@ export function ComparisonMatrix({
 
   const renderPartCard = (part: ComparisonPartItem, isOemColumn: boolean) => {
     const isAdded = activeAddedSku === part.sku;
-    const isLowStock = part.stockLevel <= part.minThreshold;
     const isOutOfStock = part.stockLevel <= 0;
+    const buttonClasses = getAddToCartButtonClasses(isAdded, isOutOfStock, isOemColumn);
 
     return (
       <div
@@ -64,19 +142,7 @@ export function ComparisonMatrix({
               <span className="text-[10px] font-mono font-bold text-text-muted">
                 {part.sku}
               </span>
-              {part.isOem ? (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary-light text-primary">
-                  OEM FACTORY
-                </span>
-              ) : part.isUniversal ? (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-bg-muted text-text-secondary border border-border">
-                  UNIVERSAL
-                </span>
-              ) : (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary/15 text-secondary">
-                  AFTERMARKET
-                </span>
-              )}
+              {renderPartTypeBadge(part)}
 
               {part.upsellBadge && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary/15 text-secondary flex items-center gap-0.5">
@@ -112,22 +178,7 @@ export function ComparisonMatrix({
               {formatPrice(part.retailPrice)}
             </div>
 
-            <div className="mt-0.5">
-              {isOutOfStock ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block bg-danger-light text-danger border border-danger/20 badge badge-danger">
-                  Out of Stock
-                </span>
-              ) : isLowStock ? (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 bg-danger-light text-danger">
-                  <AlertTriangle className="w-2.5 h-2.5" />
-                  Low Stock ({part.stockLevel})
-                </span>
-              ) : (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block bg-success-light text-success">
-                  {part.stockLevel} in stock
-                </span>
-              )}
-            </div>
+            <div className="mt-0.5">{renderStockBadge(part)}</div>
           </div>
         </div>
 
@@ -148,28 +199,68 @@ export function ComparisonMatrix({
             type="button"
             disabled={isOutOfStock}
             onClick={() => handleCardAddToCart(part)}
-            aria-label={`Add ${part.name} to POS Cart`}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-              isAdded
-                ? "bg-success text-white"
-                : isOemColumn
-                ? "bg-primary text-white hover:bg-primary-hover shadow-xs"
-                : "bg-secondary text-white hover:bg-secondary-hover shadow-xs"
-            }`}
+            aria-label={isOutOfStock ? `${part.name} is out of stock` : `Add ${part.name} to POS Cart`}
+            className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${buttonClasses}`}
           >
-            {isAdded ? (
-              <>
-                <Check className="w-3 h-3" />
-                <span>Added to Cart</span>
-              </>
-            ) : (
-              <>
-                <Plus className="w-3 h-3" />
-                <span>Add to POS Cart</span>
-              </>
-            )}
+            {renderAddToCartButtonContent(isAdded, isOutOfStock)}
           </button>
         </div>
+      </div>
+    );
+  };
+
+  const renderOemContent = () => {
+    if (isLoading) {
+      return (
+        <div className="p-8 bg-bg-surface border border-border rounded-xl text-center text-text-muted text-xs">
+          Loading OEM components...
+        </div>
+      );
+    }
+    if (oemParts.length > 0) {
+      return (
+        <div className="space-y-2.5">
+          {oemParts.map((part) => renderPartCard(part, true))}
+        </div>
+      );
+    }
+    return (
+      <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
+        <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
+        <p className="text-xs font-bold text-text-primary">
+          No OEM matches found for this model
+        </p>
+        <p className="text-[11px] text-text-muted leading-relaxed">
+          {emptyOemMessage}
+        </p>
+      </div>
+    );
+  };
+
+  const renderAftermarketContent = () => {
+    if (isLoading) {
+      return (
+        <div className="p-8 bg-bg-surface border border-border rounded-xl text-center text-text-muted text-xs">
+          Loading aftermarket components...
+        </div>
+      );
+    }
+    if (aftermarketParts.length > 0) {
+      return (
+        <div className="space-y-2.5">
+          {aftermarketParts.map((part) => renderPartCard(part, false))}
+        </div>
+      );
+    }
+    return (
+      <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
+        <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
+        <p className="text-xs font-bold text-text-primary">
+          No Aftermarket matches found for this model
+        </p>
+        <p className="text-[11px] text-text-muted leading-relaxed">
+          {emptyAftermarketMessage}
+        </p>
       </div>
     );
   };
@@ -193,25 +284,7 @@ export function ComparisonMatrix({
           </span>
         </header>
 
-        {isLoading ? (
-          <div className="p-8 bg-bg-surface border border-border rounded-xl text-center text-text-muted text-xs">
-            Loading OEM components...
-          </div>
-        ) : oemParts.length > 0 ? (
-          <div className="space-y-2.5">
-            {oemParts.map((part) => renderPartCard(part, true))}
-          </div>
-        ) : (
-          <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
-            <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
-            <p className="text-xs font-bold text-text-primary">
-              No OEM matches found for this model
-            </p>
-            <p className="text-[11px] text-text-muted leading-relaxed">
-              {emptyOemMessage}
-            </p>
-          </div>
-        )}
+        {renderOemContent()}
       </section>
 
       {/* Column 2: Alternative / Performance Aftermarket */}
@@ -231,25 +304,7 @@ export function ComparisonMatrix({
           </span>
         </header>
 
-        {isLoading ? (
-          <div className="p-8 bg-bg-surface border border-border rounded-xl text-center text-text-muted text-xs">
-            Loading aftermarket components...
-          </div>
-        ) : aftermarketParts.length > 0 ? (
-          <div className="space-y-2.5">
-            {aftermarketParts.map((part) => renderPartCard(part, false))}
-          </div>
-        ) : (
-          <div className="p-8 bg-bg-surface border border-border border-dashed rounded-xl text-center space-y-2">
-            <PackageOpen className="w-7 h-7 text-text-muted mx-auto" />
-            <p className="text-xs font-bold text-text-primary">
-              No Aftermarket matches found for this model
-            </p>
-            <p className="text-[11px] text-text-muted leading-relaxed">
-              {emptyAftermarketMessage}
-            </p>
-          </div>
-        )}
+        {renderAftermarketContent()}
       </section>
     </div>
   );

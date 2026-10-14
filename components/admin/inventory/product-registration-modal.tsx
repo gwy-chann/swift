@@ -143,8 +143,8 @@ function useProductRegistrationForm({
   // Handle Cost Change with Auto-Calculation
   const handleCostChange = (val: string) => {
     setCost(val);
-    const numericCost = parseFloat(val);
-    if (!isNaN(numericCost) && numericCost > 0) {
+    const numericCost = Number.parseFloat(val);
+    if (!Number.isNaN(numericCost) && numericCost > 0) {
       const calculated = calculateMarkupPrices(
         numericCost,
         specType === 'oem',
@@ -173,8 +173,8 @@ function useProductRegistrationForm({
   // Handle Part Specification Change
   const handleSpecTypeChange = (newSpec: 'aftermarket' | 'oem') => {
     setSpecType(newSpec);
-    const numericCost = parseFloat(cost);
-    if (!isNaN(numericCost) && numericCost > 0 && !manualRetailOverride) {
+    const numericCost = Number.parseFloat(cost);
+    if (!Number.isNaN(numericCost) && numericCost > 0 && !manualRetailOverride) {
       const calculated = calculateMarkupPrices(
         numericCost,
         newSpec === 'oem',
@@ -222,11 +222,11 @@ function useProductRegistrationForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const parsedCost = parseFloat(cost);
-    const parsedStock = parseInt(stock, 10);
-    const parsedMinThreshold = parseInt(minThreshold, 10);
-    const parsedWholesale = parseFloat(wholesale);
-    const parsedRetail = parseFloat(retail);
+    const parsedCost = Number.parseFloat(cost);
+    const parsedStock = Number.parseInt(stock, 10);
+    const parsedMinThreshold = Number.parseInt(minThreshold, 10);
+    const parsedWholesale = Number.parseFloat(wholesale);
+    const parsedRetail = Number.parseFloat(retail);
 
     const payload: Partial<ProductRegistrationInput> = {
       sku: sku.trim(),
@@ -236,11 +236,11 @@ function useProductRegistrationForm({
       model: model.trim(),
       location: location.trim(),
       specType,
-      stock: isNaN(parsedStock) ? -1 : parsedStock,
-      minThreshold: isNaN(parsedMinThreshold) ? -1 : parsedMinThreshold,
-      cost: isNaN(parsedCost) ? 0 : parsedCost,
-      wholesale: isNaN(parsedWholesale) ? undefined : parsedWholesale,
-      retail: isNaN(parsedRetail) ? undefined : parsedRetail
+      stock: Number.isNaN(parsedStock) ? -1 : parsedStock,
+      minThreshold: Number.isNaN(parsedMinThreshold) ? -1 : parsedMinThreshold,
+      cost: Number.isNaN(parsedCost) ? 0 : parsedCost,
+      wholesale: Number.isNaN(parsedWholesale) ? undefined : parsedWholesale,
+      retail: Number.isNaN(parsedRetail) ? undefined : parsedRetail
     };
 
     const validation = validateProductRegistration(payload, existingSkus);
@@ -318,7 +318,7 @@ function useProductRegistrationForm({
   };
 }
 
-export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
+export function ProductRegistrationModal(props: Readonly<ProductRegistrationModalProps>) {
   const { isOpen, onClose, pricingRules } = props;
   const {
     sku,
@@ -356,18 +356,20 @@ export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn"
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="product-registration-modal-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none border-none outline-none m-0 overflow-y-auto"
     >
-      <div className="w-full max-w-2xl bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-fadeIn"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div className="relative w-full max-w-2xl bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0 bg-bg-surface">
           <div className="flex items-center gap-3">
@@ -763,7 +765,7 @@ export function ProductRegistrationModal(props: ProductRegistrationModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 

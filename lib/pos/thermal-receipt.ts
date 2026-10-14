@@ -44,16 +44,17 @@ export function formatReceiptCurrency(amount: number): string {
 /**
  * Generates simulated barcode line array for printing/display.
  */
-export function generateReceiptBarcodePattern(receiptNumber: string): { widthClass: string }[] {
+export function generateReceiptBarcodePattern(receiptNumber: string): { id: string; widthClass: string }[] {
   const seed = receiptNumber.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const patternLength = 32;
-  const bars: { widthClass: string }[] = [];
+  const bars: { id: string; widthClass: string }[] = [];
 
   for (let i = 0; i < patternLength; i++) {
     const val = (seed + i * 7) % 5;
-    if (val === 0) bars.push({ widthClass: 'w-1' });
-    else if (val % 2 === 0) bars.push({ widthClass: 'w-0.5' });
-    else bars.push({ widthClass: 'w-px' });
+    const id = `${receiptNumber}-bar-${i}`;
+    if (val === 0) bars.push({ id, widthClass: 'w-1' });
+    else if (val % 2 === 0) bars.push({ id, widthClass: 'w-0.5' });
+    else bars.push({ id, widthClass: 'w-px' });
   }
 
   return bars;

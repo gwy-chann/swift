@@ -340,9 +340,9 @@ export function ThermalReceiptModal({
                 {/* Simulated Barcode */}
                 <div className="pt-2 flex flex-col items-center justify-center">
                   <div className="h-7 w-40 flex items-center justify-center gap-0.5 opacity-80 print:opacity-100">
-                    {generateReceiptBarcodePattern(activeReceipt.receiptNumber).map((bar, i) => (
+                    {generateReceiptBarcodePattern(activeReceipt.receiptNumber).map((bar) => (
                       <div
-                        key={i}
+                        key={bar.id}
                         className={`h-full bg-text-primary print:bg-black ${bar.widthClass}`}
                       />
                     ))}
