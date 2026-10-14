@@ -4,8 +4,8 @@ import {
   getMotorcycleModelsAction,
   getFitmentMatrixAction,
   addFitmentRuleAction,
-  MOTOMATCHER_CACHE_TAGS,
 } from '../actions.ts';
+import { MOTOMATCHER_CACHE_TAGS } from '../mock-engine.ts';
 import {
   FitmentMatrixActionResultSchema,
   AddFitmentRuleInputSchema,

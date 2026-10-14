@@ -1,9 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  executeMockMotoMatcherMatrix,
-  getFitmentMatrixAction,
-} from '../actions.ts';
+import { getFitmentMatrixAction } from '../actions.ts';
+import { executeMockMotoMatcherMatrix } from '../mock-engine.ts';
 import {
   calculateUpsellDelta,
   MotoMatcherMatrixPayloadSchema,
