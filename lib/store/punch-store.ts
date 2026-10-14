@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import type { PunchLog } from '../types/logs.ts';
+import { mapStaffShiftRow, type DbStaffShift } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
 import { ShiftRpcError, SHIFT_RPC_ERROR_CODES, formatDurationToHoursMinutes } from '../contracts/punch-clock-rpcs.ts';
 
@@ -20,6 +21,7 @@ export interface PunchStoreState {
   currentStaff: string;
   shiftStatus: ShiftStateStatus;
   lastError: PunchStoreError | null;
+  activeStaffCount: number;
 }
 
 function formatShiftDurationTimer(seconds: number): string {
@@ -35,18 +37,45 @@ export class PunchStore {
   private readonly errorListeners = new Set<(error: PunchStoreError) => void>();
 
   constructor() {
+    const initialLogs = [...MOCK_PUNCH_LOGS];
     this.state = {
       isShiftActive: true,
       shiftSeconds: 15150, // 04h 12m 30s as in mockup/app.js line 724
-      punchLogs: [...MOCK_PUNCH_LOGS],
+      punchLogs: initialLogs,
       currentStaff: 'Mike Morales',
       shiftStatus: 'on_shift',
       lastError: null,
+      activeStaffCount: this.calculateActiveStaffCount(initialLogs),
     };
+  }
+
+  private calculateActiveStaffCount(logs: PunchLog[]): number {
+    const staffStatusMap = new Map<string, string>();
+    for (const log of logs) {
+      if (log.staff && !staffStatusMap.has(log.staff)) {
+        staffStatusMap.set(log.staff, log.status);
+      }
+    }
+    let count = 0;
+    for (const status of staffStatusMap.values()) {
+      if (
+        status === 'On Shift' ||
+        status === 'Break' ||
+        status === 'on_shift' ||
+        status === 'break'
+      ) {
+        count++;
+      }
+    }
+    return count;
   }
 
   public getState = (): PunchStoreState => {
     return this.state;
+  };
+
+  public getActiveStaffCount = (): number => {
+    return this.state.activeStaffCount;
   };
 
   public subscribe = (listener: () => void): (() => void) => {
@@ -171,6 +200,8 @@ export class PunchStore {
       terminal: terminalId,
     };
 
+    const updatedLogs = [newLog, ...this.state.punchLogs];
+
     this.state = {
       ...this.state,
       isShiftActive: true,
@@ -178,7 +209,8 @@ export class PunchStore {
       shiftSeconds: 0,
       currentStaff: staffName,
       lastError: null,
-      punchLogs: [newLog, ...this.state.punchLogs],
+      punchLogs: updatedLogs,
+      activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
     };
     this.notify();
   };
@@ -211,6 +243,7 @@ export class PunchStore {
       ...this.state,
       shiftStatus: nextStatus,
       punchLogs: updatedLogs,
+      activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
       lastError: null,
     };
     this.notify();
@@ -258,6 +291,7 @@ export class PunchStore {
       shiftStatus: 'completed',
       lastError: null,
       punchLogs: updatedLogs,
+      activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
     };
     this.notify();
     return durationStr;
@@ -268,6 +302,137 @@ export class PunchStore {
       ...this.state,
       shiftSeconds: 0,
       lastError: null,
+    };
+    this.notify();
+  };
+
+  public rehydrateShift = (
+    activeShift: DbStaffShift | null,
+    recentLogs?: PunchLog[],
+    nowTimestamp?: number
+  ): void => {
+    const now = nowTimestamp ?? Date.now();
+    let isShiftActive = false;
+    let shiftStatus: ShiftStateStatus = 'idle';
+    let shiftSeconds = 0;
+    let currentStaff = this.state.currentStaff;
+
+    if (activeShift) {
+      currentStaff = activeShift.staff_name;
+      const clockInMs = new Date(activeShift.clock_in).getTime();
+      const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+
+      if (activeShift.status === 'break') {
+        isShiftActive = true;
+        shiftStatus = 'break';
+        shiftSeconds = activeShift.duration_seconds ?? elapsed;
+      } else if (activeShift.status === 'on_shift') {
+        isShiftActive = true;
+        shiftStatus = 'on_shift';
+        shiftSeconds = elapsed;
+      } else {
+        shiftStatus = 'completed';
+        shiftSeconds = activeShift.duration_seconds ?? 0;
+      }
+    }
+
+    let mergedLogs = [...this.state.punchLogs];
+    if (recentLogs && recentLogs.length > 0) {
+      const existingIds = new Set(mergedLogs.map((l) => l.id).filter(Boolean));
+      const newLogsToPrepend: PunchLog[] = [];
+      for (const log of recentLogs) {
+        if (log.id && !existingIds.has(log.id)) {
+          newLogsToPrepend.push(log);
+          existingIds.add(log.id);
+        }
+      }
+      mergedLogs = [...newLogsToPrepend, ...mergedLogs];
+    }
+
+    this.state = {
+      ...this.state,
+      isShiftActive,
+      shiftStatus,
+      shiftSeconds,
+      currentStaff,
+      punchLogs: mergedLogs,
+      activeStaffCount: this.calculateActiveStaffCount(mergedLogs),
+      lastError: null,
+    };
+    this.notify();
+  };
+
+  public handleRealtimeShiftInsert = (row: DbStaffShift): void => {
+    const mapped = mapStaffShiftRow(row);
+    const exists = this.state.punchLogs.some((l) => l.id === row.id);
+    const newLogs = exists ? this.state.punchLogs : [mapped, ...this.state.punchLogs];
+
+    let nextIsActive = this.state.isShiftActive;
+    let nextStatus = this.state.shiftStatus;
+    let nextStaff = this.state.currentStaff;
+    let nextSeconds = this.state.shiftSeconds;
+
+    if (row.staff_name === this.state.currentStaff && (row.status === 'on_shift' || row.status === 'break')) {
+      nextIsActive = true;
+      nextStatus = row.status as ShiftStateStatus;
+      nextStaff = row.staff_name;
+      const clockInMs = new Date(row.clock_in).getTime();
+      nextSeconds = Math.max(0, Math.floor((Date.now() - clockInMs) / 1000));
+    }
+
+    this.state = {
+      ...this.state,
+      isShiftActive: nextIsActive,
+      shiftStatus: nextStatus,
+      currentStaff: nextStaff,
+      shiftSeconds: nextSeconds,
+      punchLogs: newLogs,
+      activeStaffCount: this.calculateActiveStaffCount(newLogs),
+    };
+    this.notify();
+  };
+
+  public handleRealtimeShiftUpdate = (row: DbStaffShift): void => {
+    const mapped = mapStaffShiftRow(row);
+    let updated = false;
+    const newLogs = this.state.punchLogs.map((log) => {
+      if (log.id === row.id) {
+        updated = true;
+        return mapped;
+      }
+      return log;
+    });
+
+    if (!updated) {
+      newLogs.unshift(mapped);
+    }
+
+    let nextIsActive = this.state.isShiftActive;
+    let nextStatus = this.state.shiftStatus;
+    let nextSeconds = this.state.shiftSeconds;
+
+    if (row.staff_name === this.state.currentStaff) {
+      if (row.status === 'completed') {
+        nextIsActive = false;
+        nextStatus = 'completed';
+        if (row.duration_seconds !== null && row.duration_seconds !== undefined) {
+          nextSeconds = row.duration_seconds;
+        }
+      } else if (row.status === 'break') {
+        nextStatus = 'break';
+      } else if (row.status === 'on_shift') {
+        nextIsActive = true;
+        nextStatus = 'on_shift';
+      }
+    }
+
+    this.state = {
+      ...this.state,
+      isShiftActive: nextIsActive,
+      shiftStatus: nextStatus,
+      shiftSeconds: nextSeconds,
+      punchLogs: newLogs,
+      activeStaffCount: this.calculateActiveStaffCount(newLogs),
     };
     this.notify();
   };
@@ -283,6 +448,10 @@ export function usePunchStore(): PunchStoreState & {
   toggleBreak: typeof punchStore.toggleBreak;
   resetTimer: typeof punchStore.resetTimer;
   clearError: typeof punchStore.clearError;
+  rehydrateShift: typeof punchStore.rehydrateShift;
+  handleRealtimeShiftInsert: typeof punchStore.handleRealtimeShiftInsert;
+  handleRealtimeShiftUpdate: typeof punchStore.handleRealtimeShiftUpdate;
+  getActiveStaffCount: typeof punchStore.getActiveStaffCount;
 } {
   const state = useSyncExternalStore(
     punchStore.subscribe,
@@ -299,5 +468,9 @@ export function usePunchStore(): PunchStoreState & {
     toggleBreak: punchStore.toggleBreak,
     resetTimer: punchStore.resetTimer,
     clearError: punchStore.clearError,
+    rehydrateShift: punchStore.rehydrateShift,
+    handleRealtimeShiftInsert: punchStore.handleRealtimeShiftInsert,
+    handleRealtimeShiftUpdate: punchStore.handleRealtimeShiftUpdate,
+    getActiveStaffCount: punchStore.getActiveStaffCount,
   };
 }
