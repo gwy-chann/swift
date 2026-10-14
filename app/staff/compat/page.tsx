@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { CheckCircle2, Filter, Wifi, WifiOff } from "lucide-react";
+import { CheckCircle2, Filter, Wifi, WifiOff, AlertTriangle } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getMotorcycleModelsAction } from "@/lib/motomatcher/actions";
 import { useMotoMatcherRealtime } from "@/lib/hooks/use-motomatcher-realtime";
-import type { MotorcycleModelRecord, Product } from "@/lib/types/product";
+import type { MotorcycleModelRecord } from "@/lib/types/product";
 import { MOCK_MOTORCYCLE_MODEL_RECORDS } from "@/lib/mock-data/motorcycles";
 import { MotorcycleSelector } from "@/components/motomatcher/motorcycle-selector";
 import { ComparisonMatrix } from "@/components/motomatcher/comparison-matrix";
@@ -14,7 +14,7 @@ import {
   fromProductToComparisonPart,
   type ComparisonPartItem,
 } from "@/lib/motomatcher/comparison-matrix-contracts";
-import { useCartStore } from "@/lib/store/cart-store";
+import { dispatchMotoMatcherCartInsertion } from "@/lib/motomatcher/cart-dispatch";
 
 function renderSyncStatus(isConnected: boolean, status: string) {
   if (isConnected) {
@@ -52,6 +52,7 @@ export default function StaffCompatPage() {
   const [systemCategory, setSystemCategory] = useState("ALL");
   const [addedSku, setAddedSku] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "warning">("success");
   const { products, hydrateProducts } = useInventoryStore();
 
   const refreshProducts = useCallback(() => {
@@ -155,17 +156,16 @@ export default function StaffCompatPage() {
   }, [compatibleParts]);
 
   const handleAddToCart = (item: ComparisonPartItem) => {
-    const raw = item.rawProduct as Product | undefined;
-    if (raw) {
-      if (raw.stock <= 0) return;
-      const res = useCartStore.getState().addItem(raw);
-      if (res.success) {
-        setAddedSku(item.sku);
-        const shelfText = raw.location ? ` (Shelf: ${raw.location})` : "";
-        setToastMessage(`Added ${raw.name} to POS Cart${shelfText}`);
-        setTimeout(() => setAddedSku(null), 1800);
-        setTimeout(() => setToastMessage(null), 3500);
-      }
+    const result = dispatchMotoMatcherCartInsertion({ part: item });
+    setToastMessage(result.message);
+    if (result.success) {
+      setAddedSku(item.sku);
+      setToastType("success");
+      setTimeout(() => setAddedSku(null), 1800);
+      setTimeout(() => setToastMessage(null), 3500);
+    } else {
+      setToastType("warning");
+      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -257,11 +257,18 @@ export default function StaffCompatPage() {
       {toastMessage && (
         <div
           role="status"
+          aria-live="polite"
           className="fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 bg-bg-surface text-text-primary border border-border shadow-lg rounded-xl animate-in slide-in-from-bottom-2 duration-200"
         >
-          <div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
+          {toastType === "success" ? (
+            <div className="w-6 h-6 rounded-full bg-success-light text-success flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-danger-light text-danger flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          )}
           <span className="text-xs font-semibold">{toastMessage}</span>
           <button
             type="button"
