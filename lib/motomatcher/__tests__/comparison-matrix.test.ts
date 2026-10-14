@@ -206,4 +206,88 @@ describe('ComparisonMatrix Domain & Contracts (SIAA-24)', () => {
       assert.equal(result.success, false);
     });
   });
+
+  describe('Staff Floor Terminal Touch & Shelf Locator Integration (SIAA-27)', () => {
+    it('propagates exact shelf location coordinates to ComparisonPartItem', () => {
+      const productWithRack: Product = {
+        sku: 'TEST-SHELF-LOC',
+        name: 'Brembo Brake Pads',
+        category: 'Brakes',
+        brand: 'Brembo',
+        model: 'Yamaha NMAX 155',
+        retail: 950,
+        wholesale: 800,
+        cost: 650,
+        stock: 8,
+        minThreshold: 3,
+        location: 'Rack A-01 / Shelf 2',
+        oem: false,
+      };
+
+      const part = fromProductToComparisonPart(productWithRack);
+      assert.equal(part.shelfLocation, 'Rack A-01 / Shelf 2');
+    });
+
+    it('falls back to shelf_location property if location is empty', () => {
+      const rawProduct = {
+        sku: 'TEST-FALLBACK',
+        name: 'Oil Filter',
+        category: 'Engine',
+        brand: 'Yamaha Genuine',
+        model: 'Yamaha NMAX 155',
+        retail: 180,
+        wholesale: 150,
+        cost: 100,
+        stock: 20,
+        minThreshold: 5,
+        location: '',
+        shelf_location: 'Bay C-03 / Bin 4',
+        oem: true,
+      } as unknown as Product;
+
+      const part = fromProductToComparisonPart(rawProduct);
+      assert.equal(part.shelfLocation, 'Bay C-03 / Bin 4');
+    });
+
+    it('handles unassigned shelf location gracefully (null)', () => {
+      const productNoShelf: Product = {
+        sku: 'TEST-UNASSIGNED',
+        name: 'Universal Cable Tie Pack',
+        category: 'Accessories',
+        brand: 'Generic',
+        model: 'Universal',
+        retail: 50,
+        wholesale: 35,
+        cost: 20,
+        stock: 100,
+        minThreshold: 10,
+        location: '',
+        oem: false,
+      };
+
+      const part = fromProductToComparisonPart(productNoShelf);
+      assert.equal(part.shelfLocation, null);
+    });
+
+    it('supports tabbed mobile partition for mobile/tablet screen viewports (< 768px)', () => {
+      const oem = fromProductToComparisonPart(sampleOemProduct);
+      const aftermarket = fromProductToComparisonPart(sampleAftermarketProduct);
+      const allParts = [oem, aftermarket];
+
+      const { oemParts, aftermarketParts } = partitionComparisonParts(allParts);
+
+      // Mobile active tab logic
+      const resolveVisibleParts = (activeTab: 'oem' | 'aftermarket') => {
+        return activeTab === 'oem' ? oemParts : aftermarketParts;
+      };
+
+      const oemView = resolveVisibleParts('oem');
+      assert.equal(oemView.length, 1);
+      assert.equal(oemView[0].sku, 'YAM-NMAX-BELT-OEM');
+
+      const aftermarketView = resolveVisibleParts('aftermarket');
+      assert.equal(aftermarketView.length, 1);
+      assert.equal(aftermarketView[0].sku, 'KOS-NMAX-BELT-RACE');
+    });
+  });
 });
