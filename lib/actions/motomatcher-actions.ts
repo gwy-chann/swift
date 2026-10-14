@@ -41,7 +41,11 @@ export async function getMotorcycleModelsAction(): Promise<MotorcycleModelRecord
   return MOCK_MOTORCYCLE_MODEL_RECORDS;
 }
 
-export {
-  getFitmentMatrixAction,
-  executeMockMotoMatcherMatrix,
-} from '../motomatcher/actions.ts';
+export async function getFitmentMatrixAction(
+  modelId: string,
+  category?: string | null,
+  search?: string | null
+) {
+  const { getFitmentMatrixAction: action } = await import('../motomatcher/actions.ts');
+  return action(modelId, category, search);
+}
