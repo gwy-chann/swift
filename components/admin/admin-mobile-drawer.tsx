@@ -9,7 +9,7 @@ interface AdminMobileDrawerProps {
   onClose: () => void;
 }
 
-export function AdminMobileDrawer({ isOpen, onClose }: AdminMobileDrawerProps) {
+export function AdminMobileDrawer({ isOpen, onClose }: Readonly<AdminMobileDrawerProps>) {
   // Close on Escape key
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -24,7 +24,12 @@ export function AdminMobileDrawer({ isOpen, onClose }: AdminMobileDrawerProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden flex" role="dialog" aria-modal="true">
+    <dialog
+      open
+      aria-modal="true"
+      aria-label="Admin Navigation Drawer"
+      className="fixed inset-0 z-50 md:hidden flex bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none"
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fadeIn"
@@ -49,6 +54,6 @@ export function AdminMobileDrawer({ isOpen, onClose }: AdminMobileDrawerProps) {
         {/* Sidebar Navigation */}
         <AdminSidebar onItemClick={onClose} className="w-full border-r-0" />
       </div>
-    </div>
+    </dialog>
   );
 }

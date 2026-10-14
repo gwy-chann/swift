@@ -38,7 +38,7 @@ export function CashTenderModal({
     }
   }, [isOpen, totalDue]);
 
-  const parsedTendered = tenderInput.trim() === '' ? 0 : parseFloat(tenderInput) || 0;
+  const parsedTendered = tenderInput.trim() === '' ? 0 : Number.parseFloat(tenderInput) || 0;
   const tenderResult = calculateCashTender(totalDue, parsedTendered);
   const denominations = generateQuickDenominations(totalDue);
 
@@ -80,13 +80,20 @@ export function CashTenderModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="cash-tender-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none border-none outline-none m-0 overflow-y-auto"
     >
-      <div className="w-full max-w-md bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div className="relative w-full max-w-md bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col z-10">
         {/* Header */}
         <div className="p-4 border-b border-border bg-bg-surface flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -261,6 +268,6 @@ export function CashTenderModal({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

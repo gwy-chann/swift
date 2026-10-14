@@ -32,11 +32,11 @@ function EditServiceModalContent({
   service,
   onClose,
   onSave
-}: {
+}: Readonly<{
   service: LaborService;
   onClose: () => void;
   onSave: EditServiceModalProps["onSave"];
-}) {
+}>) {
   const isStandardBay = STANDARD_BAYS.includes(service.bay);
   const [name, setName] = useState(service.name);
   const [bay, setBay] = useState(isStandardBay ? service.bay : "CUSTOM");
@@ -53,8 +53,8 @@ function EditServiceModalContent({
     e.preventDefault();
     setError(null);
 
-    const parsedRate = parseFloat(rate);
-    if (isNaN(parsedRate) || parsedRate <= 0) {
+    const parsedRate = Number.parseFloat(rate);
+    if (Number.isNaN(parsedRate) || parsedRate <= 0) {
       setError("Please specify a valid flat labor rate greater than ₱0.00.");
       return;
     }
@@ -264,7 +264,7 @@ export function EditServiceModal({
   service,
   onClose,
   onSave
-}: EditServiceModalProps) {
+}: Readonly<EditServiceModalProps>) {
   if (!isOpen || !service) return null;
 
   return (

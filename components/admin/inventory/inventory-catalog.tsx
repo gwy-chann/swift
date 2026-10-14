@@ -85,7 +85,7 @@ export function InventoryCatalog({
         set.add(p.category);
       }
     }
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [products]);
 
   // Aggregate KPI stats across full inventory

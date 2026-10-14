@@ -7,6 +7,7 @@ import { STAFF_NAV_ITEMS, DEFAULT_STAFF_USER } from "@/lib/staff/navigation";
 import { StaffNavItemComponent } from "./staff-nav-item";
 import { logoutAction } from "@/lib/auth/actions";
 import { Wrench, LogOut, Loader2 } from "lucide-react";
+import { useCartStore } from "@/lib/store/cart-store";
 
 interface StaffSidebarProps {
   onItemClick?: () => void;
@@ -17,6 +18,8 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { totals } = useCartStore();
+  const cartItemCount = totals?.itemCount ?? 0;
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -61,14 +64,27 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
               Shop Floor Operations
             </div>
             <div className="space-y-0.5">
-              {STAFF_NAV_ITEMS.map((item) => (
-                <StaffNavItemComponent
-                  key={item.id}
-                  item={item}
-                  isActive={isItemActive(item.href)}
-                  onClick={onItemClick}
-                />
-              ))}
+              {STAFF_NAV_ITEMS.map((item) => {
+                const itemWithBadge =
+                  item.id === "pos" && cartItemCount > 0
+                    ? {
+                        ...item,
+                        badge: {
+                          text: String(cartItemCount),
+                          variant: "primary" as const,
+                        },
+                      }
+                    : item;
+
+                return (
+                  <StaffNavItemComponent
+                    key={item.id}
+                    item={itemWithBadge}
+                    isActive={isItemActive(item.href)}
+                    onClick={onItemClick}
+                  />
+                );
+              })}
             </div>
           </div>
         </nav>

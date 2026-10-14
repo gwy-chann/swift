@@ -20,7 +20,7 @@ export function HybridCatalogPane({
   onSelectProduct,
   onSelectService,
   title = 'Fast-Lane Checkout'
-}: HybridCatalogPaneProps) {
+}: Readonly<HybridCatalogPaneProps>) {
   const { pricingMode } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -221,10 +221,11 @@ export function HybridCatalogPane({
               };
 
               return (
-                <div
+                <button
+                  type="button"
                   key={item.sku}
                   onClick={() => handleItemClick(item)}
-                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs group cursor-pointer ${
+                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs group cursor-pointer text-left w-full ${
                     isOutOfStock
                       ? 'border-danger/30 hover:border-danger/60 bg-danger-light/10'
                       : 'border-border hover:border-primary'
@@ -276,7 +277,7 @@ export function HybridCatalogPane({
                     </div>
                     {renderActionBadge()}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

@@ -6,7 +6,7 @@ interface CatalogEmptyStateProps {
   searchQuery?: string;
 }
 
-export function CatalogEmptyState({ onResetFilters, searchQuery }: CatalogEmptyStateProps) {
+export function CatalogEmptyState({ onResetFilters, searchQuery }: Readonly<CatalogEmptyStateProps>) {
   return (
     <div className="p-12 text-center rounded-lg bg-bg-card border border-border flex flex-col items-center justify-center shadow-xs">
       <div className="w-14 h-14 rounded-full bg-bg-muted flex items-center justify-center text-text-muted mb-4">
