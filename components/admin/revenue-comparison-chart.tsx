@@ -2,113 +2,48 @@
 
 import React, { useState } from "react";
 import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
+import {
+  normalizeRevenueTrend,
+  INITIAL_WEEKLY_DATA,
+  type DailyRevenueData,
+} from "@/lib/analytics/revenue-trend-engine";
+import type { WeeklyRevenueData, RevenueTrendDay } from "@/lib/types/analytics";
 
-import type { WeeklyRevenueData } from "@/lib/types/analytics";
-
-interface DailyRevenueData {
-  day: string;
-  partsAmount: number;
-  partsDisplay: string;
-  laborAmount: number;
-  laborDisplay: string;
-  partsHeightPercent: number;
-  laborHeightPercent: number;
-}
-
-const INITIAL_WEEKLY_DATA: DailyRevenueData[] = [
-  {
-    day: "Mon",
-    partsAmount: 28500,
-    partsDisplay: "₱28.5k",
-    laborAmount: 12000,
-    laborDisplay: "₱12.0k",
-    partsHeightPercent: 60,
-    laborHeightPercent: 35,
-  },
-  {
-    day: "Tue",
-    partsAmount: 34000,
-    partsDisplay: "₱34.0k",
-    laborAmount: 15500,
-    laborDisplay: "₱15.5k",
-    partsHeightPercent: 75,
-    laborHeightPercent: 40,
-  },
-  {
-    day: "Wed",
-    partsAmount: 22100,
-    partsDisplay: "₱22.1k",
-    laborAmount: 10200,
-    laborDisplay: "₱10.2k",
-    partsHeightPercent: 50,
-    laborHeightPercent: 30,
-  },
-  {
-    day: "Thu",
-    partsAmount: 41000,
-    partsDisplay: "₱41.0k",
-    laborAmount: 21400,
-    laborDisplay: "₱21.4k",
-    partsHeightPercent: 85,
-    laborHeightPercent: 55,
-  },
-  {
-    day: "Fri",
-    partsAmount: 44500,
-    partsDisplay: "₱44.5k",
-    laborAmount: 24000,
-    laborDisplay: "₱24.0k",
-    partsHeightPercent: 90,
-    laborHeightPercent: 60,
-  },
-  {
-    day: "Sat",
-    partsAmount: 48000,
-    partsDisplay: "₱48.0k",
-    laborAmount: 29500,
-    laborDisplay: "₱29.5k",
-    partsHeightPercent: 95,
-    laborHeightPercent: 70,
-  },
-  {
-    day: "Sun (Today)",
-    partsAmount: 38200,
-    partsDisplay: "₱38.2k",
-    laborAmount: 19000,
-    laborDisplay: "₱19.0k",
-    partsHeightPercent: 80,
-    laborHeightPercent: 50,
-  },
-];
+export type { DailyRevenueData };
+export { INITIAL_WEEKLY_DATA };
 
 export interface RevenueComparisonChartProps {
-  todayPartsIncrement?: number;
-  todayLaborIncrement?: number;
+  /** Optional custom or dynamic weekly data (pre-computed or from server/RPC) */
+  data?: DailyRevenueData[] | { days: (DailyRevenueData | RevenueTrendDay)[] } | WeeklyRevenueData;
+  /** Server-provided weekly revenue trend dataset from analytics RPCs */
   initialWeeklyData?: WeeklyRevenueData;
+  /** Optional date range header text (e.g. 'Sept 22 - 28, 2026') */
+  dateRange?: string;
+  /** Realtime incremental sales amount for parts */
+  todayPartsIncrement?: number;
+  /** Realtime incremental sales amount for labor */
+  todayLaborIncrement?: number;
+  /** Initial filter state */
+  initialFilter?: "all" | "parts" | "labor";
+  /** Optional container class name */
+  className?: string;
 }
 
-export function RevenueComparisonChart({
-  todayPartsIncrement = 0,
-  todayLaborIncrement = 0,
-  initialWeeklyData,
-}: RevenueComparisonChartProps = {}) {
-  const [internalPartsIncrement, setInternalPartsIncrement] = useState(0);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday
-  const [hoveredType, setHoveredType] = useState<"parts" | "labor">("parts");
-  const [filter, setFilter] = useState<"all" | "parts" | "labor">("all");
-
-  // Realtime hook for standalone mode
-  useExecutiveRealtime({
-    onTransaction: (tx) => {
-      setInternalPartsIncrement((prev) => prev + tx.total_due);
-    },
-  });
-
-  const effectivePartsIncrement = todayPartsIncrement || internalPartsIncrement;
-
-  const baseData =
-    initialWeeklyData && initialWeeklyData.days && initialWeeklyData.days.length === 7
-      ? initialWeeklyData.days.map((d) => ({
+function resolveRawDataset(
+  data?: DailyRevenueData[] | { days: (DailyRevenueData | RevenueTrendDay)[] } | WeeklyRevenueData,
+  initialWeeklyData?: WeeklyRevenueData
+): DailyRevenueData[] {
+  const source = initialWeeklyData || data;
+  if (!source) {
+    return INITIAL_WEEKLY_DATA;
+  }
+  if (Array.isArray(source)) {
+    return source as DailyRevenueData[];
+  }
+  if ("days" in source && Array.isArray(source.days)) {
+    return (source.days as Array<DailyRevenueData | RevenueTrendDay>).map((d) => {
+      if ("day_label" in d) {
+        return {
           day: d.day_label,
           partsAmount: d.parts_amount,
           partsDisplay: d.parts_display || `₱${(d.parts_amount / 1000).toFixed(1)}k`,
@@ -116,42 +51,67 @@ export function RevenueComparisonChart({
           laborDisplay: d.labor_display || `₱${(d.labor_amount / 1000).toFixed(1)}k`,
           partsHeightPercent: d.parts_height_percent,
           laborHeightPercent: d.labor_height_percent,
-        }))
-      : INITIAL_WEEKLY_DATA;
+        };
+      }
+      return d as DailyRevenueData;
+    });
+  }
+  return INITIAL_WEEKLY_DATA;
+}
 
-  // Calculate dynamic weekly data with today's increment
-  const weeklyData = baseData.map((item, idx) => {
-    if (idx === baseData.length - 1) {
-      const updatedParts = item.partsAmount + effectivePartsIncrement;
-      const updatedLabor = item.laborAmount + todayLaborIncrement;
-      return {
-        ...item,
-        partsAmount: updatedParts,
-        partsDisplay: `₱${(updatedParts / 1000).toFixed(1)}k`,
-        laborAmount: updatedLabor,
-        laborDisplay: `₱${(updatedLabor / 1000).toFixed(1)}k`,
-        partsHeightPercent: Math.min(100, Math.round(item.partsHeightPercent + (effectivePartsIncrement / 500))),
-      };
-    }
-    return item;
+export function RevenueComparisonChart({
+  data,
+  initialWeeklyData,
+  dateRange,
+  todayPartsIncrement = 0,
+  todayLaborIncrement = 0,
+  initialFilter = "all",
+  className = "",
+}: RevenueComparisonChartProps = {}) {
+  const [internalPartsIncrement, setInternalPartsIncrement] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday
+  const [hoveredType, setHoveredType] = useState<"parts" | "labor">("parts");
+  const [filter, setFilter] = useState<"all" | "parts" | "labor">(initialFilter);
+
+  // Realtime hook for standalone mode
+  useExecutiveRealtime({
+    onTransaction: (tx) => {
+      setInternalPartsIncrement((prev) => prev + (tx.total_due || 0));
+    },
   });
 
+  const effectivePartsIncrement = todayPartsIncrement || internalPartsIncrement;
+
+  // Resolve base array
+  const rawDataset = resolveRawDataset(data, initialWeeklyData);
+
+  // Compute proportional heights, currency labels, and header badge via pure engine
+  const normalizedWeekly = normalizeRevenueTrend(rawDataset, {
+    todayPartsIncrement: effectivePartsIncrement,
+    todayLaborIncrement,
+    dateRangeLabel: dateRange,
+  });
+
+  const weeklyData = normalizedWeekly.days;
+
   return (
-    <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between">
+    <div
+      className={`bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between ${className}`}
+    >
       {/* Panel Card Header */}
       <div className="px-4 sm:px-5 py-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-bg-surface">
         <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-primary">
           7-Day Revenue Comparison (Parts Sales vs Labor Services)
         </h3>
         <span className="px-2.5 py-1 rounded text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-bg-muted text-text-secondary border border-border-subtle">
-          Sept 22 - 28, 2026
+          {normalizedWeekly.dateRangeLabel}
         </span>
       </div>
 
       {/* Chart Body */}
       <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         {/* Bars Container */}
-        <div className="h-52 sm:h-56 flex items-end gap-2 sm:gap-4 md:gap-6 pt-8 pb-2 border-b border-border relative">
+        <div className="chart-container h-52 sm:h-56 flex items-end gap-2 sm:gap-4 md:gap-6 pt-8 pb-2 border-b border-border relative">
           {weeklyData.map((item, index) => {
             const isHovered = hoveredIndex === index;
             const showPartsTooltip = isHovered && hoveredType === "parts";
@@ -163,12 +123,15 @@ export function RevenueComparisonChart({
             return (
               <div
                 key={item.day}
-                className="flex-1 flex gap-1 sm:gap-1.5 items-end h-full relative group"
+                className="chart-bar-group flex-1 flex gap-1 sm:gap-1.5 items-end h-full relative group"
               >
                 {/* Motorcycle Parts Bar */}
                 {isPartsVisible && (
                   <div
-                    className="flex-1 bg-primary hover:bg-primary-hover transition-all duration-200 rounded-t-sm relative cursor-pointer"
+                    role="graphics-symbol"
+                    aria-label={`Motorcycle Parts Sales for ${item.day}: ${item.partsDisplay}`}
+                    data-val={item.partsDisplay}
+                    className="chart-bar bar-parts flex-1 bg-primary hover:bg-primary-hover transition-all duration-200 rounded-t-sm relative cursor-pointer"
                     style={{ height: `${item.partsHeightPercent}%` }}
                     onMouseEnter={() => {
                       setHoveredIndex(index);
@@ -187,7 +150,10 @@ export function RevenueComparisonChart({
                 {/* Repair Bay Labor Bar */}
                 {isLaborVisible && (
                   <div
-                    className="flex-1 bg-info hover:bg-info/90 transition-all duration-200 rounded-t-sm relative cursor-pointer"
+                    role="graphics-symbol"
+                    aria-label={`Repair Bay Labor Services for ${item.day}: ${item.laborDisplay}`}
+                    data-val={item.laborDisplay}
+                    className="chart-bar bar-labor flex-1 bg-info hover:bg-info/90 transition-all duration-200 rounded-t-sm relative cursor-pointer"
                     style={{ height: `${item.laborHeightPercent}%` }}
                     onMouseEnter={() => {
                       setHoveredIndex(index);
@@ -208,7 +174,7 @@ export function RevenueComparisonChart({
         </div>
 
         {/* X-Axis Labels */}
-        <div className="flex justify-between items-center pt-2 text-[11px] sm:text-xs font-semibold text-text-muted">
+        <div className="chart-x-labels flex justify-between items-center pt-2 text-[11px] sm:text-xs font-semibold text-text-muted">
           {weeklyData.map((item) => (
             <span key={item.day} className="flex-1 text-center truncate px-0.5">
               {item.day}
@@ -217,15 +183,16 @@ export function RevenueComparisonChart({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 pt-2 text-xs font-semibold">
+        <div className="chart-legend flex flex-wrap items-center gap-4 sm:gap-6 mt-4 pt-2 text-xs font-semibold">
           <button
             type="button"
+            aria-pressed={filter === "all" || filter === "parts"}
             onClick={() => setFilter(filter === "parts" ? "all" : "parts")}
             className={`flex items-center gap-2 transition-opacity cursor-pointer ${
               filter === "labor" ? "opacity-40" : "opacity-100"
             }`}
           >
-            <div className="w-2.5 h-2.5 rounded-xs bg-primary shrink-0" />
+            <div className="legend-dot bar-parts w-2.5 h-2.5 rounded-xs bg-primary shrink-0" />
             <span className="text-text-primary hover:text-primary transition-colors">
               Motorcycle Parts Sales
             </span>
@@ -233,12 +200,13 @@ export function RevenueComparisonChart({
 
           <button
             type="button"
+            aria-pressed={filter === "all" || filter === "labor"}
             onClick={() => setFilter(filter === "labor" ? "all" : "labor")}
             className={`flex items-center gap-2 transition-opacity cursor-pointer ${
               filter === "parts" ? "opacity-40" : "opacity-100"
             }`}
           >
-            <div className="w-2.5 h-2.5 rounded-xs bg-info shrink-0" />
+            <div className="legend-dot bar-labor w-2.5 h-2.5 rounded-xs bg-info shrink-0" />
             <span className="text-text-primary hover:text-info transition-colors">
               Repair Bay Labor Services
             </span>
