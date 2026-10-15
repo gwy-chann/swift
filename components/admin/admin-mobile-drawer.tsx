@@ -28,7 +28,7 @@ export function AdminMobileDrawer({ isOpen, onClose }: Readonly<AdminMobileDrawe
       open
       aria-modal="true"
       aria-label="Admin Navigation Drawer"
-      className="fixed inset-0 z-50 md:hidden flex bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none"
+      className="fixed inset-0 z-50 md:hidden flex bg-transparent p-0 m-0 w-full h-full max-w-none max-h-none border-none outline-none print:hidden"
     >
       {/* Backdrop */}
       <div

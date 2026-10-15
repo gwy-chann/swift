@@ -1,10 +1,10 @@
 'use server';
 
 import type { CategoryPnlData } from '../types/analytics.ts';
+import { getMockPnlByPeriod, type AnalyticsPeriod } from '../admin/pnl-actions.ts';
 import { fetchCategoryPnl } from './rpc.ts';
-import { getDeterministicMockCategoryPnl } from './actions-mock.ts';
 
-export type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
+export type { AnalyticsPeriod };
 
 export interface AccountingCsvExportParams {
   period?: AnalyticsPeriod;
@@ -23,15 +23,18 @@ export interface AccountingCsvExportResult {
 }
 
 /**
- * Sanitizes a string for CSV inclusion according to RFC 4180.
+ * Sanitizes a string or number for CSV inclusion according to RFC 4180.
  * Wraps fields in double quotes if they contain commas, double quotes, or newlines.
- * Escapes internal double quotes by doubling them.
+ * Escapes internal double quotes by doubling them ("").
  */
-function sanitizeCsvCell(value: string | number): string {
+export function sanitizeCsvCell(value: string | number): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value.toFixed(2) : '0.00';
   }
-  const str = String(value ?? '');
+  const str = String(value);
   if (/[",\r\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
@@ -42,7 +45,7 @@ function sanitizeCsvCell(value: string | number): string {
  * Formats a CategoryPnlData structure into an RFC 4180-compliant CSV string.
  * Structure:
  * Category,Units Sold,Gross Revenue,COGS,Net Profit,Margin %
- * ...categories...
+ * ...category rows...
  * Total,[total_units],[total_gross],[total_cogs],[total_net],[overall_margin]%
  */
 export function generateAccountingCsvString(data: CategoryPnlData): string {
@@ -52,13 +55,14 @@ export function generateAccountingCsvString(data: CategoryPnlData): string {
 
   if (Array.isArray(data.categories)) {
     for (const item of data.categories) {
+      const marginPct = Number.isFinite(item.margin_pct) ? item.margin_pct.toFixed(1) : '0.0';
       const row = [
         sanitizeCsvCell(item.category),
         String(item.units_sold ?? 0),
         sanitizeCsvCell(item.gross_revenue ?? 0),
         sanitizeCsvCell(item.cogs ?? 0),
         sanitizeCsvCell(item.net_profit ?? 0),
-        `${(item.margin_pct ?? 0).toFixed(2)}%`,
+        `${marginPct}%`,
       ];
       rows.push(row.join(','));
     }
@@ -73,13 +77,17 @@ export function generateAccountingCsvString(data: CategoryPnlData): string {
     overall_margin_pct: 0,
   };
 
+  const overallMargin = Number.isFinite(summary.overall_margin_pct)
+    ? summary.overall_margin_pct.toFixed(1)
+    : '0.0';
+
   const footerRow = [
     'Total',
     String(summary.total_units_sold ?? 0),
     sanitizeCsvCell(summary.total_gross_revenue ?? 0),
     sanitizeCsvCell(summary.total_cogs ?? 0),
     sanitizeCsvCell(summary.total_net_profit ?? 0),
-    `${(summary.overall_margin_pct ?? 0).toFixed(2)}%`,
+    `${overallMargin}%`,
   ];
   rows.push(footerRow.join(','));
 
@@ -89,13 +97,13 @@ export function generateAccountingCsvString(data: CategoryPnlData): string {
 /**
  * Computes date range for a designated financial period.
  */
-export function computePeriodDateRange(period: AnalyticsPeriod): { start: Date; end: Date } {
+export function computePeriodDateRange(period: AnalyticsPeriod = 'daily'): { start: Date; end: Date } {
   const now = new Date();
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
   if (period === 'monthly') {
     const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    return { start, end: now };
+    return { start, end };
   }
 
   if (period === 'weekly') {
@@ -111,7 +119,7 @@ export function computePeriodDateRange(period: AnalyticsPeriod): { start: Date; 
 
 /**
  * Server Action: Exports categorized P&L statements into a sanitized CSV string.
- * Suggested filename: swift_financial_report_YYYY-MM-DD.csv
+ * Standardized filename: swift_revenue_report_YYYY-MM-DD.csv
  */
 export async function exportAccountingCsvAction(
   params: AccountingCsvExportParams = {}
@@ -119,7 +127,7 @@ export async function exportAccountingCsvAction(
   const period: AnalyticsPeriod = params.period || 'daily';
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
-  const filename = `swift_financial_report_${dateStr}.csv`;
+  const filename = `swift_revenue_report_${dateStr}.csv`;
 
   try {
     let pnlData: CategoryPnlData | null = null;
@@ -141,7 +149,7 @@ export async function exportAccountingCsvAction(
       pnlData.categories.length === 0 ||
       pnlData.summary.total_gross_revenue === 0
     ) {
-      pnlData = getDeterministicMockCategoryPnl(period);
+      pnlData = getMockPnlByPeriod(period);
     }
 
     const csvContent = generateAccountingCsvString(pnlData);
@@ -157,7 +165,7 @@ export async function exportAccountingCsvAction(
     };
   } catch (error) {
     console.error('[Analytics Export] Failed to export CSV:', error);
-    const fallback = getDeterministicMockCategoryPnl(period);
+    const fallback = getMockPnlByPeriod(period);
     const csvContent = generateAccountingCsvString(fallback);
 
     return {

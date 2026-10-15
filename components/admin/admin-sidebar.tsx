@@ -41,7 +41,7 @@ export function AdminSidebar({ onItemClick, className = "" }: Readonly<AdminSide
 
   return (
     <aside
-      className={`w-64 bg-bg-sidebar text-text-light flex flex-col justify-between shrink-0 h-screen border-r border-border-subtle ${className}`}
+      className={`w-64 bg-bg-sidebar text-text-light flex flex-col justify-between shrink-0 h-screen border-r border-border-subtle print:hidden ${className}`}
     >
       {/* Brand Header */}
       <div>

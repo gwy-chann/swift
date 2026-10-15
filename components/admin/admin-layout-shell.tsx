@@ -13,7 +13,7 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg-base font-sans">
+    <div className="flex h-screen w-full overflow-hidden bg-bg-base font-sans print:h-auto print:overflow-visible print:bg-white">
       {/* Desktop Persistent Sidebar */}
       <AdminSidebar className="hidden md:flex shrink-0" />
 
@@ -24,13 +24,13 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
       />
 
       {/* Main Workspace Column */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden print:h-auto print:overflow-visible print:block">
         {/* Sticky Topbar */}
         <AdminTopbar onOpenMobileMenu={() => setIsMobileDrawerOpen(true)} />
 
         {/* Scrollable Content Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-bg-base">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-bg-base print:p-0 print:overflow-visible print:bg-white">
+          <div className="max-w-7xl mx-auto print:max-w-none">{children}</div>
         </main>
       </div>
     </div>

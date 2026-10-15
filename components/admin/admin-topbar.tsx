@@ -20,7 +20,7 @@ export function AdminTopbar({ onOpenMobileMenu }: AdminTopbarProps) {
   }
 
   return (
-    <header className="h-16 px-4 sm:px-6 bg-bg-surface border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-10 select-none">
+    <header className="h-16 px-4 sm:px-6 bg-bg-surface border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-10 select-none print:hidden">
       <div className="flex items-center gap-3">
         {/* Mobile Hamburger Toggle */}
         <button

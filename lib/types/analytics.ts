@@ -50,6 +50,7 @@ export interface CategoryPnlSummary {
   total_cogs: number;
   total_net_profit: number;
   overall_margin_pct: number;
+  invoice_count?: number;
 }
 
 export interface CategoryPnlData {
