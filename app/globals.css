@@ -178,3 +178,46 @@ body {
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
+
+/* 7-Day Revenue Comparison Chart Bar Tokens (SIAA-34) */
+.chart-bar-group {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  height: 100%;
+  position: relative;
+}
+
+.chart-bar {
+  flex: 1;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+.bar-parts {
+  background-color: var(--primary);
+}
+
+.bar-labor {
+  background-color: var(--info);
+}
+
+.chart-bar[data-val]:hover::after {
+  content: attr(data-val);
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text-primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+}
+
