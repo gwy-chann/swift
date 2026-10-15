@@ -1,10 +1,7 @@
 import { z } from 'zod';
 import type {
   ExecutiveKpiData,
-  RevenueTrendDay,
   WeeklyRevenueData,
-  CategoryPnlItem,
-  CategoryPnlSummary,
   CategoryPnlData,
 } from '../types/analytics.ts';
 
