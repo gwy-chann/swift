@@ -39,12 +39,12 @@ export const ProvisionStaffUserSchema = z.object({
 });
 
 export const UpdateUserPermissionsSchema = z.object({
-  userId: z.string().uuid('Invalid user UUID'),
+  userId: z.string().min(1, 'User ID is required'),
   permissions: StaffPermissionsSchema.partial(),
 });
 
 export const ToggleUserStatusSchema = z.object({
-  userId: z.string().uuid('Invalid user UUID'),
+  userId: z.string().min(1, 'User ID is required'),
   status: z.enum(['Active', 'Inactive', 'Suspended']),
 });
 
