@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {
   getPeriodTimestampRange,
   getMockPnlByPeriod,
-  getCategoryPnlBreakdownAction,
   MOCK_CATEGORY_PNL_DATA,
+} from '../pnl-cogs-utils.ts';
+import {
+  getCategoryPnlBreakdownAction,
 } from '../pnl-actions.ts';
 
 describe('Category P&L Server Actions & Period Ranges (SIAA-36)', () => {

@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getTransactionByReceiptAction,
@@ -8,6 +8,15 @@ import { processCheckoutAction } from '../actions.ts';
 import type { CheckoutPayload } from '../../types/transaction.ts';
 
 describe('Thermal Receipt Lookup & Checkout Revalidation (SIAA-52)', () => {
+  beforeEach(async () => {
+    try {
+      const { createClient } = await import('../../supabase/server.ts');
+      const supabase = await createClient();
+      await supabase.from('products').update({ stock: 28 }).eq('sku', 'MOT-3100-10W40');
+    } catch {
+      // Offline fallback
+    }
+  });
   it('Scenario 2: resolves canonical transaction TX-1041 with itemized parts, labor services, bay, and shelf locations', async () => {
     const rawTx = await getTransactionByReceiptAction('TX-1041');
     assert.ok(rawTx, 'Expected TX-1041 to exist in transaction records');

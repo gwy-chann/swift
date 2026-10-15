@@ -6,9 +6,16 @@ import { MOCK_PRODUCTS } from '../../mock-data/products.ts';
 import type { CheckoutPayload } from '../../types/transaction.ts';
 
 describe('Supabase Atomic Checkout RPC with Stock Decrements & Audit Logging (SIAA-51)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset inventory store to canonical mock products baseline
     inventoryStore.hydrateProducts(MOCK_PRODUCTS.map((p) => ({ ...p })));
+    try {
+      const { createClient } = await import('../../supabase/server.ts');
+      const supabase = await createClient();
+      await supabase.from('products').update({ stock: 28 }).eq('sku', 'MOT-3100-10W40');
+    } catch {
+      // Offline fallback
+    }
   });
 
   it('executes successful multi-item hybrid checkout with physical parts and workshop labor', async () => {
@@ -18,8 +25,9 @@ describe('Supabase Atomic Checkout RPC with Stock Decrements & Audit Logging (SI
     const initialStock = initialProduct.stock;
     assert.ok(initialStock >= 2, 'Initial stock must be at least 2 units');
 
+    const testReceiptNumber = `TX-TEST-${Date.now()}-1`;
     const payload: CheckoutPayload = {
-      receiptNumber: 'TX-TEST-0001',
+      receiptNumber: testReceiptNumber,
       cashierId: 'c0000000-0000-0000-0000-000000000002',
       cashierName: 'Mike Morales',
       pricingMode: 'retail',
@@ -62,7 +70,7 @@ describe('Supabase Atomic Checkout RPC with Stock Decrements & Audit Logging (SI
 
     if (result.success) {
       assert.ok(result.transactionId, 'Must return transaction ID');
-      assert.equal(result.receiptNumber, 'TX-TEST-0001');
+      assert.equal(result.receiptNumber, testReceiptNumber);
       assert.equal(result.itemsCount, 2);
       assert.equal(result.partsDecremented, 1);
       assert.ok(result.createdAt);
@@ -77,7 +85,7 @@ describe('Supabase Atomic Checkout RPC with Stock Decrements & Audit Logging (SI
     const latestLog = logs[0];
     assert.ok(latestLog, 'Stock adjustment log must be created');
     assert.equal(latestLog.sku, targetSku);
-    assert.ok(latestLog.reason.includes('TX-TEST-0001'));
+    assert.ok(latestLog.reason.includes(testReceiptNumber));
   });
 
   it('aborts and rolls back when requested part quantity exceeds on-hand stock (INSUFFICIENT_STOCK)', async () => {
@@ -125,7 +133,7 @@ describe('Supabase Atomic Checkout RPC with Stock Decrements & Audit Logging (SI
 
   it('executes pure workshop labor checkout with zero physical stock decrements', async () => {
     const payload: CheckoutPayload = {
-      receiptNumber: 'TX-TEST-LABOR-ONLY',
+      receiptNumber: `TX-TEST-LABOR-${Date.now()}`,
       cashierName: 'Service Advisor',
       pricingMode: 'retail',
       subtotal: 350,

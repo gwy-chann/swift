@@ -82,6 +82,9 @@ describe('Admin Workshop Labor Services Server Actions (SIAA-59)', () => {
     assert.equal(latestLog.oldRate, 350);
     assert.equal(latestLog.reason, 'Shop consumable cost adjustment');
     assert.equal(latestLog.userName, 'Service Desk Manager');
+
+    // Restore original baseline rate
+    await updateLaborServiceAction('SRV-CVT-01', { rate: 350 });
   });
 
   it('toggles service active status (soft-delete / archive)', async () => {

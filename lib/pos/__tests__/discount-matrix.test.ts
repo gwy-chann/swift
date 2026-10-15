@@ -136,6 +136,17 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
   });
 
   describe('Reactive CartStore Discount State Machine', () => {
+    beforeEach(async () => {
+      cartStore.clearCart();
+      try {
+        const { createClient } = await import('../../supabase/server.ts');
+        const supabase = await createClient();
+        await supabase.from('products').update({ stock: 28 }).eq('sku', 'MOT-3100-10W40');
+      } catch {
+        // Offline fallback
+      }
+    });
+
     it('Scenario 1: applying senior_pwd 20% discount chip updates totals in cartStore', () => {
       // Seed cart with items
       cartStore.addPart(
@@ -277,10 +288,10 @@ describe('Customer Discount Matrix Engine (SIAA-20)', () => {
     it('Scenario 4: stamps discount_type and discount_rate into checkout transaction payload', async () => {
       cartStore.addPart(
         createTestProduct({
-          sku: 'TEST-SKU-6',
-          name: 'Tire 90/80-14',
-          category: 'Tires',
-          stock: 4,
+          sku: 'MOT-3100-10W40',
+          name: 'Motul 3100 Gold 4T 10W40 (1L)',
+          category: 'Fluids',
+          stock: 10,
           retail: 1500,
           wholesale: 1300
         })

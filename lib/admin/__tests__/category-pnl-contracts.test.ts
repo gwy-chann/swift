@@ -6,8 +6,6 @@ import {
 } from '../../../specs/036-categorized-profit-loss-breakdown-cogs-engine/contracts/pnl-cogs.ts';
 import {
   MOCK_CATEGORY_PNL_DATA,
-} from '../pnl-actions.ts';
-import {
   calculateNetProfit,
   calculateMarginPct,
   isHighYieldMargin,

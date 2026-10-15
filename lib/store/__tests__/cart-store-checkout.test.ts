@@ -28,11 +28,18 @@ describe('Cart Store Async Checkout & Receipt Persistence (SIAA-52)', () => {
     description: 'Quick lube bay standard drain and fill'
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     cartStore.clearCart();
     cartStore.closeReceiptModal();
     cartStore.setPricingMode('retail');
     cartStore.setDiscountRate(0);
+    try {
+      const { createClient } = await import('../../supabase/server.ts');
+      const supabase = await createClient();
+      await supabase.from('products').update({ stock: 28 }).eq('sku', 'MOT-3100-10W40');
+    } catch {
+      // Offline fallback
+    }
   });
 
   it('Scenario 1: executes async checkout, clears active cart, and opens thermal receipt modal on success', async () => {
