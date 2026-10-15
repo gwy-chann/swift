@@ -9,7 +9,7 @@
 
 ## Phase 1: Contracts & Server Actions Core
 
-- [ ] **TASK-1.1**: Implement `lib/staff/actions.ts` with type-safe Server Actions:
+- [x] **TASK-1.1**: Implement `lib/staff/actions.ts` with type-safe Server Actions:
   - `clockInShiftAction(terminalId?: string, notes?: string)`
   - `clockOutShiftAction(shiftId: string, notes?: string)`
   - `toggleShiftBreakAction(shiftId: string)`
@@ -17,32 +17,32 @@
   - `lookupProductPriceAction(query: string)`
   - `verifyAdminElevationAction(pin: string)`
   - Ensure cache revalidation on tag `'staff-shifts'` and graceful fallback for offline/mock mode.
-- [ ] **TASK-1.2**: Author comprehensive unit tests in `lib/staff/__tests__/staff-actions.test.ts` verifying all action behaviors, calculation accuracy, and error handling.
+- [x] **TASK-1.2**: Author comprehensive unit tests in `lib/staff/__tests__/staff-actions.test.ts` verifying all action behaviors, calculation accuracy, and error handling.
 
 ---
 
 ## Phase 2: Route Guard Elevation Support
 
-- [ ] **TASK-2.1**: Update `lib/auth/session-guards.ts` and middleware:
+- [x] **TASK-2.1**: Update `lib/auth/session-guards.ts` and middleware:
   - Enhance `resolveSession` to detect `swift_admin_elevated` cookie.
   - Update `evaluateRouteAccess` so elevated sessions can access `/admin` portal routes without redirect loop.
-- [ ] **TASK-2.2**: Add test cases in `lib/auth/__tests__/session-guards.test.ts` (or equivalent) verifying elevation route access.
+- [x] **TASK-2.2**: Add test cases in `lib/auth/__tests__/session-guards.test.ts` (or equivalent) verifying elevation route access.
 
 ---
 
 ## Phase 3: UI Wiring & Component Refactors
 
-- [ ] **TASK-3.1**: Refactor `app/staff/clock/page.tsx`:
+- [x] **TASK-3.1**: Refactor `app/staff/clock/page.tsx`:
   - Wire shift buttons to `clockInShiftAction`, `clockOutShiftAction`, `toggleShiftBreakAction`.
   - Connect attendance history table to `getStaffAttendanceHistoryAction()`.
   - Integrate with `usePunchStore` and `useStaffRealtimeShifts` for drift-free real-time attendance sync.
-- [ ] **TASK-3.2**: Refactor `app/staff/pricecheck/page.tsx`:
+- [x] **TASK-3.2**: Refactor `app/staff/pricecheck/page.tsx`:
   - Ensure input has id `#priceScanInput`.
   - Wire query to `lookupProductPriceAction(query)` with sub-200ms reactive display of Retail, Wholesale, and SC/PWD 20% discount.
-- [ ] **TASK-3.3**: Refactor `components/staff/admin-switch-modal.tsx`:
+- [x] **TASK-3.3**: Refactor `components/staff/admin-switch-modal.tsx`:
   - Wire PIN form submission to `verifyAdminElevationAction(pin)`.
   - Handle loading, invalid credentials error, and successful router push to `/admin`.
-- [ ] **TASK-3.4**: Verify `app/staff/pos/page.tsx`:
+- [x] **TASK-3.4**: Verify `app/staff/pos/page.tsx`:
   - Ensure F12 hotkey opens checkout modal wired to `processCheckoutAction()`.
   - Verify active products hydrate from Supabase catalog.
 
@@ -50,6 +50,6 @@
 
 ## Phase 4: Convergence & Verification
 
-- [ ] **TASK-4.1**: Execute typecheck (`npx tsc --noEmit`), lint (`npm run lint`), and automated tests (`npm test`).
-- [ ] **TASK-4.2**: Verify SWIFT semantic design tokens compliance (zero hardcoded colors).
-- [ ] **TASK-4.3**: Commit changes following `.agents/rules/atomic-commit.md`.
+- [x] **TASK-4.1**: Execute typecheck (`npx tsc --noEmit`), lint (`npm run lint`), and automated tests (`npm test`).
+- [x] **TASK-4.2**: Verify SWIFT semantic design tokens compliance (zero hardcoded colors).
+- [x] **TASK-4.3**: Commit changes following `.agents/rules/atomic-commit.md`.
