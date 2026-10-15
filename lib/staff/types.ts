@@ -86,7 +86,7 @@ export interface AdminElevationResult {
   success: boolean;
   elevatedUntil?: number;
   error?: string;
-  code?: 'INVALID_PIN' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR';
+  code?: 'INVALID_PIN' | 'INVALID_PASSWORD' | 'EMPTY_PASSWORD' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR';
 }
 
 export type PunchClockAction = 'in' | 'out' | 'break';
