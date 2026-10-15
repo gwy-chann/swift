@@ -4,6 +4,7 @@ import {
   listStaffUsersAction,
   provisionStaffUserAction,
   updateUserPermissionsAction,
+  updateStaffUserAction,
   toggleUserStatusAction,
   resetInMemoryStaffUsers,
   mapDbRoleToDisplay,
@@ -12,6 +13,9 @@ import {
   DbUserRoleSchema,
   StaffPermissionsSchema,
 } from '../../../specs/030-supabase-rbac-extension-granular-permission-flags/contracts/rbac-permissions.contract.ts';
+import {
+  UpdateStaffUserSchema,
+} from '../../../specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract.ts';
 import { DEFAULT_ROLE_PERMISSIONS } from '../../types/auth.ts';
 
 describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema & Admin Provisioning Actions (SIAA-56)', () => {
@@ -196,6 +200,101 @@ describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema &
 
       assert.equal(result.success, false);
       assert.equal(result.code, 'UNAUTHORIZED');
+    });
+  });
+
+  describe('STORY-7.1: User Account Provisioning & RBAC Management (SIAA-38)', () => {
+    it('validates UpdateStaffUserSchema contracts', () => {
+      const validPayload = {
+        userId: '00000000-0000-0000-0000-000000000002',
+        fullName: 'Maria Santos (Senior)',
+        role: 'cashier',
+        permissions: {
+          can_override_discount: true,
+          can_adjust_stock: true,
+        },
+      };
+
+      const parsed = UpdateStaffUserSchema.safeParse(validPayload);
+      assert.equal(parsed.success, true);
+    });
+
+    it('successfully updates employee name, role, and granular permissions via updateStaffUserAction', async () => {
+      const cashierId = '00000000-0000-0000-0000-000000000002';
+      const result = await updateStaffUserAction(
+        {
+          userId: cashierId,
+          fullName: 'Maria Clara Santos',
+          role: 'inventory_clerk',
+          permissions: {
+            can_adjust_stock: true,
+            can_override_discount: true,
+          },
+        },
+        'admin'
+      );
+
+      assert.equal(result.success, true);
+      assert.equal(result.data?.fullName, 'Maria Clara Santos');
+      assert.equal(result.data?.role, 'inventory_clerk');
+      assert.equal(result.data?.roleDisplay, 'Inventory Clerk');
+      assert.equal(result.data?.permissions.can_adjust_stock, true);
+      assert.equal(result.data?.permissions.can_override_discount, true);
+
+      // Verify reflected in staff list
+      const users = await listStaffUsersAction();
+      const updated = users.find((u) => u.id === cashierId);
+      assert.equal(updated?.fullName, 'Maria Clara Santos');
+      assert.equal(updated?.role, 'inventory_clerk');
+      assert.equal(updated?.permissions.can_adjust_stock, true);
+    });
+
+    it('prevents an active administrator from demoting their own admin role (self-demotion guard)', async () => {
+      const adminId = '00000000-0000-0000-0000-000000000001';
+      const result = await updateStaffUserAction(
+        {
+          userId: adminId,
+          role: 'cashier',
+        },
+        'admin',
+        adminId
+      );
+
+      assert.equal(result.success, false);
+      assert.equal(result.code, 'SELF_LOCKOUT_PREVENTED');
+      assert.match(result.error || '', /self-lockout or role demotion is prohibited/i);
+
+      // Verify role remains admin
+      const users = await listStaffUsersAction();
+      const adminUser = users.find((u) => u.id === adminId);
+      assert.equal(adminUser?.role, 'admin');
+    });
+
+    it('rejects updateStaffUserAction from unauthorized non-admin session', async () => {
+      const targetId = '00000000-0000-0000-0000-000000000002';
+      const result = await updateStaffUserAction(
+        {
+          userId: targetId,
+          fullName: 'Unauthorized Change',
+        },
+        'cashier'
+      );
+
+      assert.equal(result.success, false);
+      assert.equal(result.code, 'UNAUTHORIZED');
+    });
+
+    it('rejects updateStaffUserAction when target user is not found', async () => {
+      const result = await updateStaffUserAction(
+        {
+          userId: 'non-existent-user-id-999999',
+          fullName: 'Ghost User',
+        },
+        'admin'
+      );
+
+      assert.equal(result.success, false);
+      assert.equal(result.code, 'USER_NOT_FOUND');
     });
   });
 });
