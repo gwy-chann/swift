@@ -3,160 +3,7 @@
 import { getPrismaClient } from '../prisma.ts';
 import type { DbTransaction, ThermalReceiptData } from '../types/transaction.ts';
 import { mapDbTransactionToThermalReceipt } from './contracts.ts';
-
-
-export const MOCK_TRANSACTIONS: DbTransaction[] = [
-  {
-    id: 't0000000-0000-0000-0000-000000000001',
-    receipt_number: 'TX-1041',
-    cashier_id: 'c0000000-0000-0000-0000-000000000002',
-    cashier_name: 'SWIFT Fast-Lane Cashier',
-    pricing_mode: 'retail',
-    subtotal: 550.0,
-    discount_type: 'none',
-    discount_rate: 0.0,
-    discount_amount: 0.0,
-    total_due: 550.0,
-    cash_tendered: 600.0,
-    change_due: 50.0,
-    payment_method: 'Cash',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    items: [
-      {
-        id: 'i0000000-0000-0000-0000-000000000001',
-        transaction_id: 't0000000-0000-0000-0000-000000000001',
-        item_type: 'part',
-        item_sku_or_code: 'MOT-3100-10W40',
-        item_name: 'Motul 3100 Gold 4T 10W40 (1L)',
-        unit_price: 390.0,
-        quantity: 1,
-        subtotal: 390.0,
-        bay: null,
-        shelf_location: 'Aisle 1 / Shelf 1',
-      },
-      {
-        id: 'i0000000-0000-0000-0000-000000000002',
-        transaction_id: 't0000000-0000-0000-0000-000000000001',
-        item_type: 'service',
-        item_sku_or_code: 'SRV-OIL-01',
-        item_name: 'Standard Oil & Gear Oil Change',
-        unit_price: 100.0,
-        quantity: 1,
-        subtotal: 100.0,
-        bay: 'Bay 1 / Quick Bay',
-        shelf_location: null,
-      },
-      {
-        id: 'i0000000-0000-0000-0000-000000000003',
-        transaction_id: 't0000000-0000-0000-0000-000000000001',
-        item_type: 'service',
-        item_sku_or_code: 'SRV-TIRE-01',
-        item_name: 'Tubeless Tire Mounting & Bead Sealing',
-        unit_price: 60.0,
-        quantity: 1,
-        subtotal: 60.0,
-        bay: 'Bay 1 / Quick Bay',
-        shelf_location: null,
-      },
-    ],
-  },
-  {
-    id: 't0000000-0000-0000-0000-000000000002',
-    receipt_number: 'TX-1042',
-    cashier_id: 'c0000000-0000-0000-0000-000000000002',
-    cashier_name: 'SWIFT Fast-Lane Cashier',
-    pricing_mode: 'retail',
-    subtotal: 1200.0,
-    discount_type: 'senior',
-    discount_rate: 0.2,
-    discount_amount: 240.0,
-    total_due: 960.0,
-    cash_tendered: 1000.0,
-    change_due: 40.0,
-    payment_method: 'GCash',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    items: [
-      {
-        id: 'i0000000-0000-0000-0000-000000000004',
-        transaction_id: 't0000000-0000-0000-0000-000000000002',
-        item_type: 'part',
-        item_sku_or_code: 'HON-CLK-CVTB',
-        item_name: 'OEM Drive Belt (Gates Bando)',
-        unit_price: 850.0,
-        quantity: 1,
-        subtotal: 850.0,
-        bay: null,
-        shelf_location: 'Rack B-04 / Shelf 1',
-      },
-      {
-        id: 'i0000000-0000-0000-0000-000000000005',
-        transaction_id: 't0000000-0000-0000-0000-000000000002',
-        item_type: 'service',
-        item_sku_or_code: 'SRV-CVT-01',
-        item_name: 'CVT Cleaning & Regreasing',
-        unit_price: 350.0,
-        quantity: 1,
-        subtotal: 350.0,
-        bay: 'Bay 2 / Scooter Bay',
-        shelf_location: null,
-      },
-    ],
-  },
-  {
-    id: 't0000000-0000-0000-0000-000000000003',
-    receipt_number: 'TX-1043',
-    cashier_id: 'c0000000-0000-0000-0000-000000000002',
-    cashier_name: 'SWIFT Fast-Lane Cashier',
-    pricing_mode: 'wholesale',
-    subtotal: 2100.0,
-    discount_type: 'none',
-    discount_rate: 0.0,
-    discount_amount: 0.0,
-    total_due: 2100.0,
-    cash_tendered: 2100.0,
-    change_due: 0.0,
-    payment_method: 'Card',
-    created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
-    items: [
-      {
-        id: 'i0000000-0000-0000-0000-000000000006',
-        transaction_id: 't0000000-0000-0000-0000-000000000003',
-        item_type: 'part',
-        item_sku_or_code: 'RCB-NMAX-BP02',
-        item_name: 'RCB S-Series Ceramic Brake Pads',
-        unit_price: 480.0,
-        quantity: 3,
-        subtotal: 1440.0,
-        bay: null,
-        shelf_location: 'Rack A-01 / Shelf 3',
-      },
-      {
-        id: 'i0000000-0000-0000-0000-000000000007',
-        transaction_id: 't0000000-0000-0000-0000-000000000003',
-        item_type: 'part',
-        item_sku_or_code: 'DEN-IU24-IR',
-        item_name: 'Denso Iridium Power Spark Plug (IU24)',
-        unit_price: 520.0,
-        quantity: 1,
-        subtotal: 520.0,
-        bay: null,
-        shelf_location: 'Rack C-02 / Shelf 2',
-      },
-      {
-        id: 'i0000000-0000-0000-0000-000000000008',
-        transaction_id: 't0000000-0000-0000-0000-000000000003',
-        item_type: 'service',
-        item_sku_or_code: 'SRV-BRK-01',
-        item_name: 'Brake Caliper Flush & Bleeding',
-        unit_price: 140.0,
-        quantity: 1,
-        subtotal: 140.0,
-        bay: 'Bay 3 / Mechanical Bay',
-        shelf_location: null,
-      },
-    ],
-  },
-];
+import { MOCK_TRANSACTIONS } from './mock-transactions.ts';
 
 interface SupabaseTransactionItemRow {
   id?: string;
@@ -234,7 +81,7 @@ export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const rows = data as unknown as SupabaseTransactionRow[];
       return rows.map((t) => ({
         id: t.id,
@@ -291,7 +138,7 @@ export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]
         include: { items: true },
       });
 
-      if (records && records.length > 0) {
+      if (records) {
         return records.map((t) => ({
           id: t.id,
           receipt_number: t.receiptNumber,
@@ -324,23 +171,70 @@ export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]
     }
   } catch (error) {
     console.warn(
-      '[getTransactionsAction] Prisma fallback query encountered issue, using mock:',
+      '[getTransactionsAction] Prisma fallback query encountered issue:',
       error instanceof Error ? error.message : String(error)
     );
   }
 
-
-  return MOCK_TRANSACTIONS.slice(0, limit);
+  return [];
 }
 
 /**
  * Server action to retrieve a specific transaction by receipt number.
+ * Queries Supabase first, falling back to cached list or test fixture fallback.
  */
 export async function getTransactionByReceiptAction(
   receiptNumber: string
 ): Promise<DbTransaction | null> {
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*, items:transaction_items(*)')
+      .eq('receipt_number', receiptNumber)
+      .maybeSingle();
+
+    if (!error && data) {
+      const t = data as unknown as SupabaseTransactionRow;
+      return {
+        id: t.id,
+        receipt_number: t.receipt_number,
+        cashier_id: t.cashier_id,
+        cashier_name: t.cashier_name,
+        pricing_mode: t.pricing_mode,
+        subtotal: Number(t.subtotal),
+        discount_type: t.discount_type,
+        discount_rate: Number(t.discount_rate),
+        discount_amount: Number(t.discount_amount),
+        total_due: Number(t.total_due),
+        cash_tendered: Number(t.cash_tendered),
+        change_due: Number(t.change_due),
+        payment_method: t.payment_method,
+        created_at: t.created_at,
+        items: (t.items || []).map((i) => ({
+          id: i.id,
+          transaction_id: i.transaction_id,
+          item_type: i.item_type,
+          item_sku_or_code: i.item_sku_or_code,
+          item_name: i.item_name,
+          unit_price: Number(i.unit_price),
+          quantity: Number(i.quantity),
+          subtotal: Number(i.subtotal),
+          bay: i.bay,
+          shelf_location: i.shelf_location,
+        })),
+      };
+    }
+  } catch (err) {
+    console.warn('[getTransactionByReceiptAction] Live query error:', err);
+  }
+
   const all = await getTransactionsAction(100);
-  return all.find((t) => t.receipt_number === receiptNumber) || null;
+  const found = all.find((t) => t.receipt_number === receiptNumber);
+  if (found) return found;
+
+  return MOCK_TRANSACTIONS.find((t) => t.receipt_number === receiptNumber) || null;
 }
 
 

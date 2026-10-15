@@ -276,6 +276,22 @@ async function trySupabaseCheckout(
         created_at?: string;
       };
       const finalReceiptNumber = res.receipt_number || validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
+      try {
+        const { inventoryStore } = await import('../store/inventory-store.ts');
+        for (const item of validPayload.items) {
+          if (item.itemType === 'part') {
+            inventoryStore.adjustStock({
+              sku: item.itemSkuOrCode,
+              type: 'Sale Outbound',
+              units: -item.quantity,
+              reason: `POS Sale Receipt: ${finalReceiptNumber}`,
+              user: validPayload.cashierName || 'Cashier',
+            });
+          }
+        }
+      } catch {
+        // Non-blocking in-memory sync
+      }
       await triggerCheckoutRevalidation();
       await recordDiscountSecurityLog(validPayload, finalReceiptNumber);
 
