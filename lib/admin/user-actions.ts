@@ -11,6 +11,11 @@ import {
   type UserActionResult,
   type ProvisionStaffUserPayload,
 } from '../../specs/030-supabase-rbac-extension-granular-permission-flags/contracts/rbac-permissions.contract.ts';
+import {
+  UpdateStaffUserSchema,
+  type UpdateStaffUserPayload,
+} from '../../specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract.ts';
+import { logSecurityEventAction } from './audit-actions.ts';
 
 // In-memory fallback cache for test suites and environments without live Supabase
 let memoryStaffUsers: MockStaffUserProfile[] = JSON.parse(JSON.stringify(MOCK_STAFF_PROFILES));
@@ -248,6 +253,24 @@ function generateSecurePin(): string {
 
       memoryStaffUsers.push(createdUser);
       await safeRevalidatePaths();
+
+      try {
+        await logSecurityEventAction({
+          action: `Created employee account for ${normalizedEmail} (${mapDbRoleToDisplay(payload.role)})`,
+          severity: 'info',
+          terminalIp: '192.168.1.100 (Admin PC)',
+          userEmail: 'admin@swift.ph',
+          metadata: {
+            email: normalizedEmail,
+            fullName: payload.fullName,
+            role: payload.role,
+            permissions: mergedPermissions,
+          },
+        });
+      } catch {
+        // Suppress audit logging error
+      }
+
       return { success: true, data: mapProfileToSummary(createdUser) };
     }
   } catch (error) {
@@ -272,6 +295,23 @@ function generateSecurePin(): string {
 
   memoryStaffUsers.push(fallbackUser);
   await safeRevalidatePaths();
+
+  try {
+    await logSecurityEventAction({
+      action: `Created employee account for ${normalizedEmail} (${mapDbRoleToDisplay(payload.role)})`,
+      severity: 'info',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        email: normalizedEmail,
+        fullName: payload.fullName,
+        role: payload.role,
+        permissions: mergedPermissions,
+      },
+    });
+  } catch {
+    // Suppress audit logging error
+  }
 
   return {
     success: true,
@@ -339,6 +379,122 @@ export async function updateUserPermissionsAction(
       '[updateUserPermissionsAction] Supabase update issue, retained in memory:',
       error instanceof Error ? error.message : String(error)
     );
+  }
+
+  await safeRevalidatePaths();
+
+  return {
+    success: true,
+    data: mapProfileToSummary(targetUser),
+  };
+}
+
+/**
+ * Updates an employee's details (full name, role, granular permissions) with self-demotion guards.
+ */
+export async function updateStaffUserAction(
+  rawPayload: UpdateStaffUserPayload | unknown,
+  callerRoleOverride?: string,
+  callerIdOverride?: string
+): Promise<UserActionResult<StaffUserSummary>> {
+  const parsed = UpdateStaffUserSchema.safeParse(rawPayload);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid user update payload',
+      code: 'VALIDATION_ERROR',
+    };
+  }
+
+  const { role: callerRole, userId: callerId } = await resolveCallerContext(
+    callerRoleOverride,
+    callerIdOverride
+  );
+
+  if (callerRole !== 'admin') {
+    return {
+      success: false,
+      error: 'Unauthorized: Admin privileges required to update staff accounts',
+      code: 'UNAUTHORIZED',
+    };
+  }
+
+  const payload = parsed.data;
+  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === payload.userId);
+  if (existingIndex === -1) {
+    return {
+      success: false,
+      error: 'User not found',
+      code: 'USER_NOT_FOUND',
+    };
+  }
+
+  const targetUser = memoryStaffUsers[existingIndex];
+
+  // Self-demotion guard: Admin cannot change their own role to non-admin
+  if (
+    payload.userId === callerId &&
+    targetUser.role === 'admin' &&
+    payload.role &&
+    payload.role !== 'admin'
+  ) {
+    return {
+      success: false,
+      error: 'Admin self-lockout or role demotion is prohibited.',
+      code: 'SELF_LOCKOUT_PREVENTED',
+    };
+  }
+
+  const updatedName = payload.fullName?.trim() || targetUser.name;
+  const updatedRole = payload.role || targetUser.role;
+  const updatedRoleDisplay = mapDbRoleToDisplay(updatedRole);
+  const updatedPermissions: StaffPermissions = {
+    ...targetUser.permissions,
+    ...(payload.permissions || {}),
+  };
+
+  targetUser.name = updatedName;
+  targetUser.role = updatedRole;
+  targetUser.roleDisplay = updatedRoleDisplay;
+  targetUser.permissions = updatedPermissions;
+  targetUser.updatedAt = new Date().toISOString();
+
+  // Try updating Supabase database
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+    await supabase
+      .from('profiles')
+      .update({
+        full_name: updatedName,
+        role: updatedRole,
+        permissions: updatedPermissions,
+        updated_at: targetUser.updatedAt,
+      })
+      .eq('id', payload.userId);
+  } catch (error) {
+    console.warn(
+      '[updateStaffUserAction] Supabase update issue, retained in memory:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+
+  // Security audit log event
+  try {
+    await logSecurityEventAction({
+      action: `Updated employee account for ${targetUser.email} (Role: ${updatedRoleDisplay})`,
+      severity: 'info',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        targetUserId: payload.userId,
+        targetEmail: targetUser.email,
+        updatedRole,
+        updatedPermissions,
+      },
+    });
+  } catch {
+    // Suppress audit logging error
   }
 
   await safeRevalidatePaths();
@@ -419,6 +575,23 @@ export async function toggleUserStatusAction(
       '[toggleUserStatusAction] Supabase update issue, retained in memory:',
       error instanceof Error ? error.message : String(error)
     );
+  }
+
+  // Security audit log event
+  try {
+    await logSecurityEventAction({
+      action: `Toggled status of employee ${targetUser.email} to ${status}`,
+      severity: status === 'Inactive' ? 'warning' : 'info',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        userId,
+        email: targetUser.email,
+        status,
+      },
+    });
+  } catch {
+    // Suppress audit logging error
   }
 
   await safeRevalidatePaths();
