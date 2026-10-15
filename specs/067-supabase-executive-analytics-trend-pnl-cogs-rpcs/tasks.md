@@ -8,12 +8,12 @@
 
 ## Task Progress Summary
 
-- [ ] Task 1: SpecKit Artifacts Authoring & Design Baseline
-- [ ] Task 2: Database Migration: Executive KPIs, 7-Day Trend & Categorized P&L Stored Procedures
-- [ ] Task 3: TypeScript Domain Models & Validation Contracts
-- [ ] Task 4 (TDD Red): Unit Tests for Analytics Contracts, RPC Mappers & Zero-Data Boundary Resilience
-- [ ] Task 5 (TDD Green): RPC Client Bindings & Data Mappers Implementation
-- [ ] Task 6: Full Verification Gate & Task Sign-off
+- [x] Task 1: SpecKit Artifacts Authoring & Design Baseline
+- [x] Task 2: Database Migration: Executive KPIs, 7-Day Trend & Categorized P&L Stored Procedures
+- [x] Task 3: TypeScript Domain Models & Validation Contracts
+- [x] Task 4 (TDD Red): Unit Tests for Analytics Contracts, RPC Mappers & Zero-Data Boundary Resilience
+- [x] Task 5 (TDD Green): RPC Client Bindings & Data Mappers Implementation
+- [x] Task 6: Full Verification Gate & Task Sign-off
 
 ---
 
