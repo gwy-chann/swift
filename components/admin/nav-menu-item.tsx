@@ -8,17 +8,22 @@ interface NavMenuItemProps {
   onClick?: () => void;
 }
 
+function getBadgeStyle(variant?: string): string {
+  switch (variant) {
+    case "danger":
+      return "bg-danger text-white";
+    case "warning":
+      return "bg-accent text-white";
+    case "success":
+      return "bg-success text-white";
+    default:
+      return "bg-bg-muted text-text-primary";
+  }
+}
+
 export function NavMenuItem({ item, isActive, onClick }: NavMenuItemProps) {
   const Icon = item.icon;
-
-  const badgeStyle =
-    item.badge?.variant === "danger"
-      ? "bg-danger text-white"
-      : item.badge?.variant === "warning"
-      ? "bg-accent text-white"
-      : item.badge?.variant === "success"
-      ? "bg-success text-white"
-      : "bg-bg-muted text-text-primary";
+  const badgeStyle = getBadgeStyle(item.badge?.variant);
 
   return (
     <Link

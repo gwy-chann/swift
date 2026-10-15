@@ -18,11 +18,22 @@ export interface AdminKpiGridProps {
   pendingPartsWorkOrders?: number;
   lowStockCount?: number;
   isLowStockDanger?: boolean;
+  netProfitMarginPct?: number;
+  grossProfitAmount?: number;
+  revenueGrowthPct?: number;
 }
 
-function getRevenueSubtext(livePulse: boolean, salesIncrement: number | null | undefined): string {
+function getRevenueSubtext(
+  livePulse: boolean,
+  salesIncrement: number | null | undefined,
+  revenueGrowthPct?: number
+): string {
   if (livePulse && salesIncrement !== null && salesIncrement !== undefined) {
     return `+₱${salesIncrement.toFixed(2)} sale just received!`;
+  }
+  if (revenueGrowthPct !== undefined) {
+    const sign = revenueGrowthPct > 0 ? '+' : '';
+    return `${sign}${revenueGrowthPct.toFixed(1)}% vs yesterday`;
   }
   return '+14.2% vs yesterday';
 }
@@ -93,8 +104,8 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`,
-      subtext: getRevenueSubtext(livePulse, salesIncrement),
-      subtextColor: 'text-success',
+      subtext: getRevenueSubtext(livePulse, salesIncrement, props.revenueGrowthPct),
+      subtextColor: (props.revenueGrowthPct ?? 1) >= 0 ? 'text-success' : 'text-danger',
       icon: PesoIcon,
     },
     {
@@ -110,8 +121,11 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
       title: 'Net Profit Margin',
       badge: 'This Month',
       badgeVariant: 'default',
-      value: '34.8%',
-      subtext: '₱182,400.00 Gross Profit',
+      value: `${(props.netProfitMarginPct ?? 58.9).toFixed(1)}%`,
+      subtext: `₱${(props.grossProfitAmount ?? 26660.0).toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} Gross Profit`,
       subtextColor: 'text-success',
       icon: TrendingUp,
     },

@@ -138,6 +138,79 @@ export async function getCategoryPnlAction(
   }
 }
 
+interface ServiceBayRow {
+  id: string;
+  name: string;
+  bay_type: string;
+  status: string;
+  display_order: number;
+}
+
+interface ActiveWorkOrderRow {
+  id: string;
+  bay_id: string | null;
+  vehicle_model: string;
+  service_name: string;
+  status: string;
+  notes: string | null;
+}
+
+function getMechanicInfoDetail(activeOrder?: ActiveWorkOrderRow): string {
+  if (!activeOrder) {
+    return 'Available for dispatch';
+  }
+  const isWaitingParts = activeOrder.status === 'PENDING_PARTS';
+  const statusNote = isWaitingParts ? 'Waiting for parts' : 'Active';
+  return `Mechanic assigned (${statusNote})`;
+}
+
+function mapBayToDisplayItem(
+  bay: ServiceBayRow,
+  ordersByBay: Map<string, ActiveWorkOrderRow>
+): ServiceBayDisplayItem {
+  const activeOrder = ordersByBay.get(bay.id);
+  const status = (activeOrder ? activeOrder.status : bay.status) as ServiceBayDisplayItem['status'];
+  const vehicleService = activeOrder
+    ? `${activeOrder.vehicle_model} • ${activeOrder.service_name}`
+    : `${bay.bay_type} • Standby`;
+
+  return {
+    id: bay.id,
+    bayName: bay.name,
+    status,
+    vehicleService,
+    mechanicInfo: getMechanicInfoDetail(activeOrder),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchLiveServiceBays(supabase: any): Promise<ServiceBayDisplayItem[] | null> {
+  const { data: bays, error: baysError } = await supabase
+    .from('service_bays')
+    .select('id, name, bay_type, status, display_order')
+    .order('display_order', { ascending: true });
+
+  if (baysError || !bays || bays.length === 0) {
+    return null;
+  }
+
+  const { data: activeOrders } = await supabase
+    .from('work_orders')
+    .select('id, bay_id, vehicle_model, service_name, status, notes')
+    .in('status', ['IN PROGRESS', 'QUEUED', 'PENDING_PARTS']);
+
+  const ordersByBay = new Map<string, ActiveWorkOrderRow>();
+  if (activeOrders) {
+    for (const order of activeOrders as ActiveWorkOrderRow[]) {
+      if (order.bay_id && !ordersByBay.has(order.bay_id)) {
+        ordersByBay.set(order.bay_id, order);
+      }
+    }
+  }
+
+  return (bays as ServiceBayRow[]).map((bay) => mapBayToDisplayItem(bay, ordersByBay));
+}
+
 /**
  * Server Action: Fetches active workshop service bay status cards and assigned work orders.
  */
@@ -147,41 +220,9 @@ export async function getServiceBayStatusAction(): Promise<ServiceBayDisplayItem
       try {
         const { createClient } = await import('../supabase/server.ts');
         const supabase = await createClient();
-
-        const { data: bays, error: baysError } = await supabase
-          .from('service_bays')
-          .select('id, name, bay_type, status, display_order')
-          .order('display_order', { ascending: true });
-
-        if (!baysError && bays && bays.length > 0) {
-          const { data: activeOrders } = await supabase
-            .from('work_orders')
-            .select('id, bay_id, vehicle_model, service_name, status, notes')
-            .in('status', ['IN PROGRESS', 'QUEUED', 'PENDING_PARTS']);
-
-          const ordersByBay = new Map<string, (typeof activeOrders)[0]>();
-          if (activeOrders) {
-            for (const order of activeOrders) {
-              if (order.bay_id && !ordersByBay.has(order.bay_id)) {
-                ordersByBay.set(order.bay_id, order);
-              }
-            }
-          }
-
-          return bays.map((bay) => {
-            const activeOrder = ordersByBay.get(bay.id);
-            return {
-              id: bay.id,
-              bayName: bay.name,
-              status: (activeOrder ? activeOrder.status : bay.status) as ServiceBayDisplayItem['status'],
-              vehicleService: activeOrder
-                ? `${activeOrder.vehicle_model} • ${activeOrder.service_name}`
-                : `${bay.bay_type} • Standby`,
-              mechanicInfo: activeOrder
-                ? `Mechanic assigned (${activeOrder.status === 'PENDING_PARTS' ? 'Waiting for parts' : 'Active'})`
-                : 'Available for dispatch',
-            };
-          });
+        const liveBays = await fetchLiveServiceBays(supabase);
+        if (liveBays && liveBays.length > 0) {
+          return liveBays;
         }
       } catch (err) {
         console.warn('[Analytics Action] Error querying live service bays:', err);

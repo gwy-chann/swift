@@ -5,6 +5,13 @@ import { AdminKpiGrid } from '@/components/admin/admin-kpi-grid';
 import { RevenueComparisonChart } from '@/components/admin/revenue-comparison-chart';
 import { ServiceBayStatusCard, type ServiceBayDisplayItem } from '@/components/admin/service-bay-status';
 import { useExecutiveRealtime } from '@/lib/analytics/use-executive-realtime';
+import type { ExecutiveKpiData, WeeklyRevenueData } from '@/lib/types/analytics';
+
+export interface AdminDashboardClientProps {
+  initialKpis?: ExecutiveKpiData;
+  initialRevenueTrend?: WeeklyRevenueData;
+  initialServiceBays?: ServiceBayDisplayItem[];
+}
 
 const INITIAL_SERVICE_BAYS: ServiceBayDisplayItem[] = [
   {
@@ -40,19 +47,35 @@ function getWorkOrderStatusDetail(status: string): string {
   return 'In Progress';
 }
 
-export function AdminDashboardClient() {
-  const [grossRevenue, setGrossRevenue] = useState(45230.0);
+export function AdminDashboardClient({
+  initialKpis,
+  initialRevenueTrend,
+  initialServiceBays,
+}: AdminDashboardClientProps = {}) {
+  const [grossRevenue, setGrossRevenue] = useState(
+    initialKpis?.gross_revenue_today ?? 45230.0
+  );
   const [livePulse, setLivePulse] = useState(false);
   const [salesIncrement, setSalesIncrement] = useState<number | null>(null);
   const [todayPartsIncrement, setTodayPartsIncrement] = useState(0);
 
-  const [activeWorkOrders, setActiveWorkOrders] = useState(8);
-  const [pendingPartsWorkOrders, setPendingPartsWorkOrders] = useState(3);
+  const [activeWorkOrders, setActiveWorkOrders] = useState(
+    initialKpis?.active_work_orders_count ?? 8
+  );
+  const [pendingPartsWorkOrders, setPendingPartsWorkOrders] = useState(
+    initialKpis?.pending_parts_count ?? 3
+  );
 
-  const [lowStockCount, setLowStockCount] = useState(3);
-  const [isLowStockDanger, setIsLowStockDanger] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState(
+    initialKpis?.critical_low_stock_count ?? 3
+  );
+  const [isLowStockDanger, setIsLowStockDanger] = useState(
+    (initialKpis?.critical_low_stock_count ?? 3) > 0
+  );
 
-  const [serviceBays, setServiceBays] = useState<ServiceBayDisplayItem[]>(INITIAL_SERVICE_BAYS);
+  const [serviceBays, setServiceBays] = useState<ServiceBayDisplayItem[]>(
+    initialServiceBays ?? INITIAL_SERVICE_BAYS
+  );
 
   // Unified executive realtime subscription to operational-intelligence
   useExecutiveRealtime({
@@ -115,12 +138,18 @@ export function AdminDashboardClient() {
         pendingPartsWorkOrders={pendingPartsWorkOrders}
         lowStockCount={lowStockCount}
         isLowStockDanger={isLowStockDanger}
+        netProfitMarginPct={initialKpis?.net_profit_margin_pct}
+        grossProfitAmount={initialKpis?.gross_profit_amount}
+        revenueGrowthPct={initialKpis?.revenue_growth_pct}
       />
 
       {/* Dashboard Analytics & Service Bay Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2">
-          <RevenueComparisonChart todayPartsIncrement={todayPartsIncrement} />
+          <RevenueComparisonChart
+            todayPartsIncrement={todayPartsIncrement}
+            initialWeeklyData={initialRevenueTrend}
+          />
         </div>
         <div className="lg:col-span-1">
           <ServiceBayStatusCard bays={serviceBays} />

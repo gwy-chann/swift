@@ -127,8 +127,18 @@ export const DETERMINISTIC_FALLBACK_SERVICE_BAYS: ServiceBayDisplayItem[] = [
   },
 ];
 
+function getPeriodMultiplier(period: AnalyticsPeriod): number {
+  if (period === 'monthly') {
+    return 24;
+  }
+  if (period === 'weekly') {
+    return 6.5;
+  }
+  return 1;
+}
+
 export function getDeterministicMockCategoryPnl(period: AnalyticsPeriod = 'daily'): CategoryPnlData {
-  const multiplier = period === 'monthly' ? 24 : period === 'weekly' ? 6.5 : 1;
+  const multiplier = getPeriodMultiplier(period);
 
   const categories = [
     {
