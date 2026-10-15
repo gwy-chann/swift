@@ -7,7 +7,6 @@ import {
   updateStaffUserAction,
   toggleUserStatusAction,
   resetInMemoryStaffUsers,
-  mapDbRoleToDisplay,
 } from '../user-actions.ts';
 import {
   DbUserRoleSchema,
@@ -16,7 +15,7 @@ import {
 import {
   UpdateStaffUserSchema,
 } from '../../../specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract.ts';
-import { DEFAULT_ROLE_PERMISSIONS } from '../../types/auth.ts';
+import { DEFAULT_ROLE_PERMISSIONS, mapDbRoleToDisplay } from '../../types/auth.ts';
 
 describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema & Admin Provisioning Actions (SIAA-56)', () => {
   beforeEach(async () => {

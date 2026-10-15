@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   generateAccountingCsvString,
+} from '../export-utils.ts';
+import {
   exportAccountingCsvAction,
 } from '../export.ts';
 import type { CategoryPnlData } from '../../types/analytics.ts';
@@ -55,19 +57,19 @@ test('generateAccountingCsvString - formats standard RFC 4180 headers and rows',
   // Verify first row
   assert.strictEqual(
     lines[1],
-    'Fluids & Lubricants,45,12500.00,7500.00,5000.00,40.00%'
+    'Fluids & Lubricants,45,12500.00,7500.00,5000.00,40.0%'
   );
 
   // Verify Workshop Labor row
   assert.strictEqual(
     lines[3],
-    'Workshop Labor,28,14280.00,0.00,14280.00,100.00%'
+    'Workshop Labor,28,14280.00,0.00,14280.00,100.0%'
   );
 
   // Verify Summary footer row
   assert.strictEqual(
     lines[4],
-    'Total,91,45230.00,18570.00,26660.00,58.94%'
+    'Total,91,45230.00,18570.00,26660.00,58.9%'
   );
 });
 
@@ -97,7 +99,7 @@ test('generateAccountingCsvString - sanitizes values containing commas and quote
 
   assert.strictEqual(
     lines[1],
-    '"Engine, ""Belts"" & Sprockets",5,2500.00,1500.00,1000.00,40.00%'
+    '"Engine, ""Belts"" & Sprockets",5,2500.00,1500.00,1000.00,40.0%'
   );
 });
 
@@ -121,7 +123,7 @@ test('generateAccountingCsvString - handles empty category data gracefully', () 
     lines[0],
     'Category,Units Sold,Gross Revenue,COGS,Net Profit,Margin %'
   );
-  assert.strictEqual(lines[1], 'Total,0,0.00,0.00,0.00,0.00%');
+  assert.strictEqual(lines[1], 'Total,0,0.00,0.00,0.00,0.0%');
 });
 
 test('exportAccountingCsvAction - returns valid export metadata and filename', async () => {
@@ -129,7 +131,7 @@ test('exportAccountingCsvAction - returns valid export metadata and filename', a
 
   assert.strictEqual(result.success, true);
   assert.strictEqual(result.period, 'daily');
-  assert.match(result.filename, /^swift_financial_report_\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.match(result.filename, /^swift_revenue_report_\d{4}-\d{2}-\d{2}\.csv$/);
   assert.ok(result.csvContent.includes('Category,Units Sold,Gross Revenue'));
   assert.ok(result.rowCount > 0);
   assert.ok(typeof result.generatedAt === 'string');

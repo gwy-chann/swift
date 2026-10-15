@@ -14,5 +14,5 @@ BEGIN
 
     ALTER TABLE public.transactions
     ADD CONSTRAINT transactions_discount_type_check
-    CHECK (discount_type IS NULL OR discount_type IN ('none', 'senior', 'pwd', 'vip', 'fleet', 'senior_pwd'));
+    CHECK (discount_type IS NULL OR discount_type IN ('none', 'senior', 'pwd', 'vip', 'fleet', 'senior_pwd', 'custom_override', 'discount'));
 END $$;

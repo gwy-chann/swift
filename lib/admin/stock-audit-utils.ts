@@ -1,6 +1,7 @@
 import type {
   StockAdjustmentLogEntry,
   StockAuditSummaryMetrics,
+  StockAuditFilterOptions,
 } from '../types/stock-audit.ts';
 import type { StockAdjustmentLog } from '../types/logs.ts';
 
@@ -122,4 +123,67 @@ export function generateAuditCsv(logs: StockAdjustmentLogEntry[]): string {
   ];
 
   return csvLines.join('\r\n');
+}
+
+/**
+ * Filters and deterministically sorts an array of stock adjustment log entries.
+ */
+export function filterStockAdjustmentLogs(
+  logs: StockAdjustmentLogEntry[],
+  filters: StockAuditFilterOptions
+): StockAdjustmentLogEntry[] {
+  let result = [...logs];
+
+  if (filters.sku && filters.sku.trim().length > 0) {
+    const targetSku = filters.sku.trim().toLowerCase();
+    result = result.filter((item) =>
+      item.sku.toLowerCase().includes(targetSku)
+    );
+  }
+
+  if (
+    filters.adjustmentType &&
+    filters.adjustmentType.trim().length > 0 &&
+    filters.adjustmentType !== 'All'
+  ) {
+    const targetType = filters.adjustmentType.trim().toLowerCase();
+    result = result.filter(
+      (item) => item.adjustmentType.toLowerCase() === targetType
+    );
+  }
+
+  if (filters.search && filters.search.trim().length > 0) {
+    const query = filters.search.trim().toLowerCase();
+    result = result.filter(
+      (item) =>
+        item.sku.toLowerCase().includes(query) ||
+        item.reason.toLowerCase().includes(query) ||
+        item.userName.toLowerCase().includes(query) ||
+        item.adjustmentType.toLowerCase().includes(query)
+    );
+  }
+
+  if (filters.startDate) {
+    const startMs = new Date(filters.startDate).getTime();
+    result = result.filter(
+      (item) => new Date(item.createdAt).getTime() >= startMs
+    );
+  }
+
+  if (filters.endDate) {
+    const endMs = new Date(filters.endDate).getTime();
+    result = result.filter(
+      (item) => new Date(item.createdAt).getTime() <= endMs
+    );
+  }
+
+  // Deterministic ordering: created_at DESC, then id DESC
+  result.sort((a, b) => {
+    const diff =
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (diff !== 0) return diff;
+    return b.id.localeCompare(a.id);
+  });
+
+  return result;
 }

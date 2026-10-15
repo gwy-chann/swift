@@ -16,6 +16,19 @@ import {
   getEmptyCategoryPnl,
 } from './mapper.ts';
 
+function formatRpcError(error: unknown): string {
+  if (!error) return 'No data returned';
+  if (typeof error === 'object' && error !== null) {
+    const err = error as Record<string, unknown>;
+    const msg = err.message || err.details || err.code;
+    if (msg) {
+      return `${err.message ?? ''} ${err.code ? `(${err.code})` : ''} ${err.details ? `- ${err.details}` : ''}`.trim();
+    }
+    return JSON.stringify(error);
+  }
+  return String(error);
+}
+
 /**
  * Fetches executive operational KPIs via Supabase stored procedure `get_executive_kpis`.
  * @param client Supabase client instance (browser or server)
@@ -30,7 +43,7 @@ export async function fetchExecutiveKpis(
     const { data, error } = await client.rpc('get_executive_kpis', params);
 
     if (error || !data) {
-      console.error('[Analytics RPC] Error calling get_executive_kpis:', error);
+      console.warn('[Analytics RPC] Error calling get_executive_kpis:', formatRpcError(error));
       return getEmptyExecutiveKpis();
     }
 
@@ -42,7 +55,7 @@ export async function fetchExecutiveKpis(
 
     return validation.data;
   } catch (err) {
-    console.error('[Analytics RPC] Unexpected exception in fetchExecutiveKpis:', err);
+    console.warn('[Analytics RPC] Unexpected exception in fetchExecutiveKpis:', err);
     return getEmptyExecutiveKpis();
   }
 }
@@ -61,13 +74,13 @@ export async function fetchRevenueTrend7d(
     const { data, error } = await client.rpc('get_revenue_trend_7d', params);
 
     if (error || !data || !Array.isArray(data)) {
-      console.error('[Analytics RPC] Error calling get_revenue_trend_7d:', error);
+      console.warn('[Analytics RPC] Error calling get_revenue_trend_7d:', formatRpcError(error));
       return getEmptyWeeklyRevenue();
     }
 
     return normalizeWeeklyRevenue(data as Partial<RevenueTrendDay>[]);
   } catch (err) {
-    console.error('[Analytics RPC] Unexpected exception in fetchRevenueTrend7d:', err);
+    console.warn('[Analytics RPC] Unexpected exception in fetchRevenueTrend7d:', err);
     return getEmptyWeeklyRevenue();
   }
 }
@@ -95,7 +108,7 @@ export async function fetchCategoryPnl(
     });
 
     if (error || !data) {
-      console.error('[Analytics RPC] Error calling get_category_pnl:', error);
+      console.warn('[Analytics RPC] Error calling get_category_pnl:', formatRpcError(error));
       return getEmptyCategoryPnl();
     }
 
@@ -107,7 +120,7 @@ export async function fetchCategoryPnl(
 
     return validation.data;
   } catch (err) {
-    console.error('[Analytics RPC] Unexpected exception in fetchCategoryPnl:', err);
+    console.warn('[Analytics RPC] Unexpected exception in fetchCategoryPnl:', err);
     return getEmptyCategoryPnl();
   }
 }

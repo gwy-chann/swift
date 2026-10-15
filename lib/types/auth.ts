@@ -49,6 +49,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<DbUserRole, StaffPermissions> = {
   },
 };
 
+export function mapDbRoleToDisplay(role: DbUserRole): UserRole {
+  switch (role) {
+    case 'admin':
+      return 'Admin';
+    case 'cashier':
+      return 'Cashier';
+    case 'mechanic':
+      return 'Mechanic';
+    case 'inventory_clerk':
+      return 'Inventory Clerk';
+    case 'staff':
+    default:
+      return 'Staff';
+  }
+}
+
 export interface UserSession {
   id: number | string;
   name: string;

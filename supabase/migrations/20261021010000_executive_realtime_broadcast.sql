@@ -1,5 +1,5 @@
 -- ====================================================================
--- Migration: 20261021000000_executive_realtime_broadcast.sql
+-- Migration: 20261021010000_executive_realtime_broadcast.sql
 -- Description: Register public.work_orders, public.service_bays, and
 --              public.transactions with supabase_realtime publication
 --              and configure REPLICA IDENTITY FULL for sub-500ms

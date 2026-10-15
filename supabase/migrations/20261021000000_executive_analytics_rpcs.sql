@@ -25,17 +25,17 @@ DECLARE
     v_yesterday_end TIMESTAMPTZ := p_date::timestamptz;
     v_mtd_start TIMESTAMPTZ := date_trunc('month', p_date::timestamptz);
     
-    v_revenue_today NUMERIC(10, 2) := 0.00;
-    v_revenue_yesterday NUMERIC(10, 2) := 0.00;
-    v_revenue_growth_pct NUMERIC(5, 2) := 0.00;
+    v_revenue_today NUMERIC(14, 2) := 0.00;
+    v_revenue_yesterday NUMERIC(14, 2) := 0.00;
+    v_revenue_growth_pct NUMERIC(12, 2) := 0.00;
     
     v_active_work_orders INT := 0;
     v_pending_parts INT := 0;
     
-    v_mtd_revenue NUMERIC(10, 2) := 0.00;
-    v_mtd_cogs NUMERIC(10, 2) := 0.00;
-    v_gross_profit NUMERIC(10, 2) := 0.00;
-    v_net_margin_pct NUMERIC(5, 2) := 0.00;
+    v_mtd_revenue NUMERIC(14, 2) := 0.00;
+    v_mtd_cogs NUMERIC(14, 2) := 0.00;
+    v_gross_profit NUMERIC(14, 2) := 0.00;
+    v_net_margin_pct NUMERIC(12, 2) := 0.00;
     
     v_low_stock_count INT := 0;
 BEGIN

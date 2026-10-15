@@ -37,29 +37,8 @@ export interface CartStoreState {
 }
 
 
-// Initial seed cart state derived directly from mockup/app.js (lines 76-83)
-const INITIAL_CART_ITEMS: CartItem[] = [
-  {
-    id: 'MOT-3100-10W40',
-    type: 'part',
-    sku: 'MOT-3100-10W40',
-    name: 'Motul 3100 Gold 4T 10W40 (1L)',
-    price: 390,
-    qty: 2,
-    location: 'Aisle 1 / Shelf 1',
-    retailPrice: 390,
-    wholesalePrice: 330
-  },
-  {
-    id: 'SRV-OIL-01',
-    type: 'service',
-    code: 'SRV-OIL-01',
-    name: 'Labor: Standard Oil Change',
-    price: 100,
-    qty: 1,
-    bay: 'Bay 1 / Quick Bay'
-  }
-];
+// Cart initially starts empty for staff POS operations
+const INITIAL_CART_ITEMS: CartItem[] = [];
 
 class CartStore {
   private state: CartStoreState;
@@ -82,24 +61,8 @@ class CartStore {
     };
   }
 
-  public getState = () => {
-    return {
-      ...this.state,
-      addItem: this.addItem,
-      addPart: this.addPart,
-      addService: this.addService,
-      updateQuantity: this.updateQuantity,
-      removeItem: this.removeItem,
-      clearCart: this.clearCart,
-      setPricingMode: this.setPricingMode,
-      setDiscountRate: this.setDiscountRate,
-      setDiscountTier: this.setDiscountTier,
-      checkout: this.checkout,
-      openPaymentModal: this.openPaymentModal,
-      closePaymentModal: this.closePaymentModal,
-      openReceiptModal: this.openReceiptModal,
-      closeReceiptModal: this.closeReceiptModal,
-    };
+  public getState = (): CartStoreState => {
+    return this.state;
   };
 
   public subscribe = (listener: () => void): (() => void) => {
@@ -604,7 +567,7 @@ class CartStore {
 
 export const cartStore = new CartStore();
 
-export function useCartStore(): CartStoreState & {
+export type UseCartStoreState = CartStoreState & {
   addItem: typeof cartStore.addItem;
   addPart: typeof cartStore.addPart;
   addService: typeof cartStore.addService;
@@ -619,32 +582,46 @@ export function useCartStore(): CartStoreState & {
   closePaymentModal: typeof cartStore.closePaymentModal;
   openReceiptModal: typeof cartStore.openReceiptModal;
   closeReceiptModal: typeof cartStore.closeReceiptModal;
-} {
-  const state = useSyncExternalStore(
+};
+
+let cachedUseCartStoreState: UseCartStoreState | null = null;
+let lastCartStateRef: CartStoreState | null = null;
+
+function getCachedUseCartStoreState(): UseCartStoreState {
+  const currentState = cartStore.getState();
+  if (!cachedUseCartStoreState || lastCartStateRef !== currentState) {
+    lastCartStateRef = currentState;
+    cachedUseCartStoreState = {
+      ...currentState,
+      addItem: cartStore.addItem,
+      addPart: cartStore.addPart,
+      addService: cartStore.addService,
+      updateQuantity: cartStore.updateQuantity,
+      removeItem: cartStore.removeItem,
+      clearCart: cartStore.clearCart,
+      setPricingMode: cartStore.setPricingMode,
+      setDiscountRate: cartStore.setDiscountRate,
+      setDiscountTier: cartStore.setDiscountTier,
+      checkout: cartStore.checkout,
+      openPaymentModal: cartStore.openPaymentModal,
+      closePaymentModal: cartStore.closePaymentModal,
+      openReceiptModal: cartStore.openReceiptModal,
+      closeReceiptModal: cartStore.closeReceiptModal
+    };
+  }
+  return cachedUseCartStoreState;
+}
+
+export function useCartStore(): UseCartStoreState {
+  useSyncExternalStore(
     cartStore.subscribe,
     cartStore.getState,
     cartStore.getState
   );
 
-  return {
-    ...state,
-    addItem: cartStore.addItem,
-    addPart: cartStore.addPart,
-    addService: cartStore.addService,
-    updateQuantity: cartStore.updateQuantity,
-    removeItem: cartStore.removeItem,
-    clearCart: cartStore.clearCart,
-    setPricingMode: cartStore.setPricingMode,
-    setDiscountRate: cartStore.setDiscountRate,
-    setDiscountTier: cartStore.setDiscountTier,
-    checkout: cartStore.checkout,
-    openPaymentModal: cartStore.openPaymentModal,
-    closePaymentModal: cartStore.closePaymentModal,
-    openReceiptModal: cartStore.openReceiptModal,
-    closeReceiptModal: cartStore.closeReceiptModal
-  };
+  return getCachedUseCartStoreState();
 }
 
-useCartStore.getState = cartStore.getState;
+useCartStore.getState = getCachedUseCartStoreState;
 useCartStore.subscribe = cartStore.subscribe;
 

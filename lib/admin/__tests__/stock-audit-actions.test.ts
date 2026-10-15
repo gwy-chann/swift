@@ -117,7 +117,27 @@ describe('Supabase Stock Adjustment Audit Trail Ledger & Shrinkage Analytics (SI
   describe('Scenario 5: Database Connection & Fallback Path', () => {
     it('executes database query when forceMemoryStore is disabled', async () => {
       setForceMemoryStockLogs(false);
-      const response = await getStockAdjustmentLogsAction({ limit: 5 });
+      let response = await getStockAdjustmentLogsAction({ limit: 5 });
+      if (response.success && response.logs.length === 0) {
+        try {
+          const { createClient } = await import('../../supabase/server.ts');
+          const supabase = await createClient();
+          await supabase.from('stock_adjustment_logs').insert([
+            {
+              sku: 'YAM-NMAX-BL01',
+              adjustment_type: 'Physical Count',
+              quantity_delta: -2,
+              previous_stock: 14,
+              new_stock: 12,
+              reason: 'Physical inventory count reconciliation',
+              user_name: 'Carlos Rodriguez'
+            }
+          ]);
+          response = await getStockAdjustmentLogsAction({ limit: 5 });
+        } catch {
+          // Fallback ignore
+        }
+      }
       assert.equal(response.success, true);
       assert.ok(response.logs.length > 0);
       assert.ok(response.metrics.totalCount > 0);

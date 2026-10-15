@@ -4,8 +4,8 @@ import { inventoryStore } from '../../store/inventory-store.ts';
 import {
   mapStockAdjustmentLogToEntry,
   calculateSummaryMetrics,
+  filterStockAdjustmentLogs,
 } from '../stock-audit-utils.ts';
-import { filterStockAdjustmentLogs } from '../stock-audit-actions.ts';
 import type { StockAdjustmentLogEntry } from '../../types/stock-audit.ts';
 import { MOCK_STOCK_ADJUSTMENT_LOGS } from '../mock-data/stock-adjustments.ts';
 

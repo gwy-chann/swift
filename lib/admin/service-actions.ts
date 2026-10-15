@@ -310,11 +310,10 @@ async function executeSupabaseUpdateService(
     const { createClient, createAdminClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
 
-    const { data: currentService } = await supabase
-      .from('labor_services')
-      .select('*')
-      .or(`id.eq.${serviceId},code.eq.${serviceId}`)
-      .maybeSingle();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId);
+    const { data: currentService } = await (isUuid
+      ? supabase.from('labor_services').select('*').eq('id', serviceId).maybeSingle()
+      : supabase.from('labor_services').select('*').eq('code', serviceId).maybeSingle());
 
     if (!currentService) return null;
 
@@ -482,17 +481,16 @@ export async function deleteLaborServiceAction(
     const { createClient, createAdminClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
 
-    let { error: deleteError } = await supabase
-      .from('labor_services')
-      .delete()
-      .or(`id.eq.${serviceId},code.eq.${serviceId}`);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId);
+    let { error: deleteError } = await (isUuid
+      ? supabase.from('labor_services').delete().eq('id', serviceId)
+      : supabase.from('labor_services').delete().eq('code', serviceId));
 
     if (deleteError && deleteError.message.toLowerCase().includes('permission denied')) {
       const adminClient = createAdminClient();
-      const retry = await adminClient
-        .from('labor_services')
-        .delete()
-        .or(`id.eq.${serviceId},code.eq.${serviceId}`);
+      const retry = await (isUuid
+        ? adminClient.from('labor_services').delete().eq('id', serviceId)
+        : adminClient.from('labor_services').delete().eq('code', serviceId));
       deleteError = retry.error;
     }
 
@@ -547,7 +545,8 @@ export async function getServiceRateAuditLogsAction(
       .order('created_at', { ascending: false });
 
     if (serviceId) {
-      query = query.eq('service_id', serviceId);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId);
+      query = isUuid ? query.eq('service_id', serviceId) : query.eq('service_code', serviceId);
     }
 
     const { data, error } = await query;

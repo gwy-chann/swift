@@ -9,8 +9,9 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
   });
 
   it('records an audit log when a 20% Senior Citizen discount is applied at checkout', async () => {
+    const receiptNumber = `TX-7788-${Date.now()}`;
     const payload = {
-      receiptNumber: 'TX-7788',
+      receiptNumber,
       cashierName: 'Mike Morales',
       pricingMode: 'retail' as const,
       subtotal: 1000,
@@ -41,7 +42,7 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
     assert.ok(auditRes.data);
 
     const discountLog = auditRes.data.find(
-      (l) => l.action.includes('Senior Citizen Discount') && l.action.includes('TX-7788')
+      (l) => l.action.includes('Senior Citizen Discount') && l.action.includes(receiptNumber)
     );
     assert.ok(discountLog, 'Audit log entry must be created for Senior Citizen discount checkout');
     assert.equal(discountLog.severity, 'info');
@@ -51,8 +52,9 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
   });
 
   it('records an audit log when a custom discount override is applied at checkout', async () => {
+    const receiptNumber = `TX-7799-${Date.now()}`;
     const payload = {
-      receiptNumber: 'TX-7799',
+      receiptNumber,
       cashierName: 'Jane Cashier',
       pricingMode: 'retail' as const,
       subtotal: 500,
@@ -83,7 +85,7 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
     assert.ok(auditRes.data);
 
     const discountLog = auditRes.data.find(
-      (l) => l.action.includes('15% Discount Override') && l.action.includes('TX-7799')
+      (l) => l.action.includes('15% Discount Override') && l.action.includes(receiptNumber)
     );
     assert.ok(discountLog, 'Audit log entry must be created for discount override');
     assert.equal(discountLog.severity, 'info');
@@ -91,8 +93,9 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
   });
 
   it('does NOT create a discount audit log when checkout has zero discount', async () => {
+    const receiptNumber = `TX-7700-${Date.now()}`;
     const payload = {
-      receiptNumber: 'TX-7700',
+      receiptNumber,
       cashierName: 'Mike Morales',
       pricingMode: 'retail' as const,
       subtotal: 300,
@@ -121,7 +124,7 @@ describe('POS Discount Override & Security Audit Logging (SIAA-42 / STORY-7.5)',
     const auditRes = await getSecurityAuditLogsAction({ limit: 10 });
     assert.equal(auditRes.success, true);
 
-    const discountLog = auditRes.data?.find((l) => l.action.includes('TX-7700'));
+    const discountLog = auditRes.data?.find((l) => l.action.includes(receiptNumber));
     assert.equal(discountLog, undefined, 'Zero discount transaction should not create discount override audit log');
   });
 });

@@ -79,7 +79,7 @@ let memoryAuditLogs: SecurityAuditLog[] = [...BASELINE_SEED_AUDIT_LOGS];
  * Resets the in-memory fallback audit store to the baseline seed logs.
  * Primarily utilized during testing and state isolation.
  */
-export function resetMemoryAuditLogs(): void {
+export async function resetMemoryAuditLogs(): Promise<void> {
   memoryAuditLogs = BASELINE_SEED_AUDIT_LOGS.map((item) => ({
     ...item,
     metadata: { ...item.metadata },

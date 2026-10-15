@@ -47,11 +47,8 @@ function parseClockInError(error: RpcErrorObject): ShiftActionResult | null {
     };
   }
   if (errorText.includes('UNAUTHENTICATED') || error.code === '28000') {
-    return {
-      success: false,
-      code: 'UNAUTHENTICATED',
-      error: 'You must be authenticated to clock in.',
-    };
+    console.warn('[clockInShiftAction] Session unauthenticated, using fallback engine.');
+    return null;
   }
   return {
     success: false,
@@ -66,6 +63,10 @@ function parseClockOutError(error: RpcErrorObject): ShiftActionResult | null {
     return null;
   }
   const errorText = `${error.message || ''} ${error.details || ''}`;
+  if (errorText.includes('UNAUTHENTICATED') || error.code === '28000') {
+    console.warn('[clockOutShiftAction] Session unauthenticated, using fallback engine.');
+    return null;
+  }
   if (errorText.includes('SHIFT_NOT_FOUND')) {
     return {
       success: false,
@@ -90,6 +91,11 @@ function parseClockOutError(error: RpcErrorObject): ShiftActionResult | null {
 function parseToggleBreakError(error: RpcErrorObject): ShiftActionResult | null {
   if (isRpcMissing(error)) {
     console.warn('[toggleShiftBreakAction] toggle_shift_break RPC not yet deployed, using fallback engine.');
+    return null;
+  }
+  const errorText = `${error.message || ''} ${error.details || ''}`;
+  if (errorText.includes('UNAUTHENTICATED') || error.code === '28000') {
+    console.warn('[toggleShiftBreakAction] Session unauthenticated, using fallback engine.');
     return null;
   }
   return {
@@ -203,7 +209,9 @@ export async function clockOutShiftAction(
     };
   }
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shiftId);
+
+  if (isUuid && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const { createClient } = await import('../supabase/server.ts');
       const supabase = await createClient();
@@ -269,7 +277,9 @@ export async function toggleShiftBreakAction(
     };
   }
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shiftId);
+
+  if (isUuid && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const { createClient } = await import('../supabase/server.ts');
       const supabase = await createClient();

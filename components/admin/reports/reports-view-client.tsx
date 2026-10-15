@@ -6,10 +6,10 @@ import { FinancialSummaryCards } from './financial-summary-cards';
 import { CategoryPnlTable } from './category-pnl-table';
 import {
   getCategoryPnlBreakdownAction,
-  getInvoiceCountForPeriod,
   type AnalyticsPeriod,
 } from '@/lib/admin/pnl-actions';
-import { generateAccountingCsvString } from '@/lib/analytics/export';
+import { getInvoiceCountForPeriod } from '@/lib/admin/pnl-cogs-utils';
+import { generateAccountingCsvString } from '@/lib/analytics/export-utils';
 import type { CategoryPnlData } from '@/lib/types/analytics';
 
 export type PeriodOption = AnalyticsPeriod;
