@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { WorkOrderStatus } from "@/lib/types/service";
+import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
 
 export interface ServiceBayDisplayItem {
   id: string;
@@ -39,7 +40,43 @@ interface ServiceBayStatusCardProps {
   bays?: ServiceBayDisplayItem[];
 }
 
-export function ServiceBayStatusCard({ bays = DEFAULT_SERVICE_BAYS }: ServiceBayStatusCardProps) {
+export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCardProps = {}) {
+  const [internalBays, setInternalBays] = useState<ServiceBayDisplayItem[]>(
+    initialBays || DEFAULT_SERVICE_BAYS
+  );
+
+  const isControlled = initialBays !== undefined;
+
+  // Realtime hook subscription for standalone mode
+  useExecutiveRealtime({
+    enabled: !isControlled,
+    onWorkOrderChange: (wo) => {
+      setInternalBays((prev) =>
+        prev.map((bay, idx) => {
+          // If work order specifies bay_id or matches first bay
+          const isTargetBay = wo.bay_id ? bay.id === wo.bay_id : idx === 0;
+          if (isTargetBay) {
+            const statusSuffix =
+              wo.status === 'COMPLETED'
+                ? 'Ready for pickup'
+                : wo.status === 'PENDING_PARTS'
+                ? 'Waiting for counter parts'
+                : 'In Progress';
+            return {
+              ...bay,
+              status: wo.status,
+              vehicleService: `${wo.vehicle_model} • ${wo.service_name}`,
+              mechanicInfo: `Mechanic: Dante Reyes (${statusSuffix})`,
+            };
+          }
+          return bay;
+        })
+      );
+    },
+  });
+
+  const bays = isControlled ? initialBays : internalBays;
+
   const getStatusBadgeClass = (status: WorkOrderStatus) => {
     switch (status) {
       case "IN PROGRESS":
@@ -57,7 +94,7 @@ export function ServiceBayStatusCard({ bays = DEFAULT_SERVICE_BAYS }: ServiceBay
   };
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between">
+    <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between min-h-[300px]">
       {/* Header */}
       <div className="px-4 sm:px-5 py-3.5 border-b border-border flex items-center justify-between gap-2 bg-bg-surface">
         <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-primary">
@@ -76,11 +113,11 @@ export function ServiceBayStatusCard({ bays = DEFAULT_SERVICE_BAYS }: ServiceBay
             className="px-4 sm:px-5 py-3.5 hover:bg-bg-hover transition-colors"
           >
             <div className="flex items-center justify-between gap-2">
-              <strong className="text-xs sm:text-sm font-bold text-text-primary">
+              <strong className="text-xs sm:text-sm font-bold text-text-primary truncate">
                 {bay.bayName}
               </strong>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getStatusBadgeClass(
+                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${getStatusBadgeClass(
                   bay.status
                 )}`}
               >
@@ -88,11 +125,11 @@ export function ServiceBayStatusCard({ bays = DEFAULT_SERVICE_BAYS }: ServiceBay
               </span>
             </div>
 
-            <div className="text-xs text-text-muted mt-1 font-medium">
+            <div className="text-xs text-text-muted mt-1 font-medium truncate">
               {bay.vehicleService}
             </div>
 
-            <div className="text-xs text-text-secondary mt-0.5 font-medium">
+            <div className="text-xs text-text-secondary mt-0.5 font-medium truncate">
               {bay.mechanicInfo}
             </div>
           </div>

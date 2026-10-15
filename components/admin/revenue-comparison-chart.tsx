@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
 
 interface DailyRevenueData {
   day: string;
@@ -12,7 +13,7 @@ interface DailyRevenueData {
   laborHeightPercent: number;
 }
 
-const WEEKLY_REVENUE_DATA: DailyRevenueData[] = [
+const INITIAL_WEEKLY_DATA: DailyRevenueData[] = [
   {
     day: "Mon",
     partsAmount: 28500,
@@ -78,10 +79,45 @@ const WEEKLY_REVENUE_DATA: DailyRevenueData[] = [
   },
 ];
 
-export function RevenueComparisonChart() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday as in screenshot
+export interface RevenueComparisonChartProps {
+  todayPartsIncrement?: number;
+  todayLaborIncrement?: number;
+}
+
+export function RevenueComparisonChart({
+  todayPartsIncrement = 0,
+  todayLaborIncrement = 0,
+}: RevenueComparisonChartProps = {}) {
+  const [internalPartsIncrement, setInternalPartsIncrement] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday
   const [hoveredType, setHoveredType] = useState<"parts" | "labor">("parts");
   const [filter, setFilter] = useState<"all" | "parts" | "labor">("all");
+
+  // Realtime hook for standalone mode
+  useExecutiveRealtime({
+    onTransaction: (tx) => {
+      setInternalPartsIncrement((prev) => prev + tx.total_due);
+    },
+  });
+
+  const effectivePartsIncrement = todayPartsIncrement || internalPartsIncrement;
+
+  // Calculate dynamic weekly data with today's increment
+  const weeklyData = INITIAL_WEEKLY_DATA.map((item, idx) => {
+    if (idx === INITIAL_WEEKLY_DATA.length - 1) {
+      const updatedParts = item.partsAmount + effectivePartsIncrement;
+      const updatedLabor = item.laborAmount + todayLaborIncrement;
+      return {
+        ...item,
+        partsAmount: updatedParts,
+        partsDisplay: `₱${(updatedParts / 1000).toFixed(1)}k`,
+        laborAmount: updatedLabor,
+        laborDisplay: `₱${(updatedLabor / 1000).toFixed(1)}k`,
+        partsHeightPercent: Math.min(100, Math.round(item.partsHeightPercent + (effectivePartsIncrement / 500))),
+      };
+    }
+    return item;
+  });
 
   return (
     <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between">
@@ -99,7 +135,7 @@ export function RevenueComparisonChart() {
       <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         {/* Bars Container */}
         <div className="h-52 sm:h-56 flex items-end gap-2 sm:gap-4 md:gap-6 pt-8 pb-2 border-b border-border relative">
-          {WEEKLY_REVENUE_DATA.map((item, index) => {
+          {weeklyData.map((item, index) => {
             const isHovered = hoveredIndex === index;
             const showPartsTooltip = isHovered && hoveredType === "parts";
             const showLaborTooltip = isHovered && hoveredType === "labor";
@@ -111,9 +147,6 @@ export function RevenueComparisonChart() {
               <div
                 key={item.day}
                 className="flex-1 flex gap-1 sm:gap-1.5 items-end h-full relative group"
-                onMouseLeave={() => {
-                  // Keep Friday selected if leaving the container, or keep state intact
-                }}
               >
                 {/* Motorcycle Parts Bar */}
                 {isPartsVisible && (
@@ -159,7 +192,7 @@ export function RevenueComparisonChart() {
 
         {/* X-Axis Labels */}
         <div className="flex justify-between items-center pt-2 text-[11px] sm:text-xs font-semibold text-text-muted">
-          {WEEKLY_REVENUE_DATA.map((item) => (
+          {weeklyData.map((item) => (
             <span key={item.day} className="flex-1 text-center truncate px-0.5">
               {item.day}
             </span>

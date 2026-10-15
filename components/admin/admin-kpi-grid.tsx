@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   TrendingUp,
   Wrench,
@@ -8,68 +8,57 @@ import {
   Radio,
 } from 'lucide-react';
 import { PesoIcon } from '@/components/icons/peso-icon';
-import { createClient } from '@/lib/supabase/client';
+import { useExecutiveRealtime } from '@/lib/analytics/use-executive-realtime';
 
-export function AdminKpiGrid() {
-  const [grossRevenue, setGrossRevenue] = useState(45230.0);
-  const [livePulse, setLivePulse] = useState(false);
-  const [salesIncrement, setSalesIncrement] = useState<number | null>(null);
+export interface AdminKpiGridProps {
+  grossRevenue?: number;
+  livePulse?: boolean;
+  salesIncrement?: number | null;
+  activeWorkOrders?: number;
+  pendingPartsWorkOrders?: number;
+  lowStockCount?: number;
+  isLowStockDanger?: boolean;
+}
 
-  useEffect(() => {
-    // 1. Supabase Realtime channel subscription on public.transactions
-    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
-    let supabase: ReturnType<typeof createClient> | null = null;
+export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
+  // Standalone fallback states if props are not supplied by a parent coordinator
+  const [internalGrossRevenue, setInternalGrossRevenue] = useState(45230.0);
+  const [internalLivePulse, setInternalLivePulse] = useState(false);
+  const [internalSalesIncrement, setInternalSalesIncrement] = useState<number | null>(null);
+  const [internalActiveOrders, setInternalActiveOrders] = useState(8);
+  const [internalPendingParts, setInternalPendingParts] = useState(3);
+  const [internalLowStockCount, setInternalLowStockCount] = useState(3);
+  const [internalStockDanger, setInternalStockDanger] = useState(false);
 
-    try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        supabase = createClient();
-        channel = supabase
-          .channel('pos_transactions_channel')
-          .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'transactions' },
-            (payload) => {
-              const newRecord = payload.new as { total_due?: number | string };
-              if (newRecord && newRecord.total_due !== undefined) {
-                const amount = Number(newRecord.total_due) || 0;
-                setGrossRevenue((prev) => prev + amount);
-                setSalesIncrement(amount);
-                setLivePulse(true);
-                setTimeout(() => setLivePulse(false), 4000);
-              }
-            }
-          )
-          .subscribe();
+  const isControlled = props.grossRevenue !== undefined;
+
+  // Use the canonical executive realtime broadcast hook when standalone
+  useExecutiveRealtime({
+    enabled: !isControlled,
+    onTransaction: (tx) => {
+      setInternalGrossRevenue((prev) => prev + tx.total_due);
+      setInternalSalesIncrement(tx.total_due);
+      setInternalLivePulse(true);
+      setTimeout(() => setInternalLivePulse(false), 4000);
+    },
+    onWorkOrderChange: (wo) => {
+      if (wo.status === 'PENDING_PARTS') {
+        setInternalPendingParts((prev) => prev + 1);
       }
-    } catch (err) {
-      console.warn('[AdminKpiGrid] Supabase Realtime subscription could not be established:', err);
-    }
+    },
+    onStockAlert: () => {
+      setInternalLowStockCount((prev) => prev + 1);
+      setInternalStockDanger(true);
+    },
+  });
 
-    // 2. Local window event listener for testing / offline checkout broadcast
-    const handleLocalCheckout = (e: Event) => {
-      const customEvent = e as CustomEvent<{ totalDue?: number }>;
-      if (customEvent.detail && typeof customEvent.detail.totalDue === 'number') {
-        const amount = customEvent.detail.totalDue;
-        setGrossRevenue((prev) => prev + amount);
-        setSalesIncrement(amount);
-        setLivePulse(true);
-        setTimeout(() => setLivePulse(false), 4000);
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('swift:pos:checkout', handleLocalCheckout);
-    }
-
-    return () => {
-      if (supabase && channel) {
-        supabase.removeChannel(channel);
-      }
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('swift:pos:checkout', handleLocalCheckout);
-      }
-    };
-  }, []);
+  const grossRevenue = isControlled ? props.grossRevenue! : internalGrossRevenue;
+  const livePulse = isControlled ? (props.livePulse ?? false) : internalLivePulse;
+  const salesIncrement = isControlled ? props.salesIncrement : internalSalesIncrement;
+  const activeOrders = isControlled ? (props.activeWorkOrders ?? 8) : internalActiveOrders;
+  const pendingParts = isControlled ? (props.pendingPartsWorkOrders ?? 3) : internalPendingParts;
+  const lowStockCount = isControlled ? (props.lowStockCount ?? 3) : internalLowStockCount;
+  const isStockDanger = isControlled ? (props.isLowStockDanger ?? false) : internalStockDanger;
 
   const kpiCards = [
     {
@@ -80,7 +69,7 @@ export function AdminKpiGrid() {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`,
-      subtext: livePulse && salesIncrement !== null
+      subtext: livePulse && salesIncrement !== null && salesIncrement !== undefined
         ? `+₱${salesIncrement.toFixed(2)} sale just received!`
         : '+14.2% vs yesterday',
       subtextColor: 'text-success',
@@ -90,8 +79,8 @@ export function AdminKpiGrid() {
       title: 'Work Orders Queue',
       badge: 'Service Bay',
       badgeVariant: 'default',
-      value: '8 Active',
-      subtext: '3 Pending Parts Assembly',
+      value: `${activeOrders} Active`,
+      subtext: `${pendingParts} Pending Parts Assembly`,
       subtextColor: 'text-accent',
       icon: Wrench,
     },
@@ -106,12 +95,12 @@ export function AdminKpiGrid() {
     },
     {
       title: 'Critical Low Stock',
-      badge: 'Action Req',
-      badgeVariant: 'danger',
-      value: '3 SKUs',
-      valueColor: 'text-danger',
-      subtext: 'Below threshold limit',
-      subtextColor: 'text-text-muted',
+      badge: isStockDanger ? 'ALERT' : 'Action Req',
+      badgeVariant: isStockDanger ? 'danger' : 'default',
+      value: `${lowStockCount} SKUs`,
+      valueColor: isStockDanger ? 'text-danger' : 'text-text-primary',
+      subtext: isStockDanger ? 'Restock immediately' : 'Below threshold limit',
+      subtextColor: isStockDanger ? 'text-danger' : 'text-text-muted',
       icon: AlertTriangle,
     },
   ];
@@ -126,6 +115,8 @@ export function AdminKpiGrid() {
             className={`p-5 rounded-lg bg-bg-card border transition-all flex flex-col justify-between shadow-xs ${
               kpi.badgeVariant === 'live'
                 ? 'border-success/60 ring-1 ring-success/30'
+                : kpi.badgeVariant === 'danger'
+                ? 'border-danger/60 ring-1 ring-danger/30'
                 : 'border-border hover:border-primary/40'
             }`}
           >
