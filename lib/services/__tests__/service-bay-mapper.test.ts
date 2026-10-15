@@ -37,7 +37,7 @@ describe('Service Bay & Work Order Domain Mapper (SIAA-66)', () => {
         id: 'e0000000-0000-0000-0000-000000000002',
         name: 'Bay 2 (Scooter Bay)',
         bay_type: 'Specialist',
-        status: 'INVALID_STATUS' as any,
+        status: 'INVALID_STATUS' as unknown as DatabaseServiceBayRow['status'],
         display_order: 2,
         created_at: '2026-10-15T08:00:00.000Z',
         updated_at: '2026-10-15T08:00:00.000Z',
