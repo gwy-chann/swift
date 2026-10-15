@@ -30,6 +30,16 @@ const INITIAL_SERVICE_BAYS: ServiceBayDisplayItem[] = [
   },
 ];
 
+function getWorkOrderStatusDetail(status: string): string {
+  if (status === 'COMPLETED') {
+    return 'Ready for pickup';
+  }
+  if (status === 'PENDING_PARTS') {
+    return 'Waiting for counter parts';
+  }
+  return 'In Progress';
+}
+
 export function AdminDashboardClient() {
   const [grossRevenue, setGrossRevenue] = useState(45230.0);
   const [livePulse, setLivePulse] = useState(false);
@@ -66,12 +76,7 @@ export function AdminDashboardClient() {
         prev.map((bay, idx) => {
           const isTarget = wo.bay_id ? bay.id === wo.bay_id : idx === 0;
           if (isTarget) {
-            const statusDetail =
-              wo.status === 'COMPLETED'
-                ? 'Ready for pickup'
-                : wo.status === 'PENDING_PARTS'
-                ? 'Waiting for counter parts'
-                : 'In Progress';
+            const statusDetail = getWorkOrderStatusDetail(wo.status);
             return {
               ...bay,
               status: wo.status,

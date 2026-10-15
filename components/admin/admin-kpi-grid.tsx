@@ -20,19 +20,43 @@ export interface AdminKpiGridProps {
   isLowStockDanger?: boolean;
 }
 
+function getRevenueSubtext(livePulse: boolean, salesIncrement: number | null | undefined): string {
+  if (livePulse && salesIncrement !== null && salesIncrement !== undefined) {
+    return `+₱${salesIncrement.toFixed(2)} sale just received!`;
+  }
+  return '+14.2% vs yesterday';
+}
+
+function getCardBorderClass(variant: string): string {
+  if (variant === 'live') {
+    return 'border-success/60 ring-1 ring-success/30';
+  }
+  if (variant === 'danger') {
+    return 'border-danger/60 ring-1 ring-danger/30';
+  }
+  return 'border-border hover:border-primary/40';
+}
+
+function getBadgeStyleClass(variant: string): string {
+  if (variant === 'danger') {
+    return 'bg-danger-light text-danger border border-danger/30';
+  }
+  if (variant === 'live') {
+    return 'bg-success-light text-success border border-success/40 animate-pulse';
+  }
+  return 'bg-bg-muted text-text-secondary border border-border-subtle';
+}
+
 export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
-  // Standalone fallback states if props are not supplied by a parent coordinator
   const [internalGrossRevenue, setInternalGrossRevenue] = useState(45230.0);
   const [internalLivePulse, setInternalLivePulse] = useState(false);
   const [internalSalesIncrement, setInternalSalesIncrement] = useState<number | null>(null);
-  const [internalActiveOrders, setInternalActiveOrders] = useState(8);
   const [internalPendingParts, setInternalPendingParts] = useState(3);
   const [internalLowStockCount, setInternalLowStockCount] = useState(3);
   const [internalStockDanger, setInternalStockDanger] = useState(false);
 
   const isControlled = props.grossRevenue !== undefined;
 
-  // Use the canonical executive realtime broadcast hook when standalone
   useExecutiveRealtime({
     enabled: !isControlled,
     onTransaction: (tx) => {
@@ -55,7 +79,7 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
   const grossRevenue = isControlled ? props.grossRevenue! : internalGrossRevenue;
   const livePulse = isControlled ? (props.livePulse ?? false) : internalLivePulse;
   const salesIncrement = isControlled ? props.salesIncrement : internalSalesIncrement;
-  const activeOrders = isControlled ? (props.activeWorkOrders ?? 8) : internalActiveOrders;
+  const activeOrders = isControlled ? (props.activeWorkOrders ?? 8) : 8;
   const pendingParts = isControlled ? (props.pendingPartsWorkOrders ?? 3) : internalPendingParts;
   const lowStockCount = isControlled ? (props.lowStockCount ?? 3) : internalLowStockCount;
   const isStockDanger = isControlled ? (props.isLowStockDanger ?? false) : internalStockDanger;
@@ -69,9 +93,7 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`,
-      subtext: livePulse && salesIncrement !== null && salesIncrement !== undefined
-        ? `+₱${salesIncrement.toFixed(2)} sale just received!`
-        : '+14.2% vs yesterday',
+      subtext: getRevenueSubtext(livePulse, salesIncrement),
       subtextColor: 'text-success',
       icon: PesoIcon,
     },
@@ -112,13 +134,9 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
         return (
           <div
             key={kpi.title}
-            className={`p-5 rounded-lg bg-bg-card border transition-all flex flex-col justify-between shadow-xs ${
-              kpi.badgeVariant === 'live'
-                ? 'border-success/60 ring-1 ring-success/30'
-                : kpi.badgeVariant === 'danger'
-                ? 'border-danger/60 ring-1 ring-danger/30'
-                : 'border-border hover:border-primary/40'
-            }`}
+            className={`p-5 rounded-lg bg-bg-card border transition-all flex flex-col justify-between shadow-xs ${getCardBorderClass(
+              kpi.badgeVariant
+            )}`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
@@ -128,13 +146,9 @@ export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
                 </span>
               </div>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
-                  kpi.badgeVariant === 'danger'
-                    ? 'bg-danger-light text-danger border border-danger/30'
-                    : kpi.badgeVariant === 'live'
-                    ? 'bg-success-light text-success border border-success/40 animate-pulse'
-                    : 'bg-bg-muted text-text-secondary border border-border-subtle'
-                }`}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${getBadgeStyleClass(
+                  kpi.badgeVariant
+                )}`}
               >
                 {kpi.badgeVariant === 'live' && (
                   <Radio className="w-2.5 h-2.5 text-success animate-ping" />

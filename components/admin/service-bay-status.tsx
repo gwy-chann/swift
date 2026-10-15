@@ -36,6 +36,16 @@ const DEFAULT_SERVICE_BAYS: ServiceBayDisplayItem[] = [
   },
 ];
 
+function getMechanicStatusSuffix(status: string): string {
+  if (status === 'COMPLETED') {
+    return 'Ready for pickup';
+  }
+  if (status === 'PENDING_PARTS') {
+    return 'Waiting for counter parts';
+  }
+  return 'In Progress';
+}
+
 interface ServiceBayStatusCardProps {
   bays?: ServiceBayDisplayItem[];
 }
@@ -56,12 +66,7 @@ export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCard
           // If work order specifies bay_id or matches first bay
           const isTargetBay = wo.bay_id ? bay.id === wo.bay_id : idx === 0;
           if (isTargetBay) {
-            const statusSuffix =
-              wo.status === 'COMPLETED'
-                ? 'Ready for pickup'
-                : wo.status === 'PENDING_PARTS'
-                ? 'Waiting for counter parts'
-                : 'In Progress';
+            const statusSuffix = getMechanicStatusSuffix(wo.status);
             return {
               ...bay,
               status: wo.status,
