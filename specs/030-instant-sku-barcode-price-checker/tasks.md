@@ -24,23 +24,23 @@ flowchart TD
 
 ## Phase 1: Foundation & Domain Math
 
-- [ ] **Task 1.1**: Create `lib/staff/margin-math.ts` with pure mathematical functions:
+- [x] **Task 1.1**: Create `lib/staff/margin-math.ts` with pure mathematical functions:
   - `computeGrossMarkupPercent(retail: number, cost: number): number`
   - `computeWholesaleMarkupPercent(wholesale: number, cost: number): number`
   - `computeGrossMarginPercent(retail: number, cost: number): number`
   - `computeScPwdPrice(retail: number): number`
   - `simulateMarginOutput(params: MarginSimulationParams): MarginSimulationOutput`
-- [ ] **Task 1.2**: Update `lib/staff/types.ts` to enrich `ProductPriceCheckItem` with `cost`, `grossMarkupPercent`, `wholesaleMarkupPercent`, and `barcode`.
+- [x] **Task 1.2**: Update `lib/staff/types.ts` to enrich `ProductPriceCheckItem` with `cost`, `grossMarkupPercent`, `wholesaleMarkupPercent`, and `barcode`.
 
 ---
 
 ## Phase 2: Server Actions & Backend Integration
 
-- [ ] **Task 2.1**: Update `lookupProductPriceAction` in `lib/staff/actions.ts`:
+- [x] **Task 2.1**: Update `lookupProductPriceAction` in `lib/staff/actions.ts`:
   - Compute `grossMarkupPercent` and `wholesaleMarkupPercent` using `margin-math.ts`.
   - Pass `cost` through for both Supabase queries and `MOCK_PRODUCTS` fallback.
   - Return formatted error `"No item found for barcode / code: [query]"` on `PRODUCT_NOT_FOUND`.
-- [ ] **Task 2.2**: Write unit tests in `test/staff/pricecheck-actions.test.ts` verifying:
+- [x] **Task 2.2**: Write unit tests in `test/staff/pricecheck-actions.test.ts` verifying:
   - Exact SKU lookup (`YAM-NMAX-BL01`, `HON-CLK-CVTB`)
   - Case-insensitive search and partial name search
   - Accurate calculation of gross markup % and SC/PWD discount
@@ -50,18 +50,18 @@ flowchart TD
 
 ## Phase 3: Modular UI Components
 
-- [ ] **Task 3.1**: Create `components/staff/pricecheck/price-scan-card.tsx`:
+- [x] **Task 3.1**: Create `components/staff/pricecheck/price-scan-card.tsx`:
   - Render with `id="priceScanResultBox"`.
   - Display wholesale price in warning gold (`text-warning` / `var(--warning)`).
   - Display retail price in success green (`text-success` / `var(--success)`).
   - Display base cost and gross markup % badge.
   - Render `<ShelfLocationTag location={product.location} />`.
   - Render stock status badge (`IN STOCK`, `LOW STOCK`, `OUT OF STOCK`).
-- [ ] **Task 3.2**: Create `components/staff/pricecheck/margin-simulator.tsx`:
+- [x] **Task 3.2**: Create `components/staff/pricecheck/margin-simulator.tsx`:
   - Interactive retail/wholesale price input and quick-adjust step buttons.
   - Real-time calculation of simulated gross profit (₱), markup %, and margin %.
   - Visual status pill (`Profitable`, `Low Margin`, `Below Cost`).
-- [ ] **Task 3.3**: Create `components/staff/pricecheck/price-schedule-table.tsx`:
+- [x] **Task 3.3**: Create `components/staff/pricecheck/price-schedule-table.tsx`:
   - Render base product price schedule table matching `mockup/staff.html` lines 240-270.
   - Columns: SKU, Product Description, Wholesale Price, Retail Price, Gross Markup %, Shelf Location.
   - Clickable rows that invoke `onSelectSku(sku)` to populate the scanner.
@@ -70,7 +70,7 @@ flowchart TD
 
 ## Phase 4: Page Assembly & Event Wiring
 
-- [ ] **Task 4.1**: Refactor `app/staff/pricecheck/page.tsx`:
+- [x] **Task 4.1**: Refactor `app/staff/pricecheck/page.tsx`:
   - Set root container to `id="view-staff-pricecheck"`.
   - Keep `#priceScanInput` with Enter-key instant trigger (`onKeyDown`) and debounced typing.
   - Integrate `<PriceScanCard />`, `<MarginSimulator />`, and `<PriceScheduleTable />`.
@@ -81,14 +81,14 @@ flowchart TD
 
 ## Phase 5: Verification & Quality Gates
 
-- [ ] **Task 5.1**: Write UI component test suite in `test/staff/pricecheck-ui.test.tsx` verifying:
+- [x] **Task 5.1**: Write UI component test suite in `test/staff/pricecheck-ui.test.tsx` verifying:
   - Sub-200ms DOM rendering of `#priceScanResultBox`
   - Presence of `#view-staff-pricecheck` and `#priceScanInput`
   - Accurate price formatting (₱ currency symbol)
   - Interactive margin simulator calculation updates
   - Row click interaction from reference table.
-- [ ] **Task 5.2**: Run static analysis and tests:
+- [x] **Task 5.2**: Run static analysis and tests:
   - `npx tsc --noEmit`
   - `npm test -- test/staff/pricecheck`
   - `npm run lint`
-- [ ] **Task 5.3**: Synchronize knowledge graph via `graphify` auto-sync.
+- [x] **Task 5.3**: Synchronize knowledge graph via `graphify` auto-sync.
