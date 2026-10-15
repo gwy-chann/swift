@@ -17,7 +17,7 @@ export default async function AdminUsersPage() {
   const frontlineCashiers = staffUsers.filter((u) => u.role === "cashier").length;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div id="view-users" className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
