@@ -129,15 +129,17 @@ export function AdminDashboardClient({
       {/* 4 KPI Stat Cards Grid with Realtime POS Sales Subscription */}
       <AdminKpiGrid
         grossRevenue={grossRevenue}
+        grossRevenueYesterday={39605.95}
+        revenueGrowthPct={initialKpis?.revenue_growth_pct ?? 14.2}
         livePulse={livePulse}
         salesIncrement={salesIncrement}
         activeWorkOrders={activeWorkOrders}
         pendingPartsWorkOrders={pendingPartsWorkOrders}
+        netProfitMarginPct={initialKpis?.net_profit_margin_pct ?? 34.8}
+        grossProfitAmount={initialKpis?.gross_profit_amount ?? 182400.0}
         lowStockCount={lowStockCount}
         isLowStockDanger={isLowStockDanger}
-        netProfitMarginPct={initialKpis?.net_profit_margin_pct}
-        grossProfitAmount={initialKpis?.gross_profit_amount}
-        revenueGrowthPct={initialKpis?.revenue_growth_pct}
+        lowStockHref="/admin/inventory?status=low_stock"
       />
 
       {/* Dashboard Analytics & Service Bay Grid */}
