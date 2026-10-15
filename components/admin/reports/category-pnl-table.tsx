@@ -8,6 +8,26 @@ export interface CategoryPnlTableProps {
   targetMarginThreshold?: number;
 }
 
+function getProfitColorClass(highYield: boolean, netProfit: number): string {
+  if (highYield) {
+    return 'text-success font-semibold';
+  }
+  if (netProfit < 0) {
+    return 'text-danger font-semibold';
+  }
+  return 'text-text-primary';
+}
+
+function getMarginBadgeClass(highYield: boolean, marginPct: number): string {
+  if (highYield) {
+    return 'bg-success-light text-success';
+  }
+  if (marginPct < 0) {
+    return 'bg-danger-light text-danger';
+  }
+  return 'bg-accent-light text-accent';
+}
+
 export function CategoryPnlTable({
   categories,
   targetMarginThreshold = 30.0,
@@ -46,6 +66,8 @@ export function CategoryPnlTable({
           <tbody className="divide-y divide-border">
             {categories.map((item) => {
               const highYield = isHighYieldMargin(item.margin_pct, targetMarginThreshold);
+              const profitColor = getProfitColorClass(highYield, item.net_profit);
+              const marginBadge = getMarginBadgeClass(highYield, item.margin_pct);
 
               return (
                 <tr
@@ -72,28 +94,12 @@ export function CategoryPnlTable({
                   <td className="px-4 py-4 text-right text-text-secondary font-mono whitespace-nowrap">
                     {formatCurrencyPhp(item.cogs)}
                   </td>
-                  <td
-                    className={`px-4 py-4 text-right font-mono whitespace-nowrap ${
-                      highYield
-                        ? 'text-success font-semibold'
-                        : item.net_profit < 0
-                        ? 'text-danger font-semibold'
-                        : 'text-text-primary'
-                    }`}
-                  >
+                  <td className={`px-4 py-4 text-right font-mono whitespace-nowrap ${profitColor}`}>
                     {formatCurrencyPhp(item.net_profit)}
                   </td>
                   <td className="px-5 py-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center justify-end gap-1.5">
-                      <span
-                        className={`font-mono text-xs px-2 py-0.5 rounded-md font-semibold ${
-                          highYield
-                            ? 'bg-success-light text-success'
-                            : item.margin_pct < 0
-                            ? 'bg-danger-light text-danger'
-                            : 'bg-accent-light text-accent'
-                        }`}
-                      >
+                      <span className={`font-mono text-xs px-2 py-0.5 rounded-md font-semibold ${marginBadge}`}>
                         {item.margin_pct.toFixed(1)}%
                       </span>
                       {!highYield && item.margin_pct >= 0 && (

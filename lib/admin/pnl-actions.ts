@@ -2,6 +2,8 @@
 
 import type { CategoryPnlData } from '../types/analytics.ts';
 
+export type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
+
 /**
  * Baseline canonical Category P&L mock data mirroring ../mockup/admin.html and app.js.
  */
@@ -69,7 +71,7 @@ export interface CategoryPnlActionResult {
   success: boolean;
   data: CategoryPnlData;
   source: 'database' | 'fallback_mock';
-  period: 'daily' | 'weekly' | 'monthly';
+  period: AnalyticsPeriod;
   error?: string;
 }
 
@@ -77,7 +79,7 @@ export interface CategoryPnlActionResult {
  * Calculates start and end timestamps for a given reporting period.
  */
 export function getPeriodTimestampRange(
-  period: 'daily' | 'weekly' | 'monthly' = 'daily',
+  period: AnalyticsPeriod = 'daily',
   baseDate: Date = new Date()
 ): { startDate: string; endDate: string } {
   const endDate = new Date(baseDate);
@@ -100,11 +102,21 @@ export function getPeriodTimestampRange(
   };
 }
 
+function getPeriodMultiplier(period: AnalyticsPeriod): number {
+  if (period === 'daily') {
+    return 1;
+  }
+  if (period === 'weekly') {
+    return 5.8;
+  }
+  return 24.5;
+}
+
 /**
  * Scales mock data for period filtering demonstration.
  */
-export function getMockPnlByPeriod(period: 'daily' | 'weekly' | 'monthly'): CategoryPnlData {
-  const multiplier = period === 'daily' ? 1 : period === 'weekly' ? 5.8 : 24.5;
+export function getMockPnlByPeriod(period: AnalyticsPeriod): CategoryPnlData {
+  const multiplier = getPeriodMultiplier(period);
   const categories = MOCK_CATEGORY_PNL_DATA.categories.map((c) => {
     const gross_revenue = Math.round(c.gross_revenue * multiplier * 100) / 100;
     const cogs = Math.round(c.cogs * multiplier * 100) / 100;
@@ -145,7 +157,7 @@ export function getMockPnlByPeriod(period: 'daily' | 'weekly' | 'monthly'): Cate
  * Invokes PostgreSQL RPC get_category_pnl(p_start_date, p_end_date) with automatic fallback.
  */
 export async function getCategoryPnlBreakdownAction(
-  period: 'daily' | 'weekly' | 'monthly' = 'daily'
+  period: AnalyticsPeriod = 'daily'
 ): Promise<CategoryPnlActionResult> {
   const { startDate, endDate } = getPeriodTimestampRange(period);
 

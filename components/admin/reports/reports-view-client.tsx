@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Download, RefreshCw, BarChart3 } from 'lucide-react';
+import { Download, BarChart3 } from 'lucide-react';
 import { FinancialSummaryCards } from './financial-summary-cards';
 import { CategoryPnlTable } from './category-pnl-table';
-import { getCategoryPnlBreakdownAction } from '@/lib/admin/pnl-actions';
+import { getCategoryPnlBreakdownAction, type AnalyticsPeriod } from '@/lib/admin/pnl-actions';
 import type { CategoryPnlData } from '@/lib/types/analytics';
+
+export type PeriodOption = AnalyticsPeriod;
 
 export interface ReportsViewClientProps {
   initialData: CategoryPnlData;
-  initialPeriod?: 'daily' | 'weekly' | 'monthly';
+  initialPeriod?: PeriodOption;
 }
 
 export function ReportsViewClient({
@@ -17,10 +19,10 @@ export function ReportsViewClient({
   initialPeriod = 'daily',
 }: ReportsViewClientProps) {
   const [data, setData] = useState<CategoryPnlData>(initialData);
-  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>(initialPeriod);
+  const [period, setPeriod] = useState<PeriodOption>(initialPeriod);
   const [isPending, startTransition] = useTransition();
 
-  const handlePeriodChange = (newPeriod: 'daily' | 'weekly' | 'monthly') => {
+  const handlePeriodChange = (newPeriod: PeriodOption) => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
     startTransition(async () => {

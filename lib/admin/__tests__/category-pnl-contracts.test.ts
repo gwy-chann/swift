@@ -3,11 +3,9 @@ import assert from 'node:assert/strict';
 import {
   CategoryPnlItemSchema,
   CategoryPnlSummarySchema,
-  CategoryPnlDataSchema,
 } from '../../../specs/036-categorized-profit-loss-breakdown-cogs-engine/contracts/pnl-cogs.ts';
 import {
   MOCK_CATEGORY_PNL_DATA,
-  getMockPnlByPeriod,
 } from '../pnl-actions.ts';
 import {
   calculateNetProfit,

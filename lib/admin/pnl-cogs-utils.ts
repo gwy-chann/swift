@@ -32,12 +32,16 @@ export function isHighYieldMargin(marginPct: number, targetThreshold: number = 3
 
 /**
  * Formats a numeric value into standard Philippine Peso currency representation.
+ * Uses Intl.NumberFormat to avoid complex regex backtracking.
  */
 export function formatCurrencyPhp(amount: number): string {
-  const rounded = Number(amount || 0).toFixed(2);
-  const parts = rounded.split(".");
-  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `₱${intPart}.${parts[1]}`;
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const formatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(safeAmount);
+
+  return `₱${formatted}`;
 }
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Coins, Percent, ReceiptText } from 'lucide-react';
+import { Coins, Percent, ReceiptText } from 'lucide-react';
 import { PesoIcon } from '@/components/icons/peso-icon';
 import { formatCurrencyPhp, isHighYieldMargin } from '@/lib/admin/pnl-cogs-utils';
 import type { CategoryPnlSummary } from '@/lib/types/analytics';
