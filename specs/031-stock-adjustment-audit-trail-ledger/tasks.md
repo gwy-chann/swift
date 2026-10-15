@@ -30,14 +30,14 @@ flowchart TD
 
 ## Phase 2: Domain Utilities & Mock Ledger
 
-- [ ] **TASK-2.1**: Define TypeScript interfaces and Zod schemas in `lib/types/stock-audit.ts` corresponding to `contracts/stock-audit.contract.ts`:
+- [x] **TASK-2.1**: Define TypeScript interfaces and Zod schemas in `lib/types/stock-audit.ts` corresponding to `contracts/stock-audit.contract.ts`:
   - `StockAdjustmentLogEntry`
   - `StockAuditFilterOptions`
   - `StockAuditSummaryMetrics`
   - `StockAuditLogsResponse`
   - `StockAuditExportResult`
-- [ ] **TASK-2.2**: Create mock audit ledger records in `lib/admin/mock-data/stock-adjustments.ts` seeded from `mockup/app.js` (`SWIFT_DB.stockAdjustmentLogs`) with diverse adjustment scenarios (`Physical Count`, `Damaged Goods`, `Supplier Return`, `POS Sale`).
-- [ ] **TASK-2.3**: Implement pure mathematical and formatting utilities in `lib/admin/stock-audit-utils.ts`:
+- [x] **TASK-2.2**: Create mock audit ledger records in `lib/admin/mock-data/stock-adjustments.ts` seeded from `mockup/app.js` (`SWIFT_DB.stockAdjustmentLogs`) with diverse adjustment scenarios (`Physical Count`, `Damaged Goods`, `Supplier Return`, `POS Sale`).
+- [x] **TASK-2.3**: Implement pure mathematical and formatting utilities in `lib/admin/stock-audit-utils.ts`:
   - `calculateSummaryMetrics(logs)`: aggregates `totalCount`, `netDelta`, `totalShrinkage`, and `totalIntake`.
   - `generateAuditCsv(logs)`: generates standard RFC 4180 CSV string with header and escaped values.
   - `formatAuditTimestamp(isoDate)`: formats UTC timestamp for audit display and CSV exports.
@@ -46,11 +46,11 @@ flowchart TD
 
 ## Phase 3: Automated Unit & Integration Tests (TDD)
 
-- [ ] **TASK-3.1**: Create `lib/admin/__tests__/stock-audit-utils.test.ts`:
+- [x] **TASK-3.1**: Create `lib/admin/__tests__/stock-audit-utils.test.ts`:
   - Test `calculateSummaryMetrics` with positive, negative, and mixed unit deltas.
   - Test `calculateSummaryMetrics` with empty logs list.
   - Test `generateAuditCsv` verifies headers, row formatting, and quote escaping for reasons containing commas or quotes.
-- [ ] **TASK-3.2**: Create `lib/admin/__tests__/stock-audit-actions.test.ts`:
+- [x] **TASK-3.2**: Create `lib/admin/__tests__/stock-audit-actions.test.ts`:
   - Test `getStockAdjustmentLogsAction` filters by exact SKU (`YAM-NMAX-BL01`).
   - Test `getStockAdjustmentLogsAction` filters by adjustment type (`Damaged Goods`).
   - Test `getStockAdjustmentLogsAction` computes accurate aggregate metrics.
@@ -61,13 +61,13 @@ flowchart TD
 
 ## Phase 4: Server Actions Query Engine & CSV Export
 
-- [ ] **TASK-4.1**: Implement `getStockAdjustmentLogsAction` in `lib/admin/stock-audit-actions.ts`:
+- [x] **TASK-4.1**: Implement `getStockAdjustmentLogsAction` in `lib/admin/stock-audit-actions.ts`:
   - Validate query filters using `StockAuditFilterSchema`.
   - Query `public.stock_adjustment_logs` with chained filters (`sku`, `adjustment_type`, `created_at` range).
   - Enforce deterministic ordering (`created_at DESC`, `id DESC`).
   - Compute and attach `StockAuditSummaryMetrics`.
   - Provide safe fallback to mock ledger during test/offline execution.
-- [ ] **TASK-4.2**: Implement `exportStockAdjustmentLogsAction` in `lib/admin/stock-audit-actions.ts`:
+- [x] **TASK-4.2**: Implement `exportStockAdjustmentLogsAction` in `lib/admin/stock-audit-actions.ts`:
   - Query matching records.
   - Convert to RFC 4180 CSV using `generateAuditCsv`.
   - Return `{ success: true, csvContent, filename, recordCount }`.
@@ -76,20 +76,20 @@ flowchart TD
 
 ## Phase 5: UI Components & Admin Logs Page Wiring
 
-- [ ] **TASK-5.1**: Implement `components/admin/logs/stock-audit-summary-kpis.tsx`:
+- [x] **TASK-5.1**: Implement `components/admin/logs/stock-audit-summary-kpis.tsx`:
   - KPI cards for Total Adjustments, Net Unit Delta, and Total Shrinkage.
   - Adhere strictly to semantic design tokens (`bg-bg-card`, `border-border`, `text-success`, `text-danger`).
-- [ ] **TASK-5.2**: Implement `components/admin/logs/stock-audit-table.tsx`:
+- [x] **TASK-5.2**: Implement `components/admin/logs/stock-audit-table.tsx`:
   - Render table structure with `<tbody id="stockAdjLogsBody">`.
   - High-contrast color-coded change pills: positive deltas in `text-success` / `bg-success-light`, negative deltas in `text-danger` / `bg-danger-light`.
   - Adjustment type badges (`badge badge-warning` for Damaged Goods, `badge badge-info` for Physical Count).
   - Empty state when query produces 0 records.
   - Enforce 100% read-only display with zero edit/delete controls.
-- [ ] **TASK-5.3**: Implement `components/admin/logs/stock-audit-panel.tsx`:
+- [x] **TASK-5.3**: Implement `components/admin/logs/stock-audit-panel.tsx`:
   - Search input `#stockAuditFilterSku` with debounced query update.
   - Adjustment type select `#stockAuditFilterType`.
   - Export button `#exportStockAuditBtn` triggering browser CSV download.
-- [ ] **TASK-5.4**: Wire `StockAuditPanel` into `app/admin/logs/page.tsx`:
+- [x] **TASK-5.4**: Wire `StockAuditPanel` into `app/admin/logs/page.tsx`:
   - Replace the EPIC-7 placeholder with active Stock Adjustment Audit Trail ledger.
   - Ensure theme toggle and dark mode compatibility.
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ## Phase 6: Verification, Typecheck & Static Analysis
 
-- [ ] **TASK-6.1**: Run `npm test` verifying all unit and component tests pass.
-- [ ] **TASK-6.2**: Run `npx tsc --noEmit` verifying zero TypeScript compilation errors.
-- [ ] **TASK-6.3**: Run `npm run lint` verifying compliance with Next.js and project style standards.
-- [ ] **TASK-6.4**: Run `git status` and prepare atomic commits following Conventional Commits format with Jira key `[SIAA-65]`.
+- [x] **TASK-6.1**: Run `npm test` verifying all unit and component tests pass.
+- [x] **TASK-6.2**: Run `npx tsc --noEmit` verifying zero TypeScript compilation errors.
+- [x] **TASK-6.3**: Run `npm run lint` verifying compliance with Next.js and project style standards.
+- [x] **TASK-6.4**: Run `git status` and prepare atomic commits following Conventional Commits format with Jira key `[SIAA-65]`.
