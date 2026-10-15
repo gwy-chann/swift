@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import {
   Download,
   Search,
@@ -16,6 +16,11 @@ import {
   getStockAdjustmentLogsAction,
   exportStockAdjustmentLogsAction,
 } from '@/lib/admin/stock-audit-actions';
+import {
+  mapStockAdjustmentLogToEntry,
+  calculateSummaryMetrics,
+} from '@/lib/admin/stock-audit-utils';
+import { inventoryStore } from '@/lib/store/inventory-store';
 import { StockAuditSummaryKpis } from './stock-audit-summary-kpis';
 import { StockAuditTable } from './stock-audit-table';
 
@@ -38,6 +43,39 @@ export function StockAuditPanel({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isPending, startTransition] = useTransition();
   const [isExporting, setIsExporting] = useState<boolean>(false);
+
+  // Scenario 2: Real-time Append on Stock Adjustment Execution
+  useEffect(() => {
+    let lastSeenCount = inventoryStore.getState().adjustmentLogs.length;
+
+    const unsubscribe = inventoryStore.subscribe(() => {
+      const currentLogs = inventoryStore.getState().adjustmentLogs;
+      if (currentLogs.length > lastSeenCount) {
+        const newlyAdded = currentLogs.slice(0, currentLogs.length - lastSeenCount);
+        lastSeenCount = currentLogs.length;
+
+        const mappedEntries: StockAdjustmentLogEntry[] = newlyAdded.map(
+          mapStockAdjustmentLogToEntry
+        );
+
+        setLogs((prevLogs) => {
+          const existingIds = new Set(prevLogs.map((l) => l.id));
+          const uniqueNew = mappedEntries.filter((e) => !existingIds.has(e.id));
+          if (uniqueNew.length === 0) return prevLogs;
+
+          const updated = [...uniqueNew, ...prevLogs];
+          const updatedMetrics = calculateSummaryMetrics(updated);
+          setMetrics(updatedMetrics);
+          setTotalCount(updated.length);
+          return updated;
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const fetchFilteredLogs = (type: string, search: string) => {
     startTransition(async () => {
