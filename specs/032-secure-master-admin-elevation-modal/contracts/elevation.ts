@@ -10,10 +10,7 @@ import { z } from "zod";
  */
 export const AdminElevationInputSchema = z.object({
   password: z
-    .string({
-      required_error: "Please enter the administrator password.",
-      invalid_type_error: "Password must be a text string.",
-    })
+    .string()
     .trim()
     .min(1, "Please enter the administrator password."),
   targetPortal: z.enum(["admin", "staff"]).default("admin"),
