@@ -30,14 +30,14 @@ flowchart TD
 
 ## Phase 2: Domain Types & Reactive Store Integration
 
-- [ ] **TASK-2.1**: Update `lib/types/stock-audit.ts` to support optional previous/new stock and flexible UUID/string identifiers for client mock sync.
-- [ ] **TASK-2.2**: Implement helper function in `lib/admin/stock-audit-utils.ts` to convert a client `StockAdjustmentLog` (from `inventoryStore`) into `StockAdjustmentLogEntry`.
+- [x] **TASK-2.1**: Update `lib/types/stock-audit.ts` to support optional previous/new stock and flexible UUID/string identifiers for client mock sync.
+- [x] **TASK-2.2**: Implement helper function in `lib/admin/stock-audit-utils.ts` to convert a client `StockAdjustmentLog` (from `inventoryStore`) into `StockAdjustmentLogEntry`.
 
 ---
 
 ## Phase 3: Automated Unit & Component Tests (TDD)
 
-- [ ] **TASK-3.1**: Create `components/admin/logs/__tests__/stock-audit-reactive.test.tsx` testing:
+- [x] **TASK-3.1**: Create `lib/admin/__tests__/stock-audit-reactive-append.test.ts` testing:
   - Scenario 1: Ledger rendering inside `#stockAdjLogsBody` with canonical 6 columns.
   - Scenario 2: Live reactive append at index 0 when `inventoryStore.adjustStock` is executed.
   - Scenario 3: Real-time search and filter by SKU and adjustment type with KPI metric recalculation.
@@ -47,22 +47,22 @@ flowchart TD
 
 ## Phase 4: UI Component Refinements & Reactive Append
 
-- [ ] **TASK-4.1**: Standardize `StockAuditTable` in `components/admin/logs/stock-audit-table.tsx` to render the canonical 6 columns matching `mockup/admin.html:580-595` and SIAA-41 Scenario 1.
-- [ ] **TASK-4.2**: Wire reactive subscription to `inventoryStore` in `StockAuditPanel` (`components/admin/logs/stock-audit-panel.tsx`) to dynamically prepend new stock adjustments to the visible ledger and recompute summary metrics in real-time.
+- [x] **TASK-4.1**: Standardize `StockAuditTable` in `components/admin/logs/stock-audit-table.tsx` to render the canonical 6 columns matching `mockup/admin.html:580-595` and SIAA-41 Scenario 1.
+- [x] **TASK-4.2**: Wire reactive subscription to `inventoryStore` in `StockAuditPanel` (`components/admin/logs/stock-audit-panel.tsx`) to dynamically prepend new stock adjustments to the visible ledger and recompute summary metrics in real-time.
 
 ---
 
 ## Phase 5: Verification, Typecheck & Static Analysis
 
-- [ ] **TASK-5.1**: Run `npm test` verifying all test suites pass.
-- [ ] **TASK-5.2**: Run `npx tsc --noEmit` verifying zero TypeScript compilation errors.
-- [ ] **TASK-5.3**: Run `npm run lint` verifying compliance with Next.js and Tailwind standards.
+- [x] **TASK-5.1**: Run `npm test` verifying all test suites pass.
+- [x] **TASK-5.2**: Run `npx tsc --noEmit` verifying zero TypeScript compilation errors.
+- [x] **TASK-5.3**: Run `npm run lint` verifying compliance with Next.js and Tailwind standards.
 
 ---
 
 ## Phase 6: Git Atomic Commits & PR Synthesis
 
-- [ ] **TASK-6.1**: Create atomic commit for specifications and architectural artifacts (`docs(specs): [SIAA-41] ...`).
-- [ ] **TASK-6.2**: Create atomic commit for domain models and test suites (`test(admin): [SIAA-41] ...`).
-- [ ] **TASK-6.3**: Create atomic commit for UI components and reactive ledger wiring (`feat(admin): [SIAA-41] ...`).
-- [ ] **TASK-6.4**: Mark all tasks complete and synthesize PR description following `.github/pull_request_template.md`.
+- [x] **TASK-6.1**: Create atomic commit for specifications and architectural artifacts (`docs(specs): [SIAA-41] ...`).
+- [x] **TASK-6.2**: Create atomic commit for domain models and test suites (`feat(inventory): [SIAA-41] ...`).
+- [x] **TASK-6.3**: Create atomic commit for UI components and reactive ledger wiring (`feat(admin): [SIAA-41] ...`).
+- [x] **TASK-6.4**: Mark all tasks complete and synthesize PR description following `.github/pull_request_template.md`.
