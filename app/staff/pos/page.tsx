@@ -12,6 +12,7 @@ import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
+import { evaluatePosHotkey } from "@/lib/pos/barcode-scanner";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 
@@ -176,20 +177,57 @@ export default function StaffPosPage() {
     }
   }, [items, isProcessing, checkout, showToast, hydrateProducts]);
 
+  const handleScanNotFound = useCallback(() => {
+    showToast("error", "Item code or barcode not found");
+  }, [showToast]);
+
   // Keyboard hotkey for F12 checkout: if modal is not open, open payment modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F12" && !isPaymentModalOpen) {
-        e.preventDefault();
-        handleOpenPayment();
+      const isAnyModalOpen =
+        isPaymentModalOpen || isReceiptModalOpen || isOverrideModalOpen;
+
+      const evaluation = evaluatePosHotkey(e.key, {
+        cartItemCount: items.length,
+        isModalOpen: isAnyModalOpen
+      });
+
+      if (evaluation.action === "CHECKOUT_PAY") {
+        if (evaluation.preventDefault) {
+          e.preventDefault();
+        }
+        if (evaluation.canExecute) {
+          handleOpenPayment();
+        } else if (evaluation.reason === "CART_EMPTY") {
+          showToast("error", evaluation.message || "Cannot checkout: Cart is empty.");
+        }
+      } else if (evaluation.action === "CLOSE_MODAL" && evaluation.canExecute) {
+        if (isPaymentModalOpen) closePaymentModal();
+        if (isReceiptModalOpen) closeReceiptModal();
+        if (isOverrideModalOpen) {
+          setIsOverrideModalOpen(false);
+          setPendingOverrideProduct(null);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPaymentModalOpen, handleOpenPayment]);
+  }, [
+    items.length,
+    isPaymentModalOpen,
+    isReceiptModalOpen,
+    isOverrideModalOpen,
+    handleOpenPayment,
+    closePaymentModal,
+    closeReceiptModal,
+    showToast
+  ]);
 
   return (
-    <div className="flex flex-col gap-3 h-[calc(100vh-6.5rem)] animate-in fade-in duration-200">
+    <section
+      id="view-staff-pos"
+      className="flex flex-col gap-3 h-[calc(100vh-6.5rem)] animate-in fade-in duration-200"
+    >
       {/* High-Contrast Toast Notification Banner */}
       {toastMessage && (
         <output
@@ -225,6 +263,7 @@ export default function StaffPosPage() {
           laborServices={laborServices}
           onSelectProduct={handleSelectProduct}
           onSelectService={handleSelectService}
+          onScanNotFound={handleScanNotFound}
           title="Fast-Lane Checkout"
         />
 
@@ -268,7 +307,7 @@ export default function StaffPosPage() {
         }}
         receiptData={activeReceiptData}
       />
-    </div>
+    </section>
   );
 }
 

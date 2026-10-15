@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Zap, Search, ShieldAlert, AlertTriangle, Wrench } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import { StockBadge } from '@/components/inventory/stock-badge';
+import { resolveBarcodeScanQuery } from '@/lib/pos/barcode-scanner';
 import type { Product, LaborService } from '@/lib/types';
 
 export interface HybridCatalogPaneProps {
@@ -11,6 +12,7 @@ export interface HybridCatalogPaneProps {
   laborServices: LaborService[];
   onSelectProduct: (product: Product) => void;
   onSelectService: (service: LaborService) => void;
+  onScanNotFound?: (query: string) => void;
   title?: string;
 }
 
@@ -19,11 +21,13 @@ export function HybridCatalogPane({
   laborServices,
   onSelectProduct,
   onSelectService,
+  onScanNotFound,
   title = 'Fast-Lane Checkout'
 }: Readonly<HybridCatalogPaneProps>) {
   const { pricingMode } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Map labor services to unified catalog item shape for combined rendering
   const mappedLaborServices = useMemo<Product[]>(() => {
@@ -104,17 +108,24 @@ export function HybridCatalogPane({
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      const query = searchQuery.trim().toLowerCase();
+      e.preventDefault();
+      const query = searchQuery.trim();
       if (!query) return;
 
-      const matched = allPosItems.find(
-        (i) => i.sku.toLowerCase() === query || i.name.toLowerCase().includes(query)
-      );
-
-      if (matched) {
-        handleItemClick(matched);
-        setSearchQuery('');
+      const result = resolveBarcodeScanQuery(query, products, laborServices);
+      if (result.status === 'MATCHED_PART' && result.matchedItem) {
+        handleItemClick(result.matchedItem as Product);
+      } else if (result.status === 'MATCHED_SERVICE' && result.matchedItem) {
+        const srv = result.matchedItem as LaborService;
+        onSelectService(srv);
+      } else if (result.status === 'OUT_OF_STOCK_OVERRIDE' && result.matchedItem) {
+        onSelectProduct(result.matchedItem as Product);
+      } else {
+        onScanNotFound?.(query);
       }
+
+      setSearchQuery('');
+      inputRef.current?.focus();
     }
   };
 
@@ -142,6 +153,8 @@ export function HybridCatalogPane({
           <div className="relative sm:w-80">
             <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              ref={inputRef}
+              id="posItemSearchInput"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
