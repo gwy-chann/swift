@@ -1,6 +1,6 @@
 import React from 'react';
-import { AdminReportsClient } from './admin-reports-client';
-import { getCategoryPnlAction } from '@/lib/analytics/actions';
+import { getCategoryPnlBreakdownAction } from '@/lib/admin/pnl-actions';
+import { ReportsViewClient } from '@/components/admin/reports/reports-view-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +11,13 @@ export const metadata = {
 };
 
 export default async function AdminReportsPage() {
-  const initialPnlData = await getCategoryPnlAction({ period: 'daily' });
+  const result = await getCategoryPnlBreakdownAction('daily');
 
   return (
-    <AdminReportsClient
-      initialPnlData={initialPnlData}
+    <ReportsViewClient
+      initialData={result.data}
       initialPeriod="daily"
+      initialInvoiceCount={result.invoiceCount}
     />
   );
 }

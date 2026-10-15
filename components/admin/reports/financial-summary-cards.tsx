@@ -9,7 +9,8 @@ export interface FinancialSummaryCardsProps {
   invoiceCount?: number;
 }
 
-export function FinancialSummaryCards({ summary, invoiceCount = 38 }: FinancialSummaryCardsProps) {
+export function FinancialSummaryCards({ summary, invoiceCount }: FinancialSummaryCardsProps) {
+  const displayInvoices = invoiceCount ?? summary.invoice_count ?? 38;
   const isTargetMarginMet = isHighYieldMargin(summary.overall_margin_pct, 30.0);
 
   return (
@@ -29,7 +30,7 @@ export function FinancialSummaryCards({ summary, invoiceCount = 38 }: FinancialS
             {formatCurrencyPhp(summary.total_gross_revenue)}
           </div>
           <div className="text-xs text-text-secondary mt-1">
-            Across {invoiceCount} Completed Invoices
+            Across {displayInvoices} Completed Invoices
           </div>
         </div>
       </div>
