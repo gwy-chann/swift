@@ -57,3 +57,75 @@ export interface ServiceActionResult<T = LaborService> {
   code?: ServiceActionErrorCode;
   fieldErrors?: Record<string, string>;
 }
+
+// ====================================================================
+// SIAA-66: Service Bays & Active Repair Work Orders
+// ====================================================================
+
+export type ServiceBayStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'QUEUED';
+
+export type WorkOrderStatus =
+  | 'QUEUED'
+  | 'IN PROGRESS'
+  | 'PENDING_PARTS'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export interface DatabaseServiceBayRow {
+  id: string;
+  name: string;
+  bay_type: string;
+  status: ServiceBayStatus;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabaseWorkOrderRow {
+  id: string;
+  order_number: string;
+  bay_id: string | null;
+  customer_name: string;
+  vehicle_model: string;
+  plate_number: string;
+  service_code: string;
+  service_name: string;
+  mechanic_id: string | null;
+  status: WorkOrderStatus;
+  estimated_duration_minutes: number;
+  started_at: string | null;
+  completed_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceBay {
+  id: string;
+  name: string;
+  bayType: string;
+  status: ServiceBayStatus;
+  displayOrder: number;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export interface WorkOrder {
+  id: string;
+  orderNumber: string;
+  bayId: string | null;
+  customerName: string;
+  vehicleModel: string;
+  plateNumber: string;
+  serviceCode: string;
+  serviceName: string;
+  mechanicId: string | null;
+  status: WorkOrderStatus;
+  estimatedDurationMinutes: number;
+  startedAt: string | Date | null;
+  completedAt: string | Date | null;
+  notes: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
