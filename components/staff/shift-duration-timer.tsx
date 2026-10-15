@@ -1,17 +1,30 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useSyncExternalStore } from "react";
+import { usePunchStore } from "@/lib/store/punch-store";
 
 interface ShiftDurationTimerProps {
   initialSeconds?: number;
   className?: string;
+  showLabel?: boolean;
 }
 
 const emptySubscribe = () => () => {};
 
+function getLabelColor(isShiftActive: boolean, shiftStatus: string): string {
+  if (!isShiftActive) return "text-text-muted";
+  if (shiftStatus === "break") return "text-accent";
+  return "text-success";
+}
+
+function getLabelText(shiftStatus: string): string {
+  if (shiftStatus === "break") return "On Break:";
+  return "Active Shift:";
+}
+
 export function ShiftDurationTimer({
-  initialSeconds = 15150, // 04:12:30 default base
   className = "",
+  showLabel = true,
 }: ShiftDurationTimerProps) {
   const isClient = useSyncExternalStore(
     emptySubscribe,
@@ -19,30 +32,24 @@ export function ShiftDurationTimer({
     () => false
   );
 
-  const [seconds, setSeconds] = useState(initialSeconds);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  function formatTime(totalSeconds: number): string {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-  }
+  const { formattedTimer, isShiftActive, shiftStatus } = usePunchStore();
+  const labelColor = getLabelColor(isShiftActive, shiftStatus);
+  const labelText = getLabelText(shiftStatus);
 
   return (
     <div className={`flex items-center gap-1.5 text-xs ${className}`}>
-      <span className="text-success font-bold">Active Shift:</span>
-      <strong className="font-mono font-bold text-text-primary text-sm tracking-wider">
-        {isClient ? formatTime(seconds) : formatTime(initialSeconds)}
+      {showLabel && (
+        <span className={`font-bold transition-colors ${labelColor}`}>
+          {labelText}
+        </span>
+      )}
+      <strong
+        id="shiftTimerDisplay"
+        className={`font-mono font-bold text-sm tracking-wider transition-colors ${
+          isShiftActive ? "text-text-primary" : "text-text-muted opacity-80"
+        }`}
+      >
+        {isClient ? formattedTimer : "04:12:30"}
       </strong>
     </div>
   );

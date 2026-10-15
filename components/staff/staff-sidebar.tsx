@@ -8,18 +8,31 @@ import { StaffNavItemComponent } from "./staff-nav-item";
 import { logoutAction } from "@/lib/auth/actions";
 import { Wrench, LogOut, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
+import { usePunchStore } from "@/lib/store/punch-store";
 
 interface StaffSidebarProps {
   onItemClick?: () => void;
   className?: string;
 }
 
+function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
+  if (!isShiftActive) {
+    return { text: "OFF SHIFT", variant: "info" as const };
+  }
+  if (shiftStatus === "break") {
+    return { text: "ON BREAK", variant: "warning" as const };
+  }
+  return { text: "ON SHIFT", variant: "success" as const };
+}
+
 export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSidebarProps>) {
+
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { totals } = useCartStore();
   const cartItemCount = totals?.itemCount ?? 0;
+  const { isShiftActive, shiftStatus } = usePunchStore();
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -65,16 +78,23 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
             </div>
             <div className="space-y-0.5">
               {STAFF_NAV_ITEMS.map((item) => {
-                const itemWithBadge =
-                  item.id === "pos" && cartItemCount > 0
-                    ? {
-                        ...item,
-                        badge: {
-                          text: String(cartItemCount),
-                          variant: "primary" as const,
-                        },
-                      }
-                    : item;
+                let itemWithBadge = item;
+
+                if (item.id === "pos" && cartItemCount > 0) {
+                  itemWithBadge = {
+                    ...item,
+                    badge: {
+                      text: String(cartItemCount),
+                      variant: "primary" as const,
+                    },
+                  };
+                } else if (item.id === "clock") {
+                  itemWithBadge = {
+                    ...item,
+                    badge: getClockBadge(isShiftActive, shiftStatus),
+                  };
+                }
+
 
                 return (
                   <StaffNavItemComponent
@@ -85,6 +105,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
                   />
                 );
               })}
+
             </div>
           </div>
         </nav>

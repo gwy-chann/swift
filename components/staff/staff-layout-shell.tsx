@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StaffSidebar } from "./staff-sidebar";
 import { StaffTopbar } from "./staff-topbar";
 import { StaffMobileDrawer } from "./staff-mobile-drawer";
 import { AdminSwitchModal } from "./admin-switch-modal";
+import { punchStore, usePunchStore } from "@/lib/store/punch-store";
 
 interface StaffLayoutShellProps {
   children: React.ReactNode;
@@ -13,6 +14,18 @@ interface StaffLayoutShellProps {
 export function StaffLayoutShell({ children }: StaffLayoutShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdminSwitchOpen, setIsAdminSwitchOpen] = useState(false);
+  const { isShiftActive, shiftStatus } = usePunchStore();
+
+  // Global active shift heartbeat: increments punchStore active counter every 1s while on shift
+  useEffect(() => {
+    if (!isShiftActive || shiftStatus === "break") return;
+
+    const interval = setInterval(() => {
+      punchStore.tickSecond();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isShiftActive, shiftStatus]);
 
   return (
     <div className="flex h-screen w-full bg-bg-base overflow-hidden">
