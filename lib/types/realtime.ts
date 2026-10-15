@@ -55,3 +55,5 @@ export interface UseInventoryRealtimeResult {
   isConnected: boolean;
   status: RealtimeChannelStatus;
 }
+
+export * from '../contracts/executive-realtime.ts';
