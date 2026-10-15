@@ -56,22 +56,28 @@ export interface AttendanceHistoryResult {
   error?: string;
 }
 
+export interface ProductPriceCheckItem {
+  id: string;
+  sku: string;
+  barcode?: string;
+  name: string;
+  category: string;
+  brand: string;
+  model: string;
+  stock: number;
+  minThreshold: number;
+  location: string;
+  cost: number;
+  retailPrice: number;
+  wholesalePrice: number;
+  scPwdPrice: number;
+  grossMarkupPercent: number;
+  wholesaleMarkupPercent: number;
+}
+
 export interface ProductPriceCheckResult {
   success: boolean;
-  product?: {
-    id: string;
-    sku: string;
-    name: string;
-    category: string;
-    brand: string;
-    model: string;
-    stock: number;
-    minThreshold: number;
-    location: string;
-    retailPrice: number;
-    wholesalePrice: number;
-    scPwdPrice: number;
-  };
+  product?: ProductPriceCheckItem;
   error?: string;
   code?: 'PRODUCT_NOT_FOUND' | 'INVALID_QUERY' | 'DATABASE_ERROR';
 }

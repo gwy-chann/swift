@@ -10,6 +10,11 @@ import type {
   ProductPriceCheckResult,
   AdminElevationResult,
 } from './types.ts';
+import {
+  computeGrossMarkupPercent,
+  computeWholesaleMarkupPercent,
+  computeScPwdPrice,
+} from './margin-math.ts';
 
 export type ShiftStatus = 'on_shift' | 'break' | 'completed';
 
@@ -397,13 +402,17 @@ export async function lookupProductPriceAction(
       if (!error && data) {
         const retail = Number(data.retail || 0);
         const wholesale = Number(data.wholesale || 0);
-        const scPwdPrice = Number((retail * 0.8).toFixed(2));
+        const cost = Number(data.cost || 0);
+        const scPwdPrice = computeScPwdPrice(retail);
+        const grossMarkupPercent = computeGrossMarkupPercent(retail, cost);
+        const wholesaleMarkupPercent = computeWholesaleMarkupPercent(wholesale, cost);
 
         return {
           success: true,
           product: {
             id: data.id,
             sku: data.sku,
+            barcode: data.barcode || undefined,
             name: data.name,
             category: data.category,
             brand: data.brand,
@@ -411,9 +420,12 @@ export async function lookupProductPriceAction(
             stock: Number(data.stock || 0),
             minThreshold: Number(data.min_threshold || 5),
             location: data.location || 'Floor Stock',
+            cost,
             retailPrice: retail,
             wholesalePrice: wholesale,
             scPwdPrice,
+            grossMarkupPercent,
+            wholesaleMarkupPercent,
           },
         };
       }
@@ -434,7 +446,10 @@ export async function lookupProductPriceAction(
   if (matched) {
     const retail = Number(matched.retail || 0);
     const wholesale = Number(matched.wholesale || 0);
-    const scPwdPrice = Number((retail * 0.8).toFixed(2));
+    const cost = Number(matched.cost || 0);
+    const scPwdPrice = computeScPwdPrice(retail);
+    const grossMarkupPercent = computeGrossMarkupPercent(retail, cost);
+    const wholesaleMarkupPercent = computeWholesaleMarkupPercent(wholesale, cost);
 
     return {
       success: true,
@@ -448,9 +463,12 @@ export async function lookupProductPriceAction(
         stock: Number(matched.stock || 0),
         minThreshold: Number(matched.minThreshold || 5),
         location: matched.location || 'Floor Stock',
+        cost,
         retailPrice: retail,
         wholesalePrice: wholesale,
         scPwdPrice,
+        grossMarkupPercent,
+        wholesaleMarkupPercent,
       },
     };
   }
@@ -458,7 +476,7 @@ export async function lookupProductPriceAction(
   return {
     success: false,
     code: 'PRODUCT_NOT_FOUND',
-    error: `No part found for code or SKU "${query}".`,
+    error: `No item found for barcode / code: "${query}".`,
   };
 }
 
