@@ -11,12 +11,15 @@ import {
   fetchRevenueTrend7d,
   fetchCategoryPnl,
 } from './rpc.ts';
-import { computePeriodDateRange, type AnalyticsPeriod } from './export.ts';
+import { computePeriodDateRange } from './export-utils.ts';
+import type { AnalyticsPeriod } from '../admin/pnl-cogs-utils.ts';
 import {
-  DETERMINISTIC_FALLBACK_KPIS,
-  DETERMINISTIC_FALLBACK_TREND,
+  getEmptyExecutiveKpis,
+  getEmptyWeeklyRevenue,
+  getEmptyCategoryPnl,
+} from './mapper.ts';
+import {
   DETERMINISTIC_FALLBACK_SERVICE_BAYS,
-  getDeterministicMockCategoryPnl,
 } from './actions-mock.ts';
 
 export type WorkOrderStatus =
@@ -61,7 +64,7 @@ async function safeRevalidatePaths(): Promise<void> {
 /**
  * Server Action: Fetches high-level executive operational KPIs.
  * Returns Gross Revenue today, growth vs yesterday, active work order queues,
- * pending parts count, and critical low-stock count.
+ * pending parts count, and critical low-stock count based strictly on real transaction data.
  */
 export async function getExecutiveKpisAction(): Promise<ExecutiveKpiData> {
   try {
@@ -70,22 +73,22 @@ export async function getExecutiveKpisAction(): Promise<ExecutiveKpiData> {
         const { createClient } = await import('../supabase/server.ts');
         const supabase = await createClient();
         const data = await fetchExecutiveKpis(supabase);
-        if (data && (data.gross_revenue_today > 0 || data.active_work_orders_count > 0)) {
+        if (data) {
           return data;
         }
       } catch (err) {
         console.warn('[Analytics Action] Error fetching live executive KPIs:', err);
       }
     }
-    return DETERMINISTIC_FALLBACK_KPIS;
+    return getEmptyExecutiveKpis();
   } catch (err) {
     console.error('[Analytics Action] Unexpected exception in getExecutiveKpisAction:', err);
-    return DETERMINISTIC_FALLBACK_KPIS;
+    return getEmptyExecutiveKpis();
   }
 }
 
 /**
- * Server Action: Fetches rolling 7-day revenue trend split by parts counter sales and workshop labor.
+ * Server Action: Fetches rolling 7-day revenue trend split by parts counter sales and workshop labor based strictly on real data.
  */
 export async function getRevenueTrendAction(): Promise<WeeklyRevenueData> {
   try {
@@ -94,22 +97,22 @@ export async function getRevenueTrendAction(): Promise<WeeklyRevenueData> {
         const { createClient } = await import('../supabase/server.ts');
         const supabase = await createClient();
         const data = await fetchRevenueTrend7d(supabase);
-        if (data && data.days && data.days.length === 7 && data.total_weekly_revenue > 0) {
+        if (data && data.days && data.days.length === 7) {
           return data;
         }
       } catch (err) {
         console.warn('[Analytics Action] Error fetching live revenue trend:', err);
       }
     }
-    return DETERMINISTIC_FALLBACK_TREND;
+    return getEmptyWeeklyRevenue();
   } catch (err) {
     console.error('[Analytics Action] Unexpected exception in getRevenueTrendAction:', err);
-    return DETERMINISTIC_FALLBACK_TREND;
+    return getEmptyWeeklyRevenue();
   }
 }
 
 /**
- * Server Action: Fetches categorized P&L and COGS breakdown for a given period.
+ * Server Action: Fetches categorized P&L and COGS breakdown for a given period based strictly on real transactions.
  * @param params Filter parameter with period: 'daily' | 'weekly' | 'monthly'
  */
 export async function getCategoryPnlAction(
@@ -124,17 +127,17 @@ export async function getCategoryPnlAction(
         const supabase = await createClient();
         const { start, end } = computePeriodDateRange(period);
         const data = await fetchCategoryPnl(supabase, start, end);
-        if (data && data.categories && data.categories.length > 0 && data.summary.total_gross_revenue > 0) {
+        if (data && data.categories && data.categories.length > 0) {
           return data;
         }
       } catch (err) {
         console.warn('[Analytics Action] Error fetching live category P&L:', err);
       }
     }
-    return getDeterministicMockCategoryPnl(period);
+    return getEmptyCategoryPnl();
   } catch (err) {
     console.error('[Analytics Action] Unexpected exception in getCategoryPnlAction:', err);
-    return getDeterministicMockCategoryPnl(period);
+    return getEmptyCategoryPnl();
   }
 }
 

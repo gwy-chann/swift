@@ -1,7 +1,11 @@
 'use server';
 
-import type { DbUserRole, UserRole, StaffPermissions } from '../types/auth.ts';
-import { DEFAULT_ROLE_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../types/auth.ts';
+import type { DbUserRole, StaffPermissions } from '../types/auth.ts';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  DEFAULT_STAFF_PERMISSIONS,
+  mapDbRoleToDisplay,
+} from '../types/auth.ts';
 import { MOCK_STAFF_PROFILES, type MockStaffUserProfile } from '../mock-data/users.ts';
 import {
   ProvisionStaffUserSchema,
@@ -18,10 +22,11 @@ import {
 import { logSecurityEventAction } from './audit-actions.ts';
 
 // In-memory fallback cache for test suites and environments without live Supabase
-let memoryStaffUsers: MockStaffUserProfile[] = JSON.parse(JSON.stringify(MOCK_STAFF_PROFILES));
+let memoryStaffUsers: MockStaffUserProfile[] = structuredClone(MOCK_STAFF_PROFILES);
 
 export async function resetInMemoryStaffUsers(): Promise<void> {
-  memoryStaffUsers = JSON.parse(JSON.stringify(MOCK_STAFF_PROFILES));
+  memoryStaffUsers = structuredClone(MOCK_STAFF_PROFILES);
+  await Promise.resolve();
 }
 
 async function safeRevalidatePaths(): Promise<void> {
@@ -33,21 +38,6 @@ async function safeRevalidatePaths(): Promise<void> {
   }
 }
 
-export function mapDbRoleToDisplay(role: DbUserRole): UserRole {
-  switch (role) {
-    case 'admin':
-      return 'Admin';
-    case 'cashier':
-      return 'Cashier';
-    case 'mechanic':
-      return 'Mechanic';
-    case 'inventory_clerk':
-      return 'Inventory Clerk';
-    case 'staff':
-    default:
-      return 'Staff';
-  }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapProfileToSummary(profile: MockStaffUserProfile | Record<string, any>): StaffUserSummary {
@@ -154,11 +144,21 @@ export async function listStaffUsersAction(): Promise<StaffUserSummary[]> {
   return memoryStaffUsers.map(mapProfileToSummary);
 }
 
+function generateSecurePin(): string {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    const pin = (array[0] % 9000) + 1000;
+    return `SwiftTemp#${pin}`;
+  }
+  return 'SwiftTemp#5678';
+}
+
 /**
  * Provisions a new employee with Supabase auth and profiles, or in-memory fallback.
  */
 export async function provisionStaffUserAction(
-  rawPayload: ProvisionStaffUserPayload | unknown,
+  rawPayload: unknown,
   callerRoleOverride?: string
 ): Promise<UserActionResult<StaffUserSummary>> {
   const parsed = ProvisionStaffUserSchema.safeParse(rawPayload);
@@ -195,21 +195,11 @@ export async function provisionStaffUserAction(
   const roleDefaults = DEFAULT_ROLE_PERMISSIONS[payload.role] || DEFAULT_STAFF_PERMISSIONS;
   const mergedPermissions: StaffPermissions = {
     ...roleDefaults,
-    ...(payload.permissions || {}),
+    ...payload.permissions,
   };
 
   const newId = `00000000-0000-0000-0000-${String(Date.now()).slice(-12).padStart(12, '0')}`;
   const nowIso = new Date().toISOString();
-
-function generateSecurePin(): string {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint32Array(1);
-    crypto.getRandomValues(array);
-    const pin = (array[0] % 9000) + 1000;
-    return `SwiftTemp#${pin}`;
-  }
-  return 'SwiftTemp#5678';
-}
 
   // Attempt Supabase Admin Auth Provisioning
   try {
@@ -393,7 +383,7 @@ export async function updateUserPermissionsAction(
  * Updates an employee's details (full name, role, granular permissions) with self-demotion guards.
  */
 export async function updateStaffUserAction(
-  rawPayload: UpdateStaffUserPayload | unknown,
+  rawPayload: unknown,
   callerRoleOverride?: string,
   callerIdOverride?: string
 ): Promise<UserActionResult<StaffUserSummary>> {
@@ -450,7 +440,7 @@ export async function updateStaffUserAction(
   const updatedRoleDisplay = mapDbRoleToDisplay(updatedRole);
   const updatedPermissions: StaffPermissions = {
     ...targetUser.permissions,
-    ...(payload.permissions || {}),
+    ...payload.permissions,
   };
 
   targetUser.name = updatedName;

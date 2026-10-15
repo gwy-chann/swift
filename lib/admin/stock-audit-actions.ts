@@ -10,6 +10,7 @@ import { StockAuditFilterSchema } from '../types/stock-audit.ts';
 import {
   calculateSummaryMetrics,
   generateAuditCsv,
+  filterStockAdjustmentLogs,
 } from './stock-audit-utils.ts';
 import { MOCK_STOCK_ADJUSTMENT_LOGS } from './mock-data/stock-adjustments.ts';
 
@@ -22,7 +23,7 @@ let forceMemoryStore = false;
  * Toggles whether queries must use the in-memory store.
  * Primarily used during unit tests and offline benchmarking.
  */
-export function setForceMemoryStockLogs(force: boolean): void {
+export async function setForceMemoryStockLogs(force: boolean): Promise<void> {
   forceMemoryStore = force;
 }
 
@@ -30,7 +31,7 @@ export function setForceMemoryStockLogs(force: boolean): void {
  * Resets in-memory fallback logs to initial mock data.
  * Used for testing and state isolation.
  */
-export function resetMemoryStockAdjustmentLogs(): void {
+export async function resetMemoryStockAdjustmentLogs(): Promise<void> {
   memoryStockAdjustmentLogs = MOCK_STOCK_ADJUSTMENT_LOGS.map((item) => ({
     ...item,
   }));
@@ -39,73 +40,10 @@ export function resetMemoryStockAdjustmentLogs(): void {
 /**
  * Appends a new stock adjustment record into memory store (used by RPC fallback/tests).
  */
-export function appendMemoryStockAdjustmentLog(
+export async function appendMemoryStockAdjustmentLog(
   log: StockAdjustmentLogEntry
-): void {
+): Promise<void> {
   memoryStockAdjustmentLogs.unshift(log);
-}
-
-/**
- * Filters and deterministically sorts an array of stock adjustment log entries.
- */
-export function filterStockAdjustmentLogs(
-  logs: StockAdjustmentLogEntry[],
-  filters: StockAuditFilterOptions
-): StockAdjustmentLogEntry[] {
-  let result = [...logs];
-
-  if (filters.sku && filters.sku.trim().length > 0) {
-    const targetSku = filters.sku.trim().toLowerCase();
-    result = result.filter((item) =>
-      item.sku.toLowerCase().includes(targetSku)
-    );
-  }
-
-  if (
-    filters.adjustmentType &&
-    filters.adjustmentType.trim().length > 0 &&
-    filters.adjustmentType !== 'All'
-  ) {
-    const targetType = filters.adjustmentType.trim().toLowerCase();
-    result = result.filter(
-      (item) => item.adjustmentType.toLowerCase() === targetType
-    );
-  }
-
-  if (filters.search && filters.search.trim().length > 0) {
-    const query = filters.search.trim().toLowerCase();
-    result = result.filter(
-      (item) =>
-        item.sku.toLowerCase().includes(query) ||
-        item.reason.toLowerCase().includes(query) ||
-        item.userName.toLowerCase().includes(query) ||
-        item.adjustmentType.toLowerCase().includes(query)
-    );
-  }
-
-  if (filters.startDate) {
-    const startMs = new Date(filters.startDate).getTime();
-    result = result.filter(
-      (item) => new Date(item.createdAt).getTime() >= startMs
-    );
-  }
-
-  if (filters.endDate) {
-    const endMs = new Date(filters.endDate).getTime();
-    result = result.filter(
-      (item) => new Date(item.createdAt).getTime() <= endMs
-    );
-  }
-
-  // Deterministic ordering: created_at DESC, then id DESC
-  result.sort((a, b) => {
-    const diff =
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (diff !== 0) return diff;
-    return b.id.localeCompare(a.id);
-  });
-
-  return result;
 }
 
 interface RawDbAdjustmentRow {
