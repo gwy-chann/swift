@@ -28,12 +28,16 @@ export interface InventoryCatalogProps {
   initialProducts?: Product[];
   initialPricingRules?: PricingRules;
   showHeader?: boolean;
+  initialStockFilter?: StockFilterOption;
+  initialLowStockOnly?: boolean;
 }
 
 export function InventoryCatalog({
   initialProducts,
   initialPricingRules,
-  showHeader = false
+  showHeader = false,
+  initialStockFilter = 'all',
+  initialLowStockOnly = false
 }: InventoryCatalogProps = {}) {
   const { products, adjustStock, rollbackStock, registerProduct, hydrateProducts } = useInventoryStore();
   const [pricingRules, setPricingRules] = useState<PricingRules | undefined>(initialPricingRules);
@@ -66,8 +70,8 @@ export function InventoryCatalog({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [stockFilter, setStockFilter] = useState<StockFilterOption>('all');
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [stockFilter, setStockFilter] = useState<StockFilterOption>(initialStockFilter);
+  const [lowStockOnly, setLowStockOnly] = useState(initialLowStockOnly);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);

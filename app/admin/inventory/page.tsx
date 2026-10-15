@@ -8,11 +8,22 @@ export const metadata: Metadata = {
   description: 'Master parts catalog, warehouse shelf locator mapping, and real-time inventory search.'
 };
 
-export default async function AdminInventoryPage() {
-  const [initialProducts, initialPricingRules] = await Promise.all([
+interface AdminInventoryPageProps {
+  searchParams?: Promise<{ filter?: string; status?: string }>;
+}
+
+export default async function AdminInventoryPage(props: AdminInventoryPageProps) {
+  const [initialProducts, initialPricingRules, resolvedSearchParams] = await Promise.all([
     getProductsAction(),
-    getPricingRulesAction()
+    getPricingRulesAction(),
+    props.searchParams ? props.searchParams : Promise.resolve(undefined),
   ]);
+
+  const isLowStock =
+    resolvedSearchParams?.status === 'low_stock' ||
+    resolvedSearchParams?.filter === 'low_stock' ||
+    resolvedSearchParams?.status === 'low' ||
+    resolvedSearchParams?.filter === 'low';
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -21,6 +32,8 @@ export default async function AdminInventoryPage() {
         initialProducts={initialProducts}
         initialPricingRules={initialPricingRules}
         showHeader={true}
+        initialStockFilter={isLowStock ? 'low_stock' : 'all'}
+        initialLowStockOnly={isLowStock}
       />
     </div>
   );
