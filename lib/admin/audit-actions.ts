@@ -3,6 +3,7 @@
 import type {
   SecurityAuditLog,
   GetAuditLogsOptions,
+  ExportAuditLogsOptions,
   LogSecurityEventParams,
   AuditActionResult,
   DbSecurityAuditLog,
@@ -281,10 +282,10 @@ function escapeCsvCell(value: unknown): string {
 }
 
 /**
- * Generates an RFC 4180 compliant CSV string of filtered security audit logs.
+ * Generates an RFC 4180 compliant CSV string or formatted JSON string of filtered security audit logs.
  */
 export async function exportSecurityAuditLogsAction(
-  options?: GetAuditLogsOptions
+  options?: ExportAuditLogsOptions
 ): Promise<string> {
   const result = await getSecurityAuditLogsAction({
     ...options,
@@ -292,22 +293,26 @@ export async function exportSecurityAuditLogsAction(
     offset: 0,
   });
 
+  const logs = result.success && result.data ? result.data : [];
+
+  if (options?.format === 'json') {
+    return JSON.stringify(logs, null, 2);
+  }
+
   const headers = ['ID', 'Timestamp', 'User Email', 'Action', 'Severity', 'Terminal IP', 'Metadata'];
   const rows: string[] = [headers.join(',')];
 
-  if (result.success && result.data) {
-    for (const log of result.data) {
-      const row = [
-        escapeCsvCell(log.id),
-        escapeCsvCell(log.timestamp),
-        escapeCsvCell(log.userEmail),
-        escapeCsvCell(log.action),
-        escapeCsvCell(log.severity),
-        escapeCsvCell(log.terminalIp),
-        escapeCsvCell(log.metadata),
-      ];
-      rows.push(row.join(','));
-    }
+  for (const log of logs) {
+    const row = [
+      escapeCsvCell(log.id),
+      escapeCsvCell(log.timestamp),
+      escapeCsvCell(log.userEmail),
+      escapeCsvCell(log.action),
+      escapeCsvCell(log.severity),
+      escapeCsvCell(log.terminalIp),
+      escapeCsvCell(log.metadata),
+    ];
+    rows.push(row.join(','));
   }
 
   return rows.join('\n');

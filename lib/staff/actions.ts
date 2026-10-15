@@ -512,18 +512,20 @@ export async function verifyAdminElevationAction(
     cleanCredential === '1234';
 
   if (!isValid) {
-    // Record failed attempt to audit log
+    // Record failed attempt to forensic security audit log (security_alert)
     try {
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const { createClient } = await import('../supabase/server.ts');
-        const supabase = await createClient();
-        await supabase.from('audit_logs').insert({
-          action: 'ELEVATION_FAILED',
-          user: 'Unidentified Floor Attendant',
-          timestamp: new Date().toISOString(),
-          ip: 'Terminal #01 (Shop Floor)',
-        });
-      }
+      const { logSecurityEventAction } = await import('../admin/audit-actions.ts');
+      await logSecurityEventAction({
+        action: 'Failed Master Admin elevation attempt (Invalid Password/PIN)',
+        severity: 'security_alert',
+        terminalIp: 'Terminal #01 (Shop Floor)',
+        userEmail: 'security@swift.ph',
+        metadata: {
+          reason: 'INVALID_CREDENTIALS',
+          terminalId: 'Terminal #01',
+          attemptedAt: new Date().toISOString(),
+        },
+      });
     } catch {
       // Non-blocking
     }
@@ -553,20 +555,21 @@ export async function verifyAdminElevationAction(
     );
   }
 
-  // Record audit log attempt
+  // Record successful elevation event to security audit log
   try {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const { createClient } = await import('../supabase/server.ts');
-      const supabase = await createClient();
-      await supabase.from('audit_logs').insert({
-        action: 'MASTER_ADMIN_ELEVATION',
-        user: 'Elevated Staff Terminal',
-        timestamp: new Date().toISOString(),
-        ip: 'Terminal #01 (Shop Floor)',
-      });
-    }
+    const { logSecurityEventAction } = await import('../admin/audit-actions.ts');
+    await logSecurityEventAction({
+      action: 'Master Admin elevation granted for 1-hour administrative session',
+      severity: 'warning',
+      terminalIp: 'Terminal #01 (Shop Floor)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        sessionDurationSeconds: 3600,
+        elevatedAt: new Date().toISOString(),
+      },
+    });
   } catch {
-    // Non-blocking if audit table has different schema or is offline
+    // Non-blocking
   }
 
   return {
