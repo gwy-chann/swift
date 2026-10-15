@@ -140,7 +140,7 @@ export function AdminReportsClient({
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+    <div id="view-reports" className="space-y-6 sm:space-y-8 animate-fadeIn">
       {/* Header and Action Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
