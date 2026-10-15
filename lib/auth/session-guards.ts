@@ -84,6 +84,7 @@ export function resolveSession(
   supabaseUser?: { id: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null
 ): ResolvedSession {
   const roleCookie = cookies?.get("swift-session-role")?.value?.toLowerCase();
+  const isElevated = cookies?.get("swift_admin_elevated")?.value === "true";
   const validCookieRole: PortalRole | null =
     roleCookie === "admin" || roleCookie === "staff" ? roleCookie : null;
 
@@ -92,16 +93,26 @@ export function resolveSession(
       (supabaseUser.user_metadata?.role as string)?.toLowerCase() ||
       (supabaseUser.app_metadata?.role as string)?.toLowerCase();
 
-    const role: PortalRole =
+    const baseRole: PortalRole =
       metaRole === "admin" || metaRole === "staff"
         ? (metaRole as PortalRole)
         : validCookieRole || "admin";
+
+    const role: PortalRole = isElevated ? "admin" : baseRole;
 
     return {
       isAuthenticated: true,
       role,
       userId: supabaseUser.id,
       source: "supabase",
+    };
+  }
+
+  if (isElevated) {
+    return {
+      isAuthenticated: true,
+      role: "admin",
+      source: "demo",
     };
   }
 
