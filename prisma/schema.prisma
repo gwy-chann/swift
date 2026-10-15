@@ -35,6 +35,7 @@ model Profile {
   status      String    @default("Active")
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  workOrders  WorkOrder[]
 
   @@map("profiles")
 }
@@ -274,4 +275,49 @@ model StaffShiftAuditLog {
   @@index([profileId, createdAt(sort: Desc)])
   @@map("staff_shift_audit_logs")
 }
+
+model ServiceBay {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String      @unique
+  bayType      String      @map("bay_type")
+  status       String      @default("AVAILABLE")
+  displayOrder Int         @default(0) @map("display_order")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workOrders   WorkOrder[]
+
+  @@index([status])
+  @@index([displayOrder])
+  @@map("service_bays")
+}
+
+model WorkOrder {
+  id                       String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNumber              String      @unique @map("order_number")
+  bayId                    String?     @map("bay_id") @db.Uuid
+  customerName             String      @map("customer_name")
+  vehicleModel             String      @map("vehicle_model")
+  plateNumber              String      @map("plate_number")
+  serviceCode              String      @map("service_code")
+  serviceName              String      @map("service_name")
+  mechanicId               String?     @map("mechanic_id") @db.Uuid
+  status                   String      @default("QUEUED")
+  estimatedDurationMinutes Int         @default(30) @map("estimated_duration_minutes")
+  startedAt                DateTime?   @map("started_at") @db.Timestamptz(6)
+  completedAt              DateTime?   @map("completed_at") @db.Timestamptz(6)
+  notes                    String?
+  createdAt                DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  bay                      ServiceBay? @relation(fields: [bayId], references: [id], onDelete: SetNull)
+  mechanic                 Profile?    @relation(fields: [mechanicId], references: [id], onDelete: SetNull)
+
+  @@index([bayId])
+  @@index([mechanicId])
+  @@index([status])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("work_orders")
+}
+
 
