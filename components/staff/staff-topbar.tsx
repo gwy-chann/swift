@@ -70,6 +70,8 @@ export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProp
         {/* Admin Portal Switch Trigger */}
         <button
           type="button"
+          id="btnAdminPortalAccess"
+          data-testid="admin-portal-switch"
           onClick={onOpenAdminSwitch}
           className="flex items-center gap-1.5 py-1.5 px-3 rounded-md bg-secondary hover:bg-secondary-hover text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
         >
