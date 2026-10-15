@@ -31,7 +31,7 @@ export function AuditLogsTable({
   const [selectedSeverity, setSelectedSeverity] = useState<AuditLogSeverity | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isPending, startTransition] = useTransition();
-  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportingFormat, setExportingFormat] = useState<'csv' | 'json' | null>(null);
 
   const handleFilterChange = (severity: AuditLogSeverity | 'all', search: string) => {
     startTransition(async () => {
@@ -52,19 +52,22 @@ export function AuditLogsTable({
     handleFilterChange(selectedSeverity, searchQuery);
   };
 
-  const handleExportCsv = async () => {
-    setIsExporting(true);
+  const handleExport = async (format: 'csv' | 'json') => {
+    setExportingFormat(format);
     try {
-      const csvData = await exportSecurityAuditLogsAction({
+      const data = await exportSecurityAuditLogsAction({
         severity: selectedSeverity,
         searchQuery,
+        format,
       });
 
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const mimeType = format === 'json' ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;';
+      const extension = format === 'json' ? 'json' : 'csv';
+      const blob = new Blob([data], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `swift-security-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`);
+      link.setAttribute('download', `swift-security-audit-logs-${new Date().toISOString().slice(0, 10)}.${extension}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -72,7 +75,7 @@ export function AuditLogsTable({
     } catch {
       // Graceful error suppression on export
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   };
 
@@ -170,13 +173,28 @@ export function AuditLogsTable({
 
           {/* Export to CSV Button */}
           <button
+            id="exportSecurityLogCsvBtn"
             type="button"
-            onClick={handleExportCsv}
-            disabled={isExporting}
+            onClick={() => handleExport('csv')}
+            disabled={exportingFormat !== null}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+            title="Download CSV compliance log"
           >
             <Download className="w-3.5 h-3.5" />
-            {isExporting ? 'Exporting...' : 'Export CSV'}
+            {exportingFormat === 'csv' ? 'Exporting...' : 'Export CSV'}
+          </button>
+
+          {/* Export to JSON Button */}
+          <button
+            id="exportSecurityLogJsonBtn"
+            type="button"
+            onClick={() => handleExport('json')}
+            disabled={exportingFormat !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-bg-card hover:bg-bg-hover text-text-primary border border-border transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+            title="Download JSON compliance audit trail"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {exportingFormat === 'json' ? 'Exporting...' : 'Export JSON'}
           </button>
         </div>
       </div>
