@@ -83,3 +83,21 @@ export interface AdminElevationResult {
   code?: 'INVALID_PIN' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR';
 }
 
+export type PunchClockAction = 'in' | 'out' | 'break';
+
+export type PunchClockStatus = 'on_shift' | 'break' | 'completed' | 'idle';
+
+export interface StaffShiftSession {
+  id: string;
+  staffName: string;
+  terminalId: string;
+  date: string;
+  timeIn: string;
+  timeOut: string;
+  durationSeconds: number;
+  durationFormatted: string;
+  status: PunchClockStatus;
+  notes?: string | null;
+}
+
+
