@@ -29,7 +29,7 @@ flowchart TD
 
 ## Phase 2: Barcode Scanner & Hotkey Domain Engine
 
-- [ ] **TASK-2.1**: Implement `lib/pos/barcode-scanner.ts`:
+- [x] **TASK-2.1**: Implement `lib/pos/barcode-scanner.ts`:
   - `resolveBarcodeScanQuery(query, products, laborServices)`: normalizes query, matches against product SKU, product barcode, labor service code, and names.
   - Detects zero-stock condition for physical parts (`stock <= 0`) returning `OUT_OF_STOCK_OVERRIDE`.
   - Returns `NOT_FOUND` when query does not match any item.
@@ -39,7 +39,7 @@ flowchart TD
 
 ## Phase 3: Automated Unit & Integration Tests (TDD)
 
-- [ ] **TASK-3.1**: Create `lib/pos/__tests__/barcode-scanner.test.ts`:
+- [x] **TASK-3.1**: Create `lib/pos/__tests__/barcode-scanner.test.ts`:
   - Verify Scenario 1: Exact SKU and barcode scan instant resolution (`MOT-3100-10W40`, `YAM-NMAX-BL01`).
   - Verify Scenario 2: Category filter resolution (filtering items by category in-memory).
   - Verify Scenario 3: `F12` hotkey behavior (triggers checkout when cart has items; blocks checkout with warning when cart is empty; always calls `preventDefault()`).
@@ -50,13 +50,13 @@ flowchart TD
 
 ## Phase 4: UI Component Enhancements (`HybridCatalogPane` & `StaffPosPage`)
 
-- [ ] **TASK-4.1**: Enhance `components/pos/hybrid-catalog-pane.tsx`:
+- [x] **TASK-4.1**: Enhance `components/pos/hybrid-catalog-pane.tsx`:
   - Add `id="posItemSearchInput"` to input element.
   - Add `inputRef = useRef<HTMLInputElement>(null)` and ensure focus is maintained after `handleSearchKeyDown` on `[ENTER]`.
   - Integrate `resolveBarcodeScanQuery` into search input handler.
   - Add optional `onScanNotFound?: (query: string) => void` callback prop invoked when no match is found.
   - Ensure category pills ("All Fast Items", "Brakes", "Drivetrain", "Fluids", "Add Labor / Bay Service") correctly filter catalog in real-time.
-- [ ] **TASK-4.2**: Enhance `app/staff/pos/page.tsx`:
+- [x] **TASK-4.2**: Enhance `app/staff/pos/page.tsx`:
   - Add `id="view-staff-pos"` to root section container for 1:1 specification fidelity with `mockup/staff.html`.
   - Wire `onScanNotFound` callback to display error toast: `"Item code or barcode not found"`.
   - Update `F12` global keydown handler to block default browser behavior, alert on empty cart, and open payment checkout modal when items exist.
@@ -65,6 +65,6 @@ flowchart TD
 
 ## Phase 5: Verification Suite, Typecheck, and Linting
 
-- [ ] **TASK-5.1**: Run automated test suite: `node --env-file=.env.local --experimental-strip-types --test lib/pos/__tests__/barcode-scanner.test.ts` and `npm test`.
-- [ ] **TASK-5.2**: Run TypeScript compilation check: `npx tsc --noEmit`.
-- [ ] **TASK-5.3**: Run ESLint validation: `npm run lint`.
+- [x] **TASK-5.1**: Run automated test suite: `node --env-file=.env.local --experimental-strip-types --test lib/pos/__tests__/barcode-scanner.test.ts` and `npm test`.
+- [x] **TASK-5.2**: Run TypeScript compilation check: `npx tsc --noEmit`.
+- [x] **TASK-5.3**: Run ESLint validation: `npm run lint`.
