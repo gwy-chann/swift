@@ -146,5 +146,45 @@ describe('Supabase Forensic Security Audit Logs Actions (SIAA-62)', () => {
         }
       });
     });
+
+    it('exports audit logs as formatted JSON string when format is json', async () => {
+      await logSecurityEventAction({
+        action: 'Compliance JSON Export Verification',
+        severity: 'info',
+        terminalIp: 'Terminal-01-Counter',
+        userEmail: 'auditor@swift.ph',
+        metadata: { auditType: 'Statutory' },
+      });
+
+      const jsonStr = await exportSecurityAuditLogsAction({ format: 'json' });
+      assert.ok(typeof jsonStr === 'string');
+
+      const parsed = JSON.parse(jsonStr) as SecurityAuditLog[];
+      assert.ok(Array.isArray(parsed));
+      assert.ok(parsed.length > 0);
+
+      const target = parsed.find((l) => l.action === 'Compliance JSON Export Verification');
+      assert.ok(target, 'Target record must be present in parsed JSON');
+      assert.equal(target.severity, 'info');
+      assert.equal(target.userEmail, 'auditor@swift.ph');
+      assert.equal(target.terminalIp, 'Terminal-01-Counter');
+      assert.deepEqual(target.metadata, { auditType: 'Statutory' });
+    });
+
+    it('respects filters when exporting JSON', async () => {
+      await logSecurityEventAction({
+        action: 'Threat Alert For Filter Test',
+        severity: 'security_alert',
+        terminalIp: 'Terminal-01-Counter',
+      });
+
+      const jsonStr = await exportSecurityAuditLogsAction({ format: 'json', severity: 'security_alert' });
+      const parsed = JSON.parse(jsonStr) as SecurityAuditLog[];
+      assert.ok(Array.isArray(parsed));
+      assert.ok(parsed.length >= 1);
+      parsed.forEach((item) => {
+        assert.equal(item.severity, 'security_alert');
+      });
+    });
   });
 });

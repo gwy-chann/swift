@@ -221,6 +221,33 @@ export async function updatePricingRulesAction(
 
   const actionDescription = buildAuditActionDescription(previousRules, newRules, updates);
 
+  try {
+    const { logSecurityEventAction } = await import('./audit-actions.ts');
+    await logSecurityEventAction({
+      action: actionDescription,
+      severity: 'warning',
+      terminalIp: '192.168.1.100 (Admin Portal)',
+      userEmail: userName,
+      metadata: {
+        previousRules: {
+          retailMarkup: previousRules.retailMarkup,
+          wholesaleMarkup: previousRules.wholesaleMarkup,
+          aftermarketMarkup: previousRules.aftermarketMarkup,
+          hourlyLaborRate: previousRules.hourlyLaborRate,
+        },
+        newRules: {
+          retailMarkup: newRules.retailMarkup,
+          wholesaleMarkup: newRules.wholesaleMarkup,
+          aftermarketMarkup: newRules.aftermarketMarkup,
+          hourlyLaborRate: newRules.hourlyLaborRate,
+        },
+        reason: updates.reason || 'Admin global pricing update',
+      },
+    });
+  } catch {
+    // Non-blocking
+  }
+
   SWIFT_SEED_DATABASE.auditLogs.unshift({
     id: `AUD-${Date.now()}`,
     timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),

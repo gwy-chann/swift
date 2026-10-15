@@ -44,6 +44,10 @@ export interface GetAuditLogsOptions {
   offset?: number;
 }
 
+export interface ExportAuditLogsOptions extends GetAuditLogsOptions {
+  format?: 'csv' | 'json';
+}
+
 export interface LogSecurityEventParams {
   action: string;
   severity: AuditLogSeverity;

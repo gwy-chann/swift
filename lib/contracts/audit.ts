@@ -30,3 +30,8 @@ export const LogSecurityEventInputSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
   userEmail: z.string().optional(),
 });
+
+export const ExportAuditLogsOptionsSchema = GetAuditLogsFilterSchema.extend({
+  format: z.enum(['csv', 'json']).optional().default('csv'),
+});
+export type ExportAuditLogsOptions = z.infer<typeof ExportAuditLogsOptionsSchema>;

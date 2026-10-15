@@ -156,6 +156,211 @@ async function triggerCheckoutRevalidation(): Promise<void> {
 }
 
 
+function getDiscountLabel(discountType?: string | null): string {
+  const type = (discountType || '').toLowerCase();
+  if (type === 'senior' || type === 'senior_citizen') {
+    return 'Senior Citizen Discount';
+  }
+  if (type === 'pwd') {
+    return 'PWD Discount';
+  }
+  return 'Discount Override';
+}
+
+async function recordDiscountSecurityLog(
+  payload: {
+    discountRate?: number;
+    discountType?: string | null;
+    discountAmount?: number;
+    receiptNumber?: string;
+    cashierName?: string;
+    subtotal?: number;
+    totalDue?: number;
+  },
+  receiptNumber: string
+): Promise<void> {
+  const hasDiscount =
+    (payload.discountRate !== undefined && payload.discountRate > 0) ||
+    (payload.discountType && payload.discountType !== 'none');
+
+  if (!hasDiscount) return;
+
+  try {
+    const { logSecurityEventAction } = await import('../admin/audit-actions.ts');
+    const rate = payload.discountRate ?? 0;
+    const discountPct = Math.round(rate * 100);
+    const discountLabel = getDiscountLabel(payload.discountType);
+
+    await logSecurityEventAction({
+      action: `Applied ${discountPct}% ${discountLabel} on ${receiptNumber}`,
+      severity: 'info',
+      terminalIp: '192.168.1.102 (Terminal 1)',
+      userEmail: payload.cashierName || 'cashier@swift.ph',
+      metadata: {
+        invoice: receiptNumber,
+        receiptNumber,
+        discountType: payload.discountType,
+        discountRate: rate,
+        discountAmount: payload.discountAmount ?? 0,
+        subtotal: payload.subtotal,
+        totalDue: payload.totalDue,
+      },
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function trySupabaseCheckout(
+  validPayload: import('../types/transaction.ts').CheckoutPayload
+): Promise<CheckoutActionResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+
+    const p_transaction = {
+      receipt_number: validPayload.receiptNumber,
+      cashier_id: validPayload.cashierId ?? null,
+      cashier_name: validPayload.cashierName,
+      pricing_mode: validPayload.pricingMode,
+      subtotal: validPayload.subtotal,
+      discount_type: validPayload.discountType ?? null,
+      discount_rate: validPayload.discountRate,
+      discount_amount: validPayload.discountAmount,
+      total_due: validPayload.totalDue,
+      cash_tendered: validPayload.cashTendered,
+      change_due: validPayload.changeDue,
+      payment_method: validPayload.paymentMethod,
+    };
+
+    const p_items = validPayload.items.map((item) => ({
+      item_type: item.itemType,
+      item_sku_or_code: item.itemSkuOrCode,
+      item_name: item.itemName,
+      unit_price: item.unitPrice,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+      shelf_location: item.shelfLocation ?? null,
+      bay: item.bay ?? null,
+    }));
+
+    const { data, error } = await supabase.rpc('process_pos_checkout', {
+      p_transaction,
+      p_items,
+    });
+
+    if (error) {
+      const combined = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
+      if (
+        combined.includes('Could not find the function') ||
+        combined.includes('schema cache') ||
+        combined.includes('function public.process_pos_checkout') ||
+        (error as { code?: string }).code === 'PGRST202'
+      ) {
+        return null;
+      }
+      return handleCheckoutRpcError(error);
+    }
+
+    if (data && typeof data === 'object') {
+      const res = data as {
+        success?: boolean;
+        transaction_id?: string;
+        receipt_number?: string;
+        items_count?: number;
+        parts_decremented?: number;
+        created_at?: string;
+      };
+      const finalReceiptNumber = res.receipt_number || validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
+      await triggerCheckoutRevalidation();
+      await recordDiscountSecurityLog(validPayload, finalReceiptNumber);
+
+      return {
+        success: true,
+        transactionId: res.transaction_id || `tx-${Date.now()}`,
+        receiptNumber: finalReceiptNumber,
+        itemsCount: res.items_count ?? validPayload.items.length,
+        partsDecremented: res.parts_decremented ?? validPayload.items.filter((i) => i.itemType === 'part').length,
+        createdAt: res.created_at || new Date().toISOString(),
+      };
+    }
+  } catch (rpcErr) {
+    console.warn(
+      '[processCheckoutAction] Supabase RPC execution encountered issue, evaluating fallback:',
+      rpcErr instanceof Error ? rpcErr.message : String(rpcErr)
+    );
+  }
+
+  return null;
+}
+
+async function executeMockCheckout(
+  validPayload: import('../types/transaction.ts').CheckoutPayload
+): Promise<CheckoutActionResult> {
+  const { inventoryStore } = await import('../store/inventory-store.ts');
+  const { MOCK_PRODUCTS } = await import('../mock-data/products.ts');
+
+  // Validate stock constraints for physical parts
+  for (const item of validPayload.items) {
+    if (item.itemType === 'part') {
+      const storeProduct = inventoryStore.getProductBySku(item.itemSkuOrCode);
+      const mockProduct = MOCK_PRODUCTS.find((p) => p.sku === item.itemSkuOrCode);
+      const product = storeProduct || mockProduct;
+
+      if (!product) {
+        return {
+          success: false,
+          code: 'PRODUCT_NOT_FOUND',
+          sku: item.itemSkuOrCode,
+          error: `Product with SKU ${item.itemSkuOrCode} was not found in catalog.`,
+        };
+      }
+
+      if (product.stock < item.quantity) {
+        return {
+          success: false,
+          code: 'INSUFFICIENT_STOCK',
+          sku: item.itemSkuOrCode,
+          error: `Insufficient stock for SKU ${item.itemSkuOrCode}. Current: ${product.stock}, Requested: ${item.quantity}.`,
+        };
+      }
+    }
+  }
+
+  // Atomically decrement stock and record logs for physical parts
+  let partsDecremented = 0;
+  const receiptNumber = validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
+
+  for (const item of validPayload.items) {
+    if (item.itemType === 'part') {
+      inventoryStore.adjustStock({
+        sku: item.itemSkuOrCode,
+        type: 'Sale Outbound',
+        units: -item.quantity,
+        reason: `POS Sale Receipt: ${receiptNumber}`,
+        user: validPayload.cashierName || 'Cashier',
+      });
+      partsDecremented++;
+    }
+  }
+
+  await triggerCheckoutRevalidation();
+  await recordDiscountSecurityLog(validPayload, receiptNumber);
+
+  return {
+    success: true,
+    transactionId: `mock-tx-${Date.now()}`,
+    receiptNumber,
+    itemsCount: validPayload.items.length,
+    partsDecremented,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 /**
  * Executes atomic POS checkout:
  * 1. Validates payload via Zod contract schema.
@@ -181,148 +386,11 @@ export async function processCheckoutAction(
     };
   }
 
-  const validPayload = validation.data;
-
-  // 1. Try Supabase RPC execution
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    try {
-      const { createClient } = await import('../supabase/server.ts');
-      const supabase = await createClient();
-
-      const p_transaction = {
-        receipt_number: validPayload.receiptNumber,
-        cashier_id: validPayload.cashierId ?? null,
-        cashier_name: validPayload.cashierName,
-        pricing_mode: validPayload.pricingMode,
-        subtotal: validPayload.subtotal,
-        discount_type: validPayload.discountType ?? null,
-        discount_rate: validPayload.discountRate,
-        discount_amount: validPayload.discountAmount,
-        total_due: validPayload.totalDue,
-        cash_tendered: validPayload.cashTendered,
-        change_due: validPayload.changeDue,
-        payment_method: validPayload.paymentMethod
-      };
-
-      const p_items = validPayload.items.map((item) => ({
-        item_type: item.itemType,
-        item_sku_or_code: item.itemSkuOrCode,
-        item_name: item.itemName,
-        unit_price: item.unitPrice,
-        quantity: item.quantity,
-        subtotal: item.subtotal,
-        shelf_location: item.shelfLocation ?? null,
-        bay: item.bay ?? null
-      }));
-
-      const { data, error } = await supabase.rpc('process_pos_checkout', {
-        p_transaction,
-        p_items
-      });
-
-      if (error) {
-        const combined = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
-
-
-        if (
-          combined.includes('Could not find the function') ||
-          combined.includes('schema cache') ||
-          combined.includes('function public.process_pos_checkout') ||
-          (error as { code?: string }).code === 'PGRST202'
-        ) {
-          console.warn(
-            '[processCheckoutAction] process_pos_checkout RPC not yet deployed to remote Supabase, falling back to mock engine.'
-          );
-        } else {
-          return handleCheckoutRpcError(error);
-        }
-      } else if (data && typeof data === 'object') {
-        const res = data as {
-          success?: boolean;
-          transaction_id?: string;
-          receipt_number?: string;
-          items_count?: number;
-          parts_decremented?: number;
-          created_at?: string;
-        };
-        await triggerCheckoutRevalidation();
-
-        return {
-          success: true,
-          transactionId: res.transaction_id || `tx-${Date.now()}`,
-          receiptNumber: res.receipt_number || validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`,
-          itemsCount: res.items_count ?? validPayload.items.length,
-          partsDecremented: res.parts_decremented ?? validPayload.items.filter((i) => i.itemType === 'part').length,
-          createdAt: res.created_at || new Date().toISOString()
-        };
-      }
-    } catch (rpcErr) {
-      console.warn(
-        '[processCheckoutAction] Supabase RPC execution encountered issue, evaluating fallback:',
-        rpcErr instanceof Error ? rpcErr.message : String(rpcErr)
-      );
-    }
+  const supabaseResult = await trySupabaseCheckout(validation.data);
+  if (supabaseResult) {
+    return supabaseResult;
   }
 
-
-  // 2. Offline / Mock Store Fallback
-  const { inventoryStore } = await import('../store/inventory-store.ts');
-  const { MOCK_PRODUCTS } = await import('../mock-data/products.ts');
-
-  // Validate stock constraints for physical parts
-  for (const item of validPayload.items) {
-    if (item.itemType === 'part') {
-      const storeProduct = inventoryStore.getProductBySku(item.itemSkuOrCode);
-      const mockProduct = MOCK_PRODUCTS.find((p) => p.sku === item.itemSkuOrCode);
-      const product = storeProduct || mockProduct;
-
-      if (!product) {
-        return {
-          success: false,
-          code: 'PRODUCT_NOT_FOUND',
-          sku: item.itemSkuOrCode,
-          error: `Product with SKU ${item.itemSkuOrCode} was not found in catalog.`
-        };
-      }
-
-      if (product.stock < item.quantity) {
-        return {
-          success: false,
-          code: 'INSUFFICIENT_STOCK',
-          sku: item.itemSkuOrCode,
-          error: `Insufficient stock for SKU ${item.itemSkuOrCode}. Current: ${product.stock}, Requested: ${item.quantity}.`
-        };
-      }
-    }
-  }
-
-  // Atomically decrement stock and record logs for physical parts
-  let partsDecremented = 0;
-  const receiptNumber = validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
-
-  for (const item of validPayload.items) {
-    if (item.itemType === 'part') {
-      inventoryStore.adjustStock({
-        sku: item.itemSkuOrCode,
-        type: 'Sale Outbound',
-        units: -item.quantity,
-        reason: `POS Sale Receipt: ${receiptNumber}`,
-        user: validPayload.cashierName || 'Cashier'
-      });
-      partsDecremented++;
-    }
-  }
-
-
-  await triggerCheckoutRevalidation();
-
-  return {
-    success: true,
-    transactionId: `mock-tx-${Date.now()}`,
-    receiptNumber,
-    itemsCount: validPayload.items.length,
-    partsDecremented,
-    createdAt: new Date().toISOString()
-  };
+  return executeMockCheckout(validation.data);
 }
 

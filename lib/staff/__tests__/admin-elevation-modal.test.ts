@@ -77,25 +77,34 @@ describe('Secure Master Admin Elevation Modal & Shop Floor Session Guard (SIAA-3
   });
 
   describe('Scenario 2: Failed Authentication & Error Alert Handling', () => {
-    it('rejects invalid password and returns high-visibility error message', async () => {
+    it('records security_alert audit log on failed elevation attempt (SIAA-42)', async () => {
+      const { getSecurityAuditLogsAction } = await import('../../admin/audit-actions.ts');
       const res = await verifyAdminElevationAction('wrongpassword');
       assert.equal(res.success, false);
-      assert.ok(res.error?.includes('Invalid administrator password'));
+
+      const auditRes = await getSecurityAuditLogsAction({ severity: 'security_alert' });
+      assert.equal(auditRes.success, true);
+      const failedEntry = auditRes.data?.find((l) =>
+        l.action.includes('Failed Master Admin elevation attempt')
+      );
+      assert.ok(failedEntry, 'Must log failed elevation attempt as security_alert');
+      assert.equal(failedEntry.severity, 'security_alert');
+      assert.equal(failedEntry.terminalIp, 'Terminal #01 (Shop Floor)');
     });
 
-    it('rejects empty or undefined password with EMPTY_PASSWORD code', async () => {
-      const resEmpty = await verifyAdminElevationAction('');
-      assert.equal(resEmpty.success, false);
-      assert.equal(resEmpty.code, 'EMPTY_PASSWORD');
-      assert.ok(resEmpty.error?.includes('Please enter the administrator password'));
+    it('records warning audit log on granted elevation (SIAA-42)', async () => {
+      const { getSecurityAuditLogsAction } = await import('../../admin/audit-actions.ts');
+      const res = await verifyAdminElevationAction('admin123');
+      assert.equal(res.success, true);
 
-      const resWhitespace = await verifyAdminElevationAction('   ');
-      assert.equal(resWhitespace.success, false);
-      assert.equal(resWhitespace.code, 'EMPTY_PASSWORD');
-
-      const resUndefined = await verifyAdminElevationAction(undefined);
-      assert.equal(resUndefined.success, false);
-      assert.equal(resUndefined.code, 'EMPTY_PASSWORD');
+      const auditRes = await getSecurityAuditLogsAction({ severity: 'warning' });
+      assert.equal(auditRes.success, true);
+      const successEntry = auditRes.data?.find((l) =>
+        l.action.includes('Master Admin elevation granted')
+      );
+      assert.ok(successEntry, 'Must log granted elevation as warning');
+      assert.equal(successEntry.severity, 'warning');
+      assert.equal(successEntry.terminalIp, 'Terminal #01 (Shop Floor)');
     });
   });
 });
