@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import type { WorkOrderStatus } from "@/lib/types/service";
 import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
+import {
+  formatWorkOrderStatusLabel,
+  getWorkOrderStatusBadgeClass,
+  calculateActiveBaysCount,
+  formatActiveCapacityBadge,
+  type ServiceBayDisplayItem,
+} from "@/lib/services/service-bay-queue";
 
-export interface ServiceBayDisplayItem {
-  id: string;
-  bayName: string;
-  status: WorkOrderStatus;
-  vehicleService: string;
-  mechanicInfo: string;
-}
+export type { ServiceBayDisplayItem };
 
 const DEFAULT_SERVICE_BAYS: ServiceBayDisplayItem[] = [
   {
@@ -34,23 +34,34 @@ const DEFAULT_SERVICE_BAYS: ServiceBayDisplayItem[] = [
     vehicleService: "Suzuki Raider 150 Fi • Clutch Replacement",
     mechanicInfo: "Waiting for Bay clearance",
   },
+  {
+    id: "f0000000-0000-0000-0000-000000000004",
+    bayName: "Bay 4 (Tuning & Diagnostics)",
+    status: "IN PROGRESS",
+    vehicleService: "Kawasaki Ninja 400 • Valve Clearance Adjustment",
+    mechanicInfo: "Mechanic: Dante Reyes (~40 mins left)",
+  },
 ];
 
 function getMechanicStatusSuffix(status: string): string {
-  if (status === 'COMPLETED') {
-    return 'Ready for pickup';
+  if (status === "COMPLETED") {
+    return "Ready for pickup";
   }
-  if (status === 'PENDING_PARTS') {
-    return 'Waiting for counter parts';
+  if (status === "PENDING_PARTS") {
+    return "Waiting for counter parts";
   }
-  return 'In Progress';
+  return "In Progress";
 }
 
-interface ServiceBayStatusCardProps {
+export interface ServiceBayStatusCardProps {
   bays?: ServiceBayDisplayItem[];
+  activeCapacityBadge?: string;
 }
 
-export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCardProps = {}) {
+export function ServiceBayStatusCard({
+  bays: initialBays,
+  activeCapacityBadge,
+}: ServiceBayStatusCardProps = {}) {
   const [internalBays, setInternalBays] = useState<ServiceBayDisplayItem[]>(
     initialBays || DEFAULT_SERVICE_BAYS
   );
@@ -81,22 +92,12 @@ export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCard
   });
 
   const bays = isControlled ? initialBays : internalBays;
-
-  const getStatusBadgeClass = (status: WorkOrderStatus) => {
-    switch (status) {
-      case "IN PROGRESS":
-        return "bg-accent-light text-accent border border-accent/30";
-      case "COMPLETED":
-        return "bg-success-light text-success border border-success/30";
-      case "PENDING_PARTS":
-        return "bg-accent-light text-accent border border-accent/30";
-      case "CANCELLED":
-        return "bg-danger-light text-danger border border-danger/30";
-      case "QUEUED":
-      default:
-        return "bg-bg-muted text-text-secondary border border-border-subtle";
-    }
-  };
+  const activeCount = calculateActiveBaysCount(bays);
+  const displayBadgeText =
+    activeCapacityBadge ||
+    (isControlled
+      ? formatActiveCapacityBadge(activeCount)
+      : "4 Bays Active");
 
   return (
     <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between min-h-[300px]">
@@ -106,7 +107,7 @@ export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCard
           Service Bay Status
         </h3>
         <span className="px-2.5 py-1 rounded text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-success-light text-success border border-success/30">
-          4 Bays Active
+          {displayBadgeText}
         </span>
       </div>
 
@@ -122,11 +123,11 @@ export function ServiceBayStatusCard({ bays: initialBays }: ServiceBayStatusCard
                 {bay.bayName}
               </strong>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${getStatusBadgeClass(
+                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${getWorkOrderStatusBadgeClass(
                   bay.status
                 )}`}
               >
-                {bay.status}
+                {formatWorkOrderStatusLabel(bay.status)}
               </span>
             </div>
 

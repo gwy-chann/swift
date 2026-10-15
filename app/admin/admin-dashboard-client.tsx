@@ -6,6 +6,7 @@ import { RevenueComparisonChart } from '@/components/admin/revenue-comparison-ch
 import { ServiceBayStatusCard, type ServiceBayDisplayItem } from '@/components/admin/service-bay-status';
 import { useExecutiveRealtime } from '@/lib/analytics/use-executive-realtime';
 import type { ExecutiveKpiData, WeeklyRevenueData } from '@/lib/types/analytics';
+import { formatMechanicTurnaround } from '@/lib/services/service-bay-queue';
 
 export interface AdminDashboardClientProps {
   initialKpis?: ExecutiveKpiData;
@@ -35,17 +36,14 @@ const INITIAL_SERVICE_BAYS: ServiceBayDisplayItem[] = [
     vehicleService: 'Suzuki Raider 150 Fi • Clutch Replacement',
     mechanicInfo: 'Waiting for Bay clearance',
   },
+  {
+    id: 'f0000000-0000-0000-0000-000000000004',
+    bayName: 'Bay 4 (Tuning & Diagnostics)',
+    status: 'IN PROGRESS',
+    vehicleService: 'Kawasaki Ninja 400 • Valve Clearance Adjustment',
+    mechanicInfo: 'Mechanic: Dante Reyes (~40 mins left)',
+  },
 ];
-
-function getWorkOrderStatusDetail(status: string): string {
-  if (status === 'COMPLETED') {
-    return 'Ready for pickup';
-  }
-  if (status === 'PENDING_PARTS') {
-    return 'Waiting for counter parts';
-  }
-  return 'In Progress';
-}
 
 export function AdminDashboardClient({
   initialKpis,
@@ -99,12 +97,11 @@ export function AdminDashboardClient({
         prev.map((bay, idx) => {
           const isTarget = wo.bay_id ? bay.id === wo.bay_id : idx === 0;
           if (isTarget) {
-            const statusDetail = getWorkOrderStatusDetail(wo.status);
             return {
               ...bay,
               status: wo.status,
               vehicleService: `${wo.vehicle_model} • ${wo.service_name}`,
-              mechanicInfo: `Mechanic: Dante Reyes (${statusDetail})`,
+              mechanicInfo: formatMechanicTurnaround('Dante Reyes', wo.status),
             };
           }
           return bay;
@@ -118,7 +115,7 @@ export function AdminDashboardClient({
   });
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn">
+    <div id="view-dashboard" className="space-y-6 sm:space-y-8 animate-fadeIn">
       {/* Welcome & Context Banner */}
       <div>
         <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
