@@ -124,7 +124,7 @@ export async function getCategoryPnlAction(
         const supabase = await createClient();
         const { start, end } = computePeriodDateRange(period);
         const data = await fetchCategoryPnl(supabase, start, end);
-        if (data && data.categories && data.categories.length > 0) {
+        if (data && data.categories && data.categories.length > 0 && data.summary.total_gross_revenue > 0) {
           return data;
         }
       } catch (err) {

@@ -135,7 +135,12 @@ export async function exportAccountingCsvAction(
       }
     }
 
-    if (!pnlData || !pnlData.categories || pnlData.categories.length === 0) {
+    if (
+      !pnlData ||
+      !pnlData.categories ||
+      pnlData.categories.length === 0 ||
+      pnlData.summary.total_gross_revenue === 0
+    ) {
       pnlData = getDeterministicMockCategoryPnl(period);
     }
 
