@@ -13,6 +13,7 @@ export type ProductCategory =
 export interface Product {
   id?: string;
   sku: string;
+  barcode?: string;
   name: string;
   category: ProductCategory;
   stock: number;
