@@ -260,102 +260,9 @@ SET name = EXCLUDED.name,
     active = EXCLUDED.active,
     updated_at = timezone('utc'::text, now());
 
--- 6. Seed Baseline Historical Transactions & Line Items
--- Idempotent baseline data for receipt search, reprinting and analytics
-INSERT INTO public.transactions (
-    id,
-    receipt_number,
-    cashier_id,
-    cashier_name,
-    pricing_mode,
-    subtotal,
-    discount_type,
-    discount_rate,
-    discount_amount,
-    total_due,
-    cash_tendered,
-    change_due,
-    payment_method,
-    created_at
-)
-VALUES
-    (
-        't0000000-0000-0000-0000-000000000001',
-        'TX-1041',
-        'c0000000-0000-0000-0000-000000000002',
-        'SWIFT Fast-Lane Cashier',
-        'retail',
-        550.00,
-        'none',
-        0.0000,
-        0.00,
-        550.00,
-        600.00,
-        50.00,
-        'Cash',
-        timezone('utc'::text, now() - INTERVAL '2 days')
-    ),
-    (
-        't0000000-0000-0000-0000-000000000002',
-        'TX-1042',
-        'c0000000-0000-0000-0000-000000000002',
-        'SWIFT Fast-Lane Cashier',
-        'retail',
-        1200.00,
-        'senior',
-        0.2000,
-        240.00,
-        960.00,
-        1000.00,
-        40.00,
-        'GCash',
-        timezone('utc'::text, now() - INTERVAL '1 day')
-    ),
-    (
-        't0000000-0000-0000-0000-000000000003',
-        'TX-1043',
-        'c0000000-0000-0000-0000-000000000002',
-        'SWIFT Fast-Lane Cashier',
-        'wholesale',
-        2100.00,
-        'none',
-        0.0000,
-        0.00,
-        2100.00,
-        2100.00,
-        0.00,
-        'Card',
-        timezone('utc'::text, now() - INTERVAL '3 hours')
-    )
-ON CONFLICT (receipt_number) DO NOTHING;
-
-INSERT INTO public.transaction_items (
-    id,
-    transaction_id,
-    item_type,
-    item_sku_or_code,
-    item_name,
-    unit_price,
-    quantity,
-    subtotal,
-    bay,
-    shelf_location
-)
-VALUES
-    -- TX-1041 items: Oil (part) + Oil Change (service)
-    ('i0000000-0000-0000-0000-000000000001', 't0000000-0000-0000-0000-000000000001', 'part', 'MOT-3100-10W40', 'Motul 3100 Gold 4T 10W40 (1L)', 390.00, 1, 390.00, NULL, 'Aisle 1 / Shelf 1'),
-    ('i0000000-0000-0000-0000-000000000002', 't0000000-0000-0000-0000-000000000001', 'service', 'SRV-OIL-01', 'Standard Oil & Gear Oil Change', 100.00, 1, 100.00, 'Bay 1 / Quick Bay', NULL),
-    ('i0000000-0000-0000-0000-000000000003', 't0000000-0000-0000-0000-000000000001', 'service', 'SRV-TIRE-01', 'Tubeless Tire Mounting & Bead Sealing', 60.00, 1, 60.00, 'Bay 1 / Quick Bay', NULL),
-
-    -- TX-1042 items: Drive belt (part) + CVT Cleaning (service)
-    ('i0000000-0000-0000-0000-000000000004', 't0000000-0000-0000-0000-000000000002', 'part', 'HON-CLK-CVTB', 'OEM Drive Belt (Gates Bando)', 850.00, 1, 850.00, NULL, 'Rack B-04 / Shelf 1'),
-    ('i0000000-0000-0000-0000-000000000005', 't0000000-0000-0000-0000-000000000002', 'service', 'SRV-CVT-01', 'CVT Cleaning & Regreasing', 350.00, 1, 350.00, 'Bay 2 / Scooter Bay', NULL),
-
-    -- TX-1043 items: Wholesale brake pads (parts)
-    ('i0000000-0000-0000-0000-000000000006', 't0000000-0000-0000-0000-000000000003', 'part', 'RCB-NMAX-BP02', 'RCB S-Series Ceramic Brake Pads', 480.00, 3, 1440.00, NULL, 'Rack A-01 / Shelf 3'),
-    ('i0000000-0000-0000-0000-000000000007', 't0000000-0000-0000-0000-000000000003', 'part', 'DEN-IU24-IR', 'Denso Iridium Power Spark Plug (IU24)', 520.00, 1, 520.00, NULL, 'Rack C-02 / Shelf 2'),
-    ('i0000000-0000-0000-0000-000000000008', 't0000000-0000-0000-0000-000000000003', 'service', 'SRV-BRK-01', 'Brake Caliper Flush & Bleeding', 140.00, 1, 140.00, 'Bay 3 / Mechanical Bay', NULL)
-ON CONFLICT (id) DO NOTHING;
+-- 6. POS Transactions & Line Items
+-- Transactions are dynamically recorded through staff checkout operations in the Fast-Lane POS.
+-- No static dummy transactions are seeded here to ensure all sales metrics derive from real staff entries.
 
 -- 7. Seed Canonical Motorcycle Models (5 Baseline Models + Universal)
 INSERT INTO public.motorcycle_models (
@@ -432,7 +339,7 @@ INSERT INTO public.staff_shifts (
 )
 VALUES
     (
-        'p0000000-0000-0000-0000-000000000001',
+        '30000000-0000-0000-0000-000000000001',
         'c0000000-0000-0000-0000-000000000002',
         'Maria Santos',
         'Terminal #01',
@@ -443,7 +350,7 @@ VALUES
         'Baseline demo shift'
     ),
     (
-        'p0000000-0000-0000-0000-000000000002',
+        '30000000-0000-0000-0000-000000000002',
         'c0000000-0000-0000-0000-000000000002',
         'Maria Santos',
         'Terminal #01',
@@ -454,7 +361,7 @@ VALUES
         'Baseline demo shift'
     ),
     (
-        'p0000000-0000-0000-0000-000000000003',
+        '30000000-0000-0000-0000-000000000003',
         'c0000000-0000-0000-0000-000000000002',
         'Maria Santos',
         'Terminal #02',
@@ -569,6 +476,59 @@ SET order_number = EXCLUDED.order_number,
     completed_at = EXCLUDED.completed_at,
     notes = EXCLUDED.notes,
     updated_at = timezone('utc'::text, now());
+
+-- 12. Seed Baseline Stock Adjustment Logs
+INSERT INTO public.stock_adjustment_logs (
+    id,
+    sku,
+    adjustment_type,
+    quantity_delta,
+    previous_stock,
+    new_stock,
+    reason,
+    user_id,
+    user_name,
+    created_at
+)
+VALUES
+    (
+        'a0000000-0000-0000-0000-000000008821',
+        'YAM-NMAX-BL01',
+        'Physical Count',
+        -2,
+        14,
+        12,
+        'Physical inventory count reconciliation',
+        'c0000000-0000-0000-0000-000000000001',
+        'Carlos Rodriguez',
+        timezone('utc'::text, now() - INTERVAL '2 days')
+    ),
+    (
+        'a0000000-0000-0000-0000-000000008820',
+        'MOT-3100-10W40',
+        'Supplier Return',
+        24,
+        6,
+        30,
+        'PO-4091 Supplier Delivery Received',
+        'c0000000-0000-0000-0000-000000000002',
+        'Rico Santos',
+        timezone('utc'::text, now() - INTERVAL '2 days' + INTERVAL '3 hours')
+    ),
+    (
+        'a0000000-0000-0000-0000-000000008819',
+        'NGK-CPR8EA9',
+        'Damaged Goods',
+        -1,
+        15,
+        14,
+        'Cracked porcelain during shelving',
+        'c0000000-0000-0000-0000-000000000002',
+        'Mike Morales',
+        timezone('utc'::text, now() - INTERVAL '1 day')
+    )
+ON CONFLICT (id) DO NOTHING;
+
 
 
 

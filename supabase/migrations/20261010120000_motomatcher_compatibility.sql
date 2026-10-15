@@ -1,5 +1,5 @@
 -- ====================================================================
--- Migration: 20261011000000_motomatcher_compatibility.sql
+-- Migration: 20261010120000_motomatcher_compatibility.sql
 -- Description: Motorcycle models catalog, multi-part fitment mappings,
 --              B-tree indexes, RLS security policies, and updated_at trigger.
 -- Jira Issue: SIAA-53 (STORY-4.6)

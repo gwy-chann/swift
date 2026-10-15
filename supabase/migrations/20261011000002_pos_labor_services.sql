@@ -1,5 +1,5 @@
 -- ====================================================================
--- Migration: 20261011000000_pos_labor_services.sql
+-- Migration: 20261011000002_pos_labor_services.sql
 -- Description: Workshop labor services schema, flat rates matrix,
 --              B-tree indexes, updated_at trigger, and Row-Level Security.
 -- Jira Issue: SIAA-49 (STORY-3.6)
