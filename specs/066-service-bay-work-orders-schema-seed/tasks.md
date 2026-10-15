@@ -8,14 +8,14 @@
 
 ## Task Progress Summary
 
-- [ ] Task 1: SpecKit Artifacts Authoring & Design Baseline
-- [ ] Task 2: Database Migration: `service_bays` & `work_orders` Tables, Indexes, Constraints & RLS
-- [ ] Task 3: Prisma Schema Synchronization (`ServiceBay` & `WorkOrder` Models)
-- [ ] Task 4 (TDD Red): Failing Unit Tests for Service Bay & Work Order Mapper
-- [ ] Task 5 (TDD Green): Domain Models, Types & Mapper Implementation
-- [ ] Task 6: Baseline Demonstration Seed Data in `supabase/seed.sql`
-- [ ] Task 7: UI Component Alignment (`service-bay-status.tsx`) & Design Tokens
-- [ ] Task 8: Full Verification Gate & Task Sign-off
+- [x] Task 1: SpecKit Artifacts Authoring & Design Baseline
+- [x] Task 2: Database Migration: `service_bays` & `work_orders` Tables, Indexes, Constraints & RLS
+- [x] Task 3: Prisma Schema Synchronization (`ServiceBay` & `WorkOrder` Models)
+- [x] Task 4 (TDD Red): Failing Unit Tests for Service Bay & Work Order Mapper
+- [x] Task 5 (TDD Green): Domain Models, Types & Mapper Implementation
+- [x] Task 6: Baseline Demonstration Seed Data in `supabase/seed.sql`
+- [x] Task 7: UI Component Alignment (`service-bay-status.tsx`) & Design Tokens
+- [x] Task 8: Full Verification Gate & Task Sign-off
 
 ---
 
