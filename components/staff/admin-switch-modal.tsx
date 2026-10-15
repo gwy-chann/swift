@@ -22,12 +22,9 @@ export function AdminSwitchModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus password input when modal opens and reset state
+  // Focus password input when modal opens
   useEffect(() => {
     if (isOpen) {
-      setPassword("");
-      setError(null);
-      setIsSubmitting(false);
       const timer = setTimeout(() => {
         passwordInputRef.current?.focus();
       }, 50);
@@ -35,17 +32,24 @@ export function AdminSwitchModal({
     }
   }, [isOpen]);
 
+  const handleDismiss = React.useCallback(() => {
+    setPassword("");
+    setError(null);
+    setIsSubmitting(false);
+    onClose();
+  }, [onClose]);
+
   // Handle Escape key to safely dismiss modal without state loss (WCAG AA)
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        handleDismiss();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleDismiss]);
 
   if (!isOpen) return null;
 
@@ -91,7 +95,7 @@ export function AdminSwitchModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          handleDismiss();
         }
       }}
     >
@@ -117,7 +121,7 @@ export function AdminSwitchModal({
           <button
             type="button"
             id="btnCloseElevationModal"
-            onClick={onClose}
+            onClick={handleDismiss}
             aria-label="Close modal"
             className="w-7 h-7 rounded-md flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
           >
@@ -215,7 +219,7 @@ export function AdminSwitchModal({
             <button
               type="button"
               id="btnCancelElevation"
-              onClick={onClose}
+              onClick={handleDismiss}
               disabled={isSubmitting}
               className="py-2.5 px-4 bg-bg-surface hover:bg-bg-hover text-text-secondary border border-border rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
             >
