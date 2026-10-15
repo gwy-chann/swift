@@ -19,18 +19,18 @@ export const StockAuditFilterSchema = z.object({
 export type StockAuditFilterOptions = z.infer<typeof StockAuditFilterSchema>;
 
 export const StockAdjustmentLogEntrySchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   sku: z.string().min(1),
   adjustmentType: z.string().min(1),
   quantityDelta: z.number().int().refine((val) => val !== 0, {
     message: 'Quantity delta must be non-zero',
   }),
-  previousStock: z.number().int().nonnegative(),
-  newStock: z.number().int().nonnegative(),
+  previousStock: z.number().int().nonnegative().optional().default(0),
+  newStock: z.number().int().nonnegative().optional().default(0),
   reason: z.string().default(''),
-  userId: z.string().uuid().nullable().optional(),
+  userId: z.string().nullable().optional(),
   userName: z.string().default('Staff Member'),
-  createdAt: z.string().datetime(),
+  createdAt: z.string(),
 });
 
 export type StockAdjustmentLogEntry = z.infer<typeof StockAdjustmentLogEntrySchema>;

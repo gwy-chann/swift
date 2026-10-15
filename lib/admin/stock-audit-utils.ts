@@ -2,6 +2,32 @@ import type {
   StockAdjustmentLogEntry,
   StockAuditSummaryMetrics,
 } from '../types/stock-audit.ts';
+import type { StockAdjustmentLog } from '../types/logs.ts';
+
+/**
+ * Maps a client StockAdjustmentLog (from InventoryStore) to a presentation StockAdjustmentLogEntry.
+ */
+export function mapStockAdjustmentLogToEntry(
+  log: StockAdjustmentLog
+): StockAdjustmentLogEntry {
+  let quantityDelta = 0;
+  const match = (log.change || '').match(/([+-]?\d+)/);
+  if (match) {
+    quantityDelta = parseInt(match[1], 10) || 0;
+  }
+
+  return {
+    id: log.id,
+    sku: log.sku,
+    adjustmentType: log.type,
+    quantityDelta,
+    previousStock: 0,
+    newStock: 0,
+    reason: log.reason,
+    userName: log.user,
+    createdAt: log.timestamp || new Date().toISOString(),
+  };
+}
 
 /**
  * Calculates aggregated inventory metrics across stock adjustment log entries.
