@@ -11,6 +11,7 @@ enum UserRole {
   staff
   cashier
   mechanic
+  inventory_clerk
 
   @@map("user_role")
 }
@@ -26,13 +27,14 @@ model User {
 }
 
 model Profile {
-  id        String    @id @db.Uuid
-  email     String    @unique
-  fullName  String?   @map("full_name")
-  role      UserRole  @default(staff)
-  status    String    @default("Active")
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id          String    @id @db.Uuid
+  email       String    @unique
+  fullName    String?   @map("full_name")
+  role        UserRole  @default(staff)
+  permissions Json      @default("{\"can_adjust_stock\": false, \"can_override_discount\": false, \"can_manage_pricing\": false, \"can_view_reports\": false}")
+  status      String    @default("Active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
 }
