@@ -5,6 +5,7 @@ import {
   Search,
   UserPlus,
   Power,
+  Pencil,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -17,6 +18,7 @@ import type { DbUserRole } from "@/lib/types/auth";
 import type { StaffUserSummary } from "@/specs/030-supabase-rbac-extension-granular-permission-flags/contracts/rbac-permissions.contract";
 import { toggleUserStatusAction } from "@/lib/admin/user-actions";
 import { AddStaffModal } from "./add-staff-modal";
+import { EditStaffModal } from "./edit-staff-modal";
 
 interface UserLedgerTableProps {
   initialUsers: StaffUserSummary[];
@@ -27,6 +29,7 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<StaffUserSummary | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -42,6 +45,12 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
 
   const handleStaffAdded = (newUser: StaffUserSummary) => {
     setUsers((prev) => [newUser, ...prev]);
+  };
+
+  const handleStaffUpdated = (updatedUser: StaffUserSummary) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+    );
   };
 
   const handleToggleStatus = async (user: StaffUserSummary) => {
@@ -134,11 +143,13 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
         {/* Add Staff Button */}
         <button
           type="button"
+          id="btnAddStaffUser"
+          data-testid="btn-add-staff"
           onClick={() => setIsAddModalOpen(true)}
           className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-text-light text-xs font-bold hover:bg-primary-hover shadow-xs transition-colors shrink-0"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Provision Employee</span>
+          <span>+ Add Staff User</span>
         </button>
       </div>
 
@@ -155,7 +166,7 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border text-xs">
+            <tbody id="usersTableBody" className="divide-y divide-border text-xs">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-text-muted">
@@ -249,19 +260,34 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
 
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(user)}
-                          disabled={isBusy}
-                          aria-label={`Toggle status for ${user.fullName}`}
-                          className={`p-1.5 rounded-lg border transition-colors ${
-                            isActive
-                              ? "text-danger border-border hover:bg-danger-light"
-                              : "text-success border-border hover:bg-success-light"
-                          } disabled:opacity-50`}
-                        >
-                          <Power className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            id={`btnEditUser-${user.id}`}
+                            data-testid={`btn-edit-user-${user.id}`}
+                            onClick={() => setEditingUser(user)}
+                            aria-label={`Edit ${user.fullName}`}
+                            title="Edit Staff Member"
+                            className="p-1.5 rounded-lg border border-border text-text-secondary hover:text-primary hover:border-primary/40 hover:bg-primary-light transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            id={`btnToggleStatus-${user.id}`}
+                            data-testid={`btn-toggle-status-${user.id}`}
+                            onClick={() => handleToggleStatus(user)}
+                            disabled={isBusy}
+                            aria-label={`Toggle status for ${user.fullName}`}
+                            className={`p-1.5 rounded-lg border transition-colors ${
+                              isActive
+                                ? "text-danger border-border hover:bg-danger-light"
+                                : "text-success border-border hover:bg-success-light"
+                            } disabled:opacity-50`}
+                          >
+                            <Power className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -277,6 +303,14 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onStaffAdded={handleStaffAdded}
+      />
+
+      {/* Edit Staff Modal */}
+      <EditStaffModal
+        isOpen={!!editingUser}
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onStaffUpdated={handleStaffUpdated}
       />
     </div>
   );

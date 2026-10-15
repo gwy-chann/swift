@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DbUserRole, StaffPermissions } from '@/lib/types/auth';
+import type { DbUserRole, UserRole, StaffPermissions } from '@/lib/types/auth';
 
 export const StaffPermissionsSchema = z.object({
   can_adjust_stock: z.boolean().default(false),
@@ -47,7 +47,7 @@ export interface StaffUserSummary {
   email: string;
   fullName: string;
   role: DbUserRole;
-  roleDisplay: string;
+  roleDisplay: UserRole;
   status: 'Active' | 'Inactive' | 'Suspended';
   permissions: StaffPermissions;
   createdAt: string;
