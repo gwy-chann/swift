@@ -35,3 +35,51 @@ export interface StaffShiftState {
   initialElapsedSeconds: number;
   isOnShift: boolean;
 }
+
+export interface ShiftActionResult {
+  success: boolean;
+  shiftId?: string;
+  staffName?: string;
+  terminalId?: string;
+  clockIn?: string;
+  clockOut?: string;
+  durationFormatted?: string;
+  status?: 'on_shift' | 'break' | 'completed';
+  error?: string;
+  code?: string;
+}
+
+export interface AttendanceHistoryResult {
+  success: boolean;
+  logs: import("@/lib/types/logs").PunchLog[];
+  activeShift: import("@/lib/types/logs").DbStaffShift | null;
+  error?: string;
+}
+
+export interface ProductPriceCheckResult {
+  success: boolean;
+  product?: {
+    id: string;
+    sku: string;
+    name: string;
+    category: string;
+    brand: string;
+    model: string;
+    stock: number;
+    minThreshold: number;
+    location: string;
+    retailPrice: number;
+    wholesalePrice: number;
+    scPwdPrice: number;
+  };
+  error?: string;
+  code?: 'PRODUCT_NOT_FOUND' | 'INVALID_QUERY' | 'DATABASE_ERROR';
+}
+
+export interface AdminElevationResult {
+  success: boolean;
+  elevatedUntil?: number;
+  error?: string;
+  code?: 'INVALID_PIN' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR';
+}
+

@@ -96,6 +96,35 @@ describe('Session Route Guards & Access Matrix Engine (SIAA-71)', () => {
       assert.equal(session.role, 'admin');
       assert.equal(session.source, 'supabase');
     });
+
+    it('elevates staff role to admin when swift_admin_elevated cookie is present', () => {
+      const mockCookies = {
+        get: (name: string) => {
+          if (name === 'swift-session-role') return { value: 'staff' };
+          if (name === 'swift_admin_elevated') return { value: 'true' };
+          return undefined;
+        },
+      };
+      const session = resolveSession(mockCookies);
+      assert.equal(session.isAuthenticated, true);
+      assert.equal(session.role, 'admin');
+      assert.equal(session.source, 'demo');
+    });
+
+    it('elevates Supabase staff user to admin role when swift_admin_elevated is present', () => {
+      const mockCookies = {
+        get: (name: string) => (name === 'swift_admin_elevated' ? { value: 'true' } : undefined),
+      };
+      const mockUser = {
+        id: 'usr-staff-777',
+        user_metadata: { role: 'staff' },
+      };
+      const session = resolveSession(mockCookies, mockUser);
+      assert.equal(session.isAuthenticated, true);
+      assert.equal(session.role, 'admin');
+      assert.equal(session.userId, 'usr-staff-777');
+      assert.equal(session.source, 'supabase');
+    });
   });
 
   describe('evaluateRouteAccess', () => {
