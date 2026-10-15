@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
 
+import type { WeeklyRevenueData } from "@/lib/types/analytics";
+
 interface DailyRevenueData {
   day: string;
   partsAmount: number;
@@ -82,11 +84,13 @@ const INITIAL_WEEKLY_DATA: DailyRevenueData[] = [
 export interface RevenueComparisonChartProps {
   todayPartsIncrement?: number;
   todayLaborIncrement?: number;
+  initialWeeklyData?: WeeklyRevenueData;
 }
 
 export function RevenueComparisonChart({
   todayPartsIncrement = 0,
   todayLaborIncrement = 0,
+  initialWeeklyData,
 }: RevenueComparisonChartProps = {}) {
   const [internalPartsIncrement, setInternalPartsIncrement] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday
@@ -102,9 +106,22 @@ export function RevenueComparisonChart({
 
   const effectivePartsIncrement = todayPartsIncrement || internalPartsIncrement;
 
+  const baseData =
+    initialWeeklyData && initialWeeklyData.days && initialWeeklyData.days.length === 7
+      ? initialWeeklyData.days.map((d) => ({
+          day: d.day_label,
+          partsAmount: d.parts_amount,
+          partsDisplay: d.parts_display || `₱${(d.parts_amount / 1000).toFixed(1)}k`,
+          laborAmount: d.labor_amount,
+          laborDisplay: d.labor_display || `₱${(d.labor_amount / 1000).toFixed(1)}k`,
+          partsHeightPercent: d.parts_height_percent,
+          laborHeightPercent: d.labor_height_percent,
+        }))
+      : INITIAL_WEEKLY_DATA;
+
   // Calculate dynamic weekly data with today's increment
-  const weeklyData = INITIAL_WEEKLY_DATA.map((item, idx) => {
-    if (idx === INITIAL_WEEKLY_DATA.length - 1) {
+  const weeklyData = baseData.map((item, idx) => {
+    if (idx === baseData.length - 1) {
       const updatedParts = item.partsAmount + effectivePartsIncrement;
       const updatedLabor = item.laborAmount + todayLaborIncrement;
       return {
