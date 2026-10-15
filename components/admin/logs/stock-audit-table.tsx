@@ -46,7 +46,7 @@ export function StockAuditTable({
     if (isLoading) {
       return (
         <tr>
-          <td colSpan={8} className="py-12 text-center text-text-muted">
+          <td colSpan={6} className="py-12 text-center text-text-muted">
             <div className="inline-flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               <span>Loading immutable stock adjustment ledger...</span>
@@ -59,7 +59,7 @@ export function StockAuditTable({
     if (logs.length === 0) {
       return (
         <tr id="stockAuditEmptyState">
-          <td colSpan={8} className="py-12 text-center">
+          <td colSpan={6} className="py-12 text-center">
             <div className="flex flex-col items-center justify-center gap-2 text-text-muted">
               <PackageX className="w-8 h-8 opacity-40 text-text-secondary" />
               <p className="text-sm font-semibold text-text-primary">
@@ -113,16 +113,6 @@ export function StockAuditTable({
             </span>
           </td>
 
-          {/* Previous Stock */}
-          <td className="py-3 px-4 font-mono text-text-muted">
-            {log.previousStock}
-          </td>
-
-          {/* New Stock */}
-          <td className="py-3 px-4 font-mono font-semibold text-text-primary">
-            {log.newStock}
-          </td>
-
           {/* Reason / Reference */}
           <td className="py-3 px-4 text-text-primary max-w-xs truncate" title={log.reason}>
             {log.reason || (
@@ -151,8 +141,6 @@ export function StockAuditTable({
             <th className="py-3 px-4">SKU</th>
             <th className="py-3 px-4">Type</th>
             <th className="py-3 px-4">Change</th>
-            <th className="py-3 px-4">Previous Stock</th>
-            <th className="py-3 px-4">New Stock</th>
             <th className="py-3 px-4">Reason / Reference</th>
             <th className="py-3 px-4">Authorized By</th>
           </tr>
