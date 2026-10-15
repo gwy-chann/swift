@@ -13,6 +13,7 @@ export const StockAuditFilterSchema = z.object({
   search: z.string().trim().optional(),
   limit: z.number().int().positive().max(1000).default(50).optional(),
   offset: z.number().int().nonnegative().default(0).optional(),
+  useMemoryStore: z.boolean().optional(),
 });
 
 export type StockAuditFilterOptions = z.infer<typeof StockAuditFilterSchema>;
