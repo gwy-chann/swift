@@ -55,6 +55,36 @@ VALUES
         timezone('utc'::text, now()),
         '',
         ''
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'd0000000-0000-0000-0000-000000000003',
+        'authenticated',
+        'authenticated',
+        'mechanic1@swift.local',
+        crypt('swift123', gen_salt('bf')),
+        timezone('utc'::text, now()),
+        '{"provider": "email", "providers": ["email"]}'::jsonb,
+        '{"full_name": "Dante Reyes", "role": "mechanic"}'::jsonb,
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now()),
+        '',
+        ''
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'd0000000-0000-0000-0000-000000000004',
+        'authenticated',
+        'authenticated',
+        'mechanic2@swift.local',
+        crypt('swift123', gen_salt('bf')),
+        timezone('utc'::text, now()),
+        '{"provider": "email", "providers": ["email"]}'::jsonb,
+        '{"full_name": "Alex Lim", "role": "mechanic"}'::jsonb,
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now()),
+        '',
+        ''
     )
 ON CONFLICT (id) DO UPDATE
 SET encrypted_password = EXCLUDED.encrypted_password,
@@ -94,6 +124,26 @@ VALUES
         timezone('utc'::text, now()),
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
+    ),
+    (
+        'd0000000-0000-0000-0000-000000000003',
+        'd0000000-0000-0000-0000-000000000003',
+        jsonb_build_object('sub', 'd0000000-0000-0000-0000-000000000003', 'email', 'mechanic1@swift.local'),
+        'email',
+        'mechanic1@swift.local',
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now())
+    ),
+    (
+        'd0000000-0000-0000-0000-000000000004',
+        'd0000000-0000-0000-0000-000000000004',
+        jsonb_build_object('sub', 'd0000000-0000-0000-0000-000000000004', 'email', 'mechanic2@swift.local'),
+        'email',
+        'mechanic2@swift.local',
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now())
     )
 ON CONFLICT (id) DO UPDATE
 SET identity_data = EXCLUDED.identity_data,
@@ -124,6 +174,24 @@ VALUES
         'cashier@swift.local',
         'SWIFT Fast-Lane Cashier',
         'cashier'::public.user_role,
+        'Active',
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now())
+    ),
+    (
+        'd0000000-0000-0000-0000-000000000003',
+        'mechanic1@swift.local',
+        'Dante Reyes',
+        'mechanic'::public.user_role,
+        'Active',
+        timezone('utc'::text, now()),
+        timezone('utc'::text, now())
+    ),
+    (
+        'd0000000-0000-0000-0000-000000000004',
+        'mechanic2@swift.local',
+        'Alex Lim',
+        'mechanic'::public.user_role,
         'Active',
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
@@ -397,6 +465,111 @@ VALUES
         'Baseline demo shift'
     )
 ON CONFLICT (id) DO NOTHING;
+
+-- 10. Seed Canonical Workshop Service Bays (4 Standard Bays)
+-- Matching mockup/app.js & components/admin/service-bay-status.tsx
+INSERT INTO public.service_bays (
+    id,
+    name,
+    bay_type,
+    status,
+    display_order
+)
+VALUES
+    ('e0000000-0000-0000-0000-000000000001', 'Bay 1 (Quick Bay)', 'Express', 'OCCUPIED', 1),
+    ('e0000000-0000-0000-0000-000000000002', 'Bay 2 (Scooter Bay)', 'Specialist', 'OCCUPIED', 2),
+    ('e0000000-0000-0000-0000-000000000003', 'Bay 3 (Mechanical Bay)', 'Diagnostic', 'QUEUED', 3),
+    ('e0000000-0000-0000-0000-000000000004', 'Bay 4 (Heavy Repair)', 'Overhaul', 'AVAILABLE', 4)
+ON CONFLICT (id) DO UPDATE
+SET name = EXCLUDED.name,
+    bay_type = EXCLUDED.bay_type,
+    status = EXCLUDED.status,
+    display_order = EXCLUDED.display_order,
+    updated_at = timezone('utc'::text, now());
+
+-- 11. Seed Baseline Active Repair Work Orders (3 Demo Orders)
+-- Matching mockup/app.js & components/admin/service-bay-status.tsx
+INSERT INTO public.work_orders (
+    id,
+    order_number,
+    bay_id,
+    customer_name,
+    vehicle_model,
+    plate_number,
+    service_code,
+    service_name,
+    mechanic_id,
+    status,
+    estimated_duration_minutes,
+    started_at,
+    completed_at,
+    notes
+)
+VALUES
+    (
+        'f0000000-0000-0000-0000-000000000001',
+        'WO-2026-0001',
+        'e0000000-0000-0000-0000-000000000001',
+        'Juan dela Cruz',
+        'Yamaha NMAX 155',
+        'ND-10492',
+        'SRV-OIL-01',
+        'Oil Change + Brake Pads',
+        'd0000000-0000-0000-0000-000000000003',
+        'IN PROGRESS',
+        30,
+        timezone('utc'::text, now() - INTERVAL '20 minutes'),
+        NULL,
+        'Mechanic: Dante Reyes (~10 mins left)'
+    ),
+    (
+        'f0000000-0000-0000-0000-000000000002',
+        'WO-2026-0002',
+        'e0000000-0000-0000-0000-000000000002',
+        'Ramon Bautista',
+        'Honda Click 150i',
+        'NC-88412',
+        'SRV-CVT-01',
+        'Full CVT Overhaul',
+        'd0000000-0000-0000-0000-000000000004',
+        'IN PROGRESS',
+        45,
+        timezone('utc'::text, now() - INTERVAL '20 minutes'),
+        NULL,
+        'Mechanic: Alex Lim (~25 mins left)'
+    ),
+    (
+        'f0000000-0000-0000-0000-000000000003',
+        'WO-2026-0003',
+        'e0000000-0000-0000-0000-000000000003',
+        'Eduardo Santos',
+        'Suzuki Raider 150 Fi',
+        'NE-33901',
+        'SRV-BRK-01',
+        'Clutch Replacement',
+        NULL,
+        'QUEUED',
+        60,
+        NULL,
+        NULL,
+        'Waiting for Bay clearance'
+    )
+ON CONFLICT (id) DO UPDATE
+SET order_number = EXCLUDED.order_number,
+    bay_id = EXCLUDED.bay_id,
+    customer_name = EXCLUDED.customer_name,
+    vehicle_model = EXCLUDED.vehicle_model,
+    plate_number = EXCLUDED.plate_number,
+    service_code = EXCLUDED.service_code,
+    service_name = EXCLUDED.service_name,
+    mechanic_id = EXCLUDED.mechanic_id,
+    status = EXCLUDED.status,
+    estimated_duration_minutes = EXCLUDED.estimated_duration_minutes,
+    started_at = EXCLUDED.started_at,
+    completed_at = EXCLUDED.completed_at,
+    notes = EXCLUDED.notes,
+    updated_at = timezone('utc'::text, now());
+
 
 
 
