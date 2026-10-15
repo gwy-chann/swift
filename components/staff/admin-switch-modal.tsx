@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldAlert, X, Lock, ArrowRight } from "lucide-react";
+import { ShieldAlert, X, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { verifyAdminElevationAction } from "@/lib/staff/actions";
 
 interface AdminSwitchModalProps {
   isOpen: boolean;
@@ -12,22 +13,36 @@ interface AdminSwitchModalProps {
 export function AdminSwitchModal({ isOpen, onClose }: AdminSwitchModalProps) {
   const router = useRouter();
   const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError("");
+    if (!pin.trim()) {
+      setError("Please enter the Master Admin Security PIN.");
+      return;
+    }
 
-    // Simulate verification (any 4+ digit pin or direct entry for demo/dev)
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await verifyAdminElevationAction(pin);
+      if (!res.success) {
+        setError(res.error || "Invalid Master Admin PIN. Access denied.");
+        setIsSubmitting(false);
+        return;
+      }
+
       onClose();
       router.push("/admin");
-    }, 400);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Elevation authorization failed.");
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -67,8 +82,18 @@ export function AdminSwitchModal({ isOpen, onClose }: AdminSwitchModalProps) {
             Enter Master Admin PIN or click authorize below to elevate permissions and access inventory management, analytics, and store settings:
           </p>
 
+          {error && (
+            <div className="p-3 bg-danger-light text-danger border border-danger/30 rounded-lg text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-text-primary uppercase tracking-wider">
+            <label
+              htmlFor="elevationPinInput"
+              className="block text-xs font-bold text-text-primary uppercase tracking-wider"
+            >
               Admin Security PIN
             </label>
             <div className="relative">
@@ -76,16 +101,19 @@ export function AdminSwitchModal({ isOpen, onClose }: AdminSwitchModalProps) {
                 <Lock className="w-4 h-4" />
               </div>
               <input
+                id="elevationPinInput"
                 type="password"
                 maxLength={6}
                 value={pin}
-                onChange={(e) => setPin(e.target.value)}
+                onChange={(e) => {
+                  setPin(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="••••"
                 className="w-full pl-9 pr-3 py-2.5 bg-bg-input border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-center tracking-[6px] font-mono text-base text-text-primary placeholder:text-text-muted/40 transition-all outline-hidden"
                 autoFocus
               />
             </div>
-            {error && <p className="text-xs text-danger">{error}</p>}
           </div>
 
           <div className="flex items-center gap-2.5 pt-2">
@@ -100,7 +128,8 @@ export function AdminSwitchModal({ isOpen, onClose }: AdminSwitchModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="py-2.5 px-4 bg-bg-surface hover:bg-bg-hover text-text-secondary border border-border rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="py-2.5 px-4 bg-bg-surface hover:bg-bg-hover text-text-secondary border border-border rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
