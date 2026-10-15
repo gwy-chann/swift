@@ -1,35 +1,40 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useTransition } from "react";
-import { Barcode, SearchX, MapPin, Tag, ShieldCheck, Layers } from "lucide-react";
-import { lookupProductPriceAction } from "@/lib/staff/actions";
-import type { ProductPriceCheckResult } from "@/lib/staff/types";
-
-function getStockBadgeClass(stock: number, minThreshold: number): string {
-  if (stock > minThreshold) {
-    return "bg-success-light text-success border border-success/30";
-  }
-  if (stock > 0) {
-    return "bg-accent-light text-accent border border-accent/30";
-  }
-  return "bg-danger-light text-danger border border-danger/30";
-}
-
-function getStockStatusLabel(stock: number, minThreshold: number): string {
-  if (stock > minThreshold) {
-    return `IN STOCK (${stock} Units)`;
-  }
-  if (stock > 0) {
-    return `LOW STOCK (${stock} Units)`;
-  }
-  return "OUT OF STOCK (0 Units)";
-}
+import React, { useState, useEffect, useTransition, useCallback } from 'react';
+import { Barcode, SearchX, Search, RotateCcw } from 'lucide-react';
+import { lookupProductPriceAction } from '@/lib/staff/actions';
+import type { ProductPriceCheckResult } from '@/lib/staff/types';
+import { PriceScanCard } from '@/components/staff/pricecheck/price-scan-card';
+import { MarginSimulator } from '@/components/staff/pricecheck/margin-simulator';
+import { PriceScheduleTable } from '@/components/staff/pricecheck/price-schedule-table';
 
 export default function StaffPriceCheckPage() {
-  const [query, setQuery] = useState("YAM-NMAX-BL01");
+  const [query, setQuery] = useState('YAM-NMAX-BL01');
   const [lookupResult, setLookupResult] = useState<ProductPriceCheckResult | null>(null);
   const [isSearching, startTransition] = useTransition();
 
+  const executeLookup = useCallback((searchQuery: string) => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setLookupResult(null);
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await lookupProductPriceAction(trimmed);
+        setLookupResult(res);
+      } catch {
+        setLookupResult({
+          success: false,
+          code: 'DATABASE_ERROR',
+          error: 'Unable to query product price at this time.',
+        });
+      }
+    });
+  }, []);
+
+  // Debounced lookup on typing (100ms)
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -37,149 +42,133 @@ export default function StaffPriceCheckPage() {
     }
 
     const timer = setTimeout(() => {
-      startTransition(async () => {
-        try {
-          const res = await lookupProductPriceAction(trimmed);
-          setLookupResult(res);
-        } catch {
-          setLookupResult({
-            success: false,
-            code: "DATABASE_ERROR",
-            error: "Unable to query product price at this time.",
-          });
-        }
-      });
-    }, 120);
+      executeLookup(trimmed);
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, executeLookup]);
+
+  // Immediate lookup on Enter keypress (hardware barcode scanner carriage return)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeLookup(query);
+    }
+  };
 
   const hasQuery = query.trim().length > 0;
   const matchedProduct = hasQuery && lookupResult?.success ? lookupResult.product : null;
   const showEmptyState = hasQuery && lookupResult && !lookupResult.success;
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
-      {/* Price Check Barcode Input */}
-      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs text-center space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center">
-          <Barcode className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-text-primary">Instant Barcode & Price Checker</h3>
-          <p className="text-xs text-text-muted">
-            Scan barcode or enter SKU code for instant customer price inquiries (&lt;200ms)
-          </p>
+    <div
+      id="view-staff-pricecheck"
+      className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200"
+    >
+      {/* 1. Barcode & SKU Lookup Scanner Box (mockup/staff.html lines 226-238) */}
+      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Barcode className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-text-primary">
+                Instant Barcode &amp; Price Lookup Scanner
+              </h3>
+              <p className="text-xs text-text-muted">
+                Type SKU or scan barcode to view wholesale vs. retail breakdown, margin, and shelf location.
+              </p>
+            </div>
+          </div>
+
+          {hasQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                setLookupResult(null);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors self-start sm:self-auto cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Clear</span>
+            </button>
+          )}
         </div>
 
-        <div className="relative max-w-md mx-auto">
-          <input
-            id="priceScanInput"
-            name="priceScanInput"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Scan barcode or type SKU (e.g. YAM-NMAX-BL01)..."
-            className="w-full text-center py-3 px-4 bg-bg-input border-2 border-primary focus:ring-4 focus:ring-primary/20 rounded-xl font-mono text-base font-bold text-text-primary outline-hidden transition-all"
-            autoFocus
-          />
-          {isSearching && (
-            <div className="absolute right-3.5 top-3.5 flex items-center">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary animate-ping" />
-            </div>
-          )}
+        {/* Input Bar with Instant Button */}
+        <div className="flex gap-2.5">
+          <div className="relative flex-1">
+            <input
+              id="priceScanInput"
+              name="priceScanInput"
+              type="text"
+              value={query}
+              onChange={(e) => {
+                const val = e.target.value;
+                setQuery(val);
+                if (!val.trim()) {
+                  setLookupResult(null);
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter SKU (e.g. YAM-NMAX-BL01, HON-CLK-CVTB) or scan barcode..."
+              className="w-full py-3 px-4 bg-bg-input border-2 border-primary focus:ring-4 focus:ring-primary/20 rounded-xl font-mono text-base font-bold text-text-primary outline-hidden transition-all"
+              autoFocus
+            />
+            {isSearching && (
+              <div className="absolute right-3.5 top-3.5 flex items-center">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-ping" />
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => executeLookup(query)}
+            className="px-5 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-xs"
+          >
+            <Search className="w-4 h-4" />
+            <span>Check Price</span>
+          </button>
         </div>
       </div>
 
-      {/* Result Card */}
+      {/* 2. Result Card Container (Scenario 1, 2, 3) */}
       {matchedProduct && (
-        <div className="p-6 bg-bg-card border border-border rounded-xl shadow-xs space-y-4 animate-in fade-in duration-150">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-text-muted font-bold tracking-wider">
-                  {matchedProduct.sku}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-bg-muted text-text-secondary">
-                  {matchedProduct.category}
-                </span>
-              </div>
-              <h4 className="text-lg font-bold text-text-primary mt-1">{matchedProduct.name}</h4>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary mt-1">
-                <span className="flex items-center gap-1 font-semibold text-secondary">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {matchedProduct.location || "Floor Stock"}
-                </span>
-                {matchedProduct.model && (
-                  <span className="flex items-center gap-1 text-text-muted">
-                    <Layers className="w-3.5 h-3.5" />
-                    Fitment: {matchedProduct.model}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="shrink-0">
-              <span
-                className={`inline-block px-3 py-1 rounded-md text-xs font-extrabold ${getStockBadgeClass(
-                  matchedProduct.stock,
-                  matchedProduct.minThreshold
-                )}`}
-              >
-                {getStockStatusLabel(matchedProduct.stock, matchedProduct.minThreshold)}
-              </span>
-            </div>
-          </div>
-
-          {/* Dual-Tier + SC/PWD Pricing Matrix */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
-            <div className="p-3.5 bg-bg-base border border-border rounded-lg space-y-1">
-              <div className="flex items-center gap-1 text-[11px] text-text-muted font-bold">
-                <Tag className="w-3 h-3 text-primary" />
-                <span>Retail Price (SRP)</span>
-              </div>
-              <span className="text-xl font-black font-mono text-primary block">
-                ₱{matchedProduct.retailPrice.toFixed(2)}
-              </span>
-              <span className="text-[10px] text-text-muted">Standard Walk-in Customer</span>
-            </div>
-
-            <div className="p-3.5 bg-bg-base border border-border rounded-lg space-y-1">
-              <div className="flex items-center gap-1 text-[11px] text-text-muted font-bold">
-                <Layers className="w-3 h-3 text-secondary" />
-                <span>Wholesale (Bulk 5+)</span>
-              </div>
-              <span className="text-xl font-black font-mono text-secondary block">
-                ₱{matchedProduct.wholesalePrice.toFixed(2)}
-              </span>
-              <span className="text-[10px] text-text-muted">Fleet &amp; Partner Shops</span>
-            </div>
-
-            <div className="p-3.5 bg-bg-base border border-border rounded-lg space-y-1">
-              <div className="flex items-center gap-1 text-[11px] text-text-muted font-bold">
-                <ShieldCheck className="w-3 h-3 text-text-primary" />
-                <span>SC / PWD (20% Off)</span>
-              </div>
-              <span className="text-xl font-black font-mono text-text-primary block">
-                ₱{matchedProduct.scPwdPrice.toFixed(2)}
-              </span>
-              <span className="text-[10px] text-text-muted">Mandated RA 9994 / RA 10754</span>
-            </div>
-          </div>
+        <div className="space-y-4">
+          <PriceScanCard product={matchedProduct} />
+          {/* Interactive Margin Simulator */}
+          <MarginSimulator product={matchedProduct} />
         </div>
       )}
 
+      {/* 3. Empty State (Scenario 4) */}
       {showEmptyState && (
-        <div className="p-8 bg-bg-surface border border-border rounded-xl shadow-xs text-center space-y-2">
-          <SearchX className="w-8 h-8 text-text-muted mx-auto" />
-          <p className="text-sm font-bold text-text-primary">
-            No Part Found for SKU &quot;{query}&quot;
-          </p>
-          <p className="text-xs text-text-muted">
-            Try scanning another barcode, checking SKU spelling, or verifying parts catalog.
+        <div
+          id="priceScanResultBox"
+          className="p-8 bg-bg-surface border border-danger/30 rounded-xl shadow-xs text-center space-y-2 animate-in fade-in duration-150"
+        >
+          <div className="w-12 h-12 mx-auto rounded-full bg-danger-light text-danger flex items-center justify-center">
+            <SearchX className="w-6 h-6" />
+          </div>
+          <div className="text-base font-bold text-danger">
+            {lookupResult.error || `No item found for barcode / code: "${query}"`}
+          </div>
+          <p className="text-xs text-text-muted max-w-md mx-auto">
+            Please verify SKU formatting, scan an alternate product barcode, or select an item from the reference price schedule table below.
           </p>
         </div>
       )}
+
+      {/* 4. Base Product Price Schedule Data Table (Scenario 4 & mockup/staff.html lines 240-270) */}
+      <PriceScheduleTable
+        onSelectSku={(sku) => {
+          setQuery(sku);
+          executeLookup(sku);
+        }}
+        activeSku={matchedProduct?.sku}
+      />
     </div>
   );
 }
