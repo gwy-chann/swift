@@ -11,7 +11,7 @@ export const SecurityAuditLogSchema = z.object({
   action: z.string().min(1),
   severity: AuditLogSeveritySchema,
   terminalIp: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string()
 });
 export type SecurityAuditLog = z.infer<typeof SecurityAuditLogSchema>;
@@ -30,7 +30,7 @@ export const LogSecurityEventInputSchema = z.object({
   action: z.string().min(1, 'Action description cannot be empty'),
   severity: AuditLogSeveritySchema,
   terminalIp: z.string().optional(),
-  metadata: z.record(z.unknown()).optional().default({}),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
   userEmail: z.string().optional()
 });
 export type LogSecurityEventInput = z.infer<typeof LogSecurityEventInputSchema>;
