@@ -22,6 +22,7 @@ import {
   computeScPwdPrice,
 } from './margin-math.ts';
 import { DEFAULT_DEMO_PINS } from './constants.ts';
+import { validateTerminalTokenAction } from '../terminal/actions.ts';
 
 interface RpcErrorObject {
   message?: string;
@@ -406,9 +407,22 @@ async function invokeSupabaseClockIn(
 export async function clockInShiftAction(
   terminalId?: string,
   notes?: string,
-  profileId?: string
+  profileId?: string,
+  deviceToken?: string | null
 ): Promise<ShiftActionResult> {
   const terminal = terminalId?.trim() || 'Terminal #01';
+
+  // SIAA-82: Terminal device token binding validation
+  if (deviceToken !== undefined) {
+    const validation = await validateTerminalTokenAction(deviceToken);
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: validation.errorCode || 'UNAUTHORIZED_TERMINAL_DEVICE',
+        code: validation.errorCode || 'UNAUTHORIZED_TERMINAL_DEVICE',
+      };
+    }
+  }
 
   const supabaseResult = await invokeSupabaseClockIn(terminal, notes, profileId);
   if (supabaseResult) {
