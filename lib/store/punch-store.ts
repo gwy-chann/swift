@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import type { PunchLog } from '../types/logs.ts';
 import { mapStaffShiftRow, type DbStaffShift } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
+import { MOCK_STAFF_PROFILES } from '../mock-data/users.ts';
 import { ShiftRpcError, SHIFT_RPC_ERROR_CODES, formatDurationToHoursMinutes } from '../contracts/punch-clock-rpcs.ts';
 import {
   SWIFT_STORAGE_KEYS,
@@ -39,6 +40,7 @@ export interface StaffMemberShiftState {
   shiftId?: string;
   staffName: string;
   profileId: string;
+  role?: string;
   clockInTime?: string;
 }
 
@@ -49,6 +51,7 @@ export interface PunchStoreState {
   punchLogs: PunchLog[];
   currentStaff: string;
   currentProfileId: string;
+  currentStaffRole: string;
   shiftStatus: ShiftStateStatus;
   lastError: PunchStoreError | null;
   activeStaffCount: number;
@@ -86,6 +89,15 @@ function formatShiftDurationTimer(seconds: number): string {
   const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
   const s = String(seconds % 60).padStart(2, '0');
   return `${h}:${m}:${s}`;
+}
+
+export function resolveStaffRole(profileId?: string, explicitRole?: string): string {
+  if (explicitRole) return explicitRole.toLowerCase();
+  if (profileId) {
+    const found = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
+    if (found?.role) return found.role.toLowerCase();
+  }
+  return 'cashier';
 }
 
 export class PunchStore {
@@ -164,13 +176,14 @@ export class PunchStore {
 
       const staff = parsed.currentStaff || defaultStaff;
       const profileId = parsed.currentProfileId || defaultProfileId;
+      const staffRole = parsed.currentStaffRole || resolveStaffRole(profileId);
       const logs =
         Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
           ? parsed.punchLogs
           : initialLogs;
       const sessions =
         parsed.staffSessions && typeof parsed.staffSessions === 'object'
-          ? parsed.staffSessions
+          ? (parsed.staffSessions as unknown as Record<string, StaffMemberShiftState>)
           : {
               [profileId]: {
                 isShiftActive,
@@ -179,6 +192,7 @@ export class PunchStore {
                 shiftSeconds,
                 staffName: staff,
                 profileId,
+                role: staffRole,
               },
             };
 
@@ -189,6 +203,7 @@ export class PunchStore {
         punchLogs: logs,
         currentStaff: staff,
         currentProfileId: profileId,
+        currentStaffRole: staffRole,
         shiftStatus,
         lastError: null,
         activeStaffCount: this.calculateActiveStaffCount(logs),
@@ -223,6 +238,7 @@ export class PunchStore {
       const status: ShiftStateStatus = parsed.status;
       const profileId = parsed.profileId || defaultProfileId;
       const staffName = parsed.staffName || defaultStaff;
+      const staffRole = resolveStaffRole(profileId);
       const shiftId = parsed.shiftId || null;
       const shiftSeconds = status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed;
 
@@ -233,6 +249,7 @@ export class PunchStore {
         punchLogs: initialLogs,
         currentStaff: staffName,
         currentProfileId: profileId,
+        currentStaffRole: staffRole,
         shiftStatus: status,
         lastError: null,
         activeStaffCount: this.calculateActiveStaffCount(initialLogs),
@@ -244,6 +261,7 @@ export class PunchStore {
             shiftSeconds,
             staffName,
             profileId,
+            role: staffRole,
           },
         },
       };
@@ -257,6 +275,7 @@ export class PunchStore {
     defaultProfileId: string,
     initialLogs: PunchLog[]
   ): PunchStoreState {
+    const defaultRole = resolveStaffRole(defaultProfileId);
     return {
       isShiftActive: false,
       activeShiftId: null,
@@ -264,6 +283,7 @@ export class PunchStore {
       punchLogs: initialLogs,
       currentStaff: defaultStaff,
       currentProfileId: defaultProfileId,
+      currentStaffRole: defaultRole,
       shiftStatus: 'idle',
       lastError: null,
       activeStaffCount: this.calculateActiveStaffCount(initialLogs),
@@ -274,6 +294,7 @@ export class PunchStore {
           shiftSeconds: 0,
           staffName: defaultStaff,
           profileId: defaultProfileId,
+          role: defaultRole,
         },
       },
     };
@@ -437,18 +458,27 @@ export class PunchStore {
     }
   };
 
-  public switchStaff = (profile: { id: string; name: string }): void => {
+  public switchStaff = (profile: { id: string; name: string; role?: string }): void => {
+    const role = resolveStaffRole(profile.id, profile.role);
     const existing = this.state.staffSessions[profile.id];
     if (existing) {
       this.state = {
         ...this.state,
         currentStaff: profile.name,
         currentProfileId: profile.id,
+        currentStaffRole: role,
         isShiftActive: existing.isShiftActive,
         activeShiftId: existing.activeShiftId || null,
         shiftStatus: existing.shiftStatus,
         shiftSeconds: existing.shiftSeconds,
         lastError: null,
+        staffSessions: {
+          ...this.state.staffSessions,
+          [profile.id]: {
+            ...existing,
+            role,
+          },
+        },
       };
     } else {
       const newSession: StaffMemberShiftState = {
@@ -458,11 +488,13 @@ export class PunchStore {
         shiftSeconds: 0,
         staffName: profile.name,
         profileId: profile.id,
+        role,
       };
       this.state = {
         ...this.state,
         currentStaff: profile.name,
         currentProfileId: profile.id,
+        currentStaffRole: role,
         isShiftActive: false,
         activeShiftId: null,
         shiftStatus: 'idle',
@@ -537,6 +569,7 @@ export class PunchStore {
         lastSavedAt: Date.now(),
         currentStaff: this.state.currentStaff,
         currentProfileId: this.state.currentProfileId,
+        currentStaffRole: this.state.currentStaffRole,
         isShiftActive: this.state.isShiftActive,
         activeShiftId,
         shiftStatus: this.state.shiftStatus,
@@ -552,7 +585,7 @@ export class PunchStore {
             }
           : null,
         punchLogs: this.state.punchLogs,
-        staffSessions: this.state.staffSessions,
+        staffSessions: this.state.staffSessions as unknown as Record<string, import('../contracts/offline-shift-sync.ts').StoredStaffSessionItem>,
       };
 
       storage.setItem(SWIFT_STORAGE_KEYS.SHIFT_STATE, JSON.stringify(storedState));
@@ -566,13 +599,14 @@ export class PunchStore {
     const delta = this.computeActiveShiftDelta(parsed.activeShift, now);
     const profileId = parsed.currentProfileId || this.state.currentProfileId;
     const staffName = parsed.currentStaff || this.state.currentStaff;
+    const currentStaffRole = parsed.currentStaffRole || resolveStaffRole(profileId);
 
     const isShiftActive = parsed.activeShift ? delta.isShiftActive : Boolean(parsed.isShiftActive);
     const shiftStatus = parsed.activeShift ? delta.shiftStatus : parsed.shiftStatus || 'idle';
     const shiftSeconds = parsed.activeShift ? delta.shiftSeconds : parsed.shiftSeconds || 0;
     const activeShiftId = parsed.activeShift ? delta.activeShiftId : parsed.activeShiftId || null;
 
-    const updatedSessions = { ...this.state.staffSessions, ...(parsed.staffSessions || {}) };
+    const updatedSessions = { ...this.state.staffSessions, ...(parsed.staffSessions as unknown as Record<string, StaffMemberShiftState> || {}) };
     if (isShiftActive) {
       updatedSessions[profileId] = {
         ...(updatedSessions[profileId] || {}),
@@ -582,6 +616,7 @@ export class PunchStore {
         shiftSeconds,
         staffName,
         profileId,
+        role: currentStaffRole,
       };
     }
 
@@ -598,6 +633,7 @@ export class PunchStore {
       shiftSeconds,
       currentStaff: staffName,
       currentProfileId: profileId,
+      currentStaffRole,
       punchLogs: logs,
       activeStaffCount: this.calculateActiveStaffCount(logs),
       staffSessions: updatedSessions,
@@ -619,6 +655,7 @@ export class PunchStore {
     const status: ShiftStateStatus = parsed.status;
     const profileId = parsed.profileId || this.state.currentProfileId;
     const staffName = parsed.staffName || this.state.currentStaff;
+    const staffRole = resolveStaffRole(profileId);
     const shiftId = parsed.shiftId || this.state.activeShiftId;
 
     const updatedSessions = { ...this.state.staffSessions };
@@ -629,6 +666,7 @@ export class PunchStore {
       shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
       staffName,
       profileId,
+      role: staffRole,
     };
 
     this.state = {
@@ -639,6 +677,7 @@ export class PunchStore {
       shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
       currentStaff: staffName,
       currentProfileId: profileId,
+      currentStaffRole: staffRole,
       staffSessions: updatedSessions,
     };
     this.notify();

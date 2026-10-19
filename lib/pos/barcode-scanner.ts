@@ -152,7 +152,7 @@ export type PosHotkeyEvaluationResult =
       action: "CHECKOUT_PAY";
       preventDefault: true;
       canExecute: false;
-      reason: "CART_EMPTY" | "MODAL_ACTIVE" | "SHIFT_INACTIVE";
+      reason: "CART_EMPTY" | "MODAL_ACTIVE" | "SHIFT_INACTIVE" | "UNAUTHORIZED_ROLE";
       message?: string;
     }
   | {
@@ -167,7 +167,7 @@ export type PosHotkeyEvaluationResult =
     };
 
 /**
- * Pure evaluator for physical keyboard hotkeys (F12, Escape) on the Fast-Lane POS interface.
+ * Pure evaluator for physical keyboard hotkeys (F12, F9, Escape) on the Fast-Lane POS interface.
  */
 export function evaluatePosHotkey(
   key: string,
@@ -175,9 +175,10 @@ export function evaluatePosHotkey(
     cartItemCount: number;
     isModalOpen: boolean;
     isShiftActive?: boolean;
+    userRole?: string;
   }
 ): PosHotkeyEvaluationResult {
-  if (key === "F12") {
+  if (key === "F12" || key === "F9") {
     if (options.isModalOpen) {
       return {
         action: "CHECKOUT_PAY",
@@ -203,6 +204,18 @@ export function evaluatePosHotkey(
         reason: "SHIFT_INACTIVE",
         message: "Active Shift Required: You must clock in / time in before processing customer orders."
       };
+    }
+    if (options.userRole !== undefined) {
+      const normalizedRole = options.userRole.toLowerCase();
+      if (normalizedRole !== "cashier" && normalizedRole !== "admin") {
+        return {
+          action: "CHECKOUT_PAY",
+          preventDefault: true,
+          canExecute: false,
+          reason: "UNAUTHORIZED_ROLE",
+          message: "Access Restricted: Only active Cashiers or Store Managers can process sales and accept payments."
+        };
+      }
     }
     return {
       action: "CHECKOUT_PAY",
