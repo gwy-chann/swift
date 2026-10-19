@@ -249,6 +249,116 @@ export class PunchStore {
     return this.state.staffSessions[profileId];
   };
 
+  private persistActiveShiftToStorage(data: {
+    shiftId: string;
+    staffName: string;
+    profileId: string;
+    clockIn: string;
+    status: string;
+    durationSeconds?: number;
+  }): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      if (data.status === 'completed' || data.status === 'idle') {
+        window.localStorage.removeItem('swift_active_shift');
+      } else {
+        window.localStorage.setItem('swift_active_shift', JSON.stringify(data));
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  private clearActiveShiftFromStorage(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      window.localStorage.removeItem('swift_active_shift');
+    } catch {
+      // Ignore
+    }
+  }
+
+  public rehydrateFromStorage = (): void => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      const stored = window.localStorage.getItem('swift_active_shift');
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      if (parsed && (parsed.status === 'on_shift' || parsed.status === 'break') && parsed.clockIn) {
+        const now = Date.now();
+        const clockInMs = new Date(parsed.clockIn).getTime();
+        const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+        const status: ShiftStateStatus = parsed.status;
+        const profileId = parsed.profileId || this.state.currentProfileId;
+        const staffName = parsed.staffName || this.state.currentStaff;
+        const shiftId = parsed.shiftId || this.state.activeShiftId;
+
+        const updatedSessions = { ...this.state.staffSessions };
+        updatedSessions[profileId] = {
+          isShiftActive: true,
+          activeShiftId: shiftId,
+          shiftStatus: status,
+          shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
+          staffName,
+          profileId,
+        };
+
+        this.state = {
+          ...this.state,
+          isShiftActive: true,
+          activeShiftId: shiftId,
+          shiftStatus: status,
+          shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
+          currentStaff: staffName,
+          currentProfileId: profileId,
+          staffSessions: updatedSessions,
+        };
+        this.notify();
+      }
+    } catch (err) {
+      console.warn('Failed to rehydrate active shift from storage:', err);
+    }
+  };
+
+  public setActiveShiftId = (shiftId: string, profileId?: string): void => {
+    const targetProfileId = profileId || this.state.currentProfileId;
+    const session = this.state.staffSessions[targetProfileId];
+    const updatedSessions = {
+      ...this.state.staffSessions,
+      [targetProfileId]: session
+        ? { ...session, activeShiftId: shiftId, shiftId }
+        : {
+            isShiftActive: this.state.isShiftActive,
+            activeShiftId: shiftId,
+            shiftStatus: this.state.shiftStatus,
+            shiftSeconds: this.state.shiftSeconds,
+            staffName: this.state.currentStaff,
+            profileId: targetProfileId,
+          },
+    };
+
+    this.state = {
+      ...this.state,
+      activeShiftId: targetProfileId === this.state.currentProfileId ? shiftId : this.state.activeShiftId,
+      staffSessions: updatedSessions,
+    };
+
+    if (this.state.isShiftActive && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const stored = window.localStorage.getItem('swift_active_shift');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.shiftId = shiftId;
+          window.localStorage.setItem('swift_active_shift', JSON.stringify(parsed));
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    this.notify();
+  };
+
   public clockIn = (
     staff?: string,
     terminalId: string = 'Terminal #01',
@@ -307,6 +417,15 @@ export class PunchStore {
     };
 
     const isCurrent = targetProfileId === this.state.currentProfileId;
+
+    this.persistActiveShiftToStorage({
+      shiftId,
+      staffName: targetStaff,
+      profileId: targetProfileId,
+      clockIn: now.toISOString(),
+      status: 'on_shift',
+      durationSeconds: 0,
+    });
 
     this.state = {
       ...this.state,
@@ -381,6 +500,17 @@ export class PunchStore {
       ...currentSession,
       shiftStatus: nextStatus,
     };
+
+    if (targetId) {
+      this.persistActiveShiftToStorage({
+        shiftId: targetId,
+        staffName: currentSession.staffName,
+        profileId: targetProfileId,
+        clockIn: new Date().toISOString(),
+        status: nextStatus,
+        durationSeconds: currentSession.shiftSeconds,
+      });
+    }
 
     const isCurrent = targetProfileId === this.state.currentProfileId;
 
@@ -475,6 +605,8 @@ export class PunchStore {
       shiftStatus: 'completed',
     };
 
+    this.clearActiveShiftFromStorage();
+
     const isCurrent = targetProfileId === this.state.currentProfileId;
 
     this.state = {
@@ -521,7 +653,8 @@ export class PunchStore {
   public rehydrateShift = (
     activeShift: DbStaffShift | null,
     recentLogs?: PunchLog[],
-    nowTimestamp?: number
+    nowTimestamp?: number,
+    profileId?: string
   ): void => {
     const now = nowTimestamp ?? Date.now();
     let isShiftActive = this.state.isShiftActive;
@@ -529,6 +662,7 @@ export class PunchStore {
     let shiftStatus: ShiftStateStatus = this.state.shiftStatus;
     let shiftSeconds = this.state.shiftSeconds;
     let currentStaff = this.state.currentStaff;
+    const targetProfileId = activeShift?.profile_id || profileId || this.state.currentProfileId;
 
     if (activeShift) {
       currentStaff = activeShift.staff_name;
@@ -550,25 +684,55 @@ export class PunchStore {
         shiftStatus = 'completed';
         shiftSeconds = activeShift.duration_seconds ?? 0;
       }
-    } else if (!this.state.isShiftActive) {
-      // Remote returned activeShift === null and local shift is inactive
-      isShiftActive = false;
-      activeShiftId = null;
-      shiftStatus = 'idle';
-      shiftSeconds = 0;
+
+      this.persistActiveShiftToStorage({
+        shiftId: activeShift.id,
+        staffName: activeShift.staff_name,
+        profileId: targetProfileId,
+        clockIn: activeShift.clock_in,
+        status: activeShift.status,
+        durationSeconds: activeShift.duration_seconds ?? elapsed,
+      });
+    } else {
+      // Non-destructive guard:
+      // If we already have a locally active shift, do NOT wipe to idle!
+      if (!this.state.isShiftActive) {
+        isShiftActive = false;
+        activeShiftId = null;
+        shiftStatus = 'idle';
+        shiftSeconds = 0;
+      }
     }
 
     const mergedLogs = this.mergeRecentLogs(this.state.punchLogs, recentLogs);
 
+    const updatedSessions = { ...this.state.staffSessions };
+    const currentSession = updatedSessions[targetProfileId] || {
+      staffName: currentStaff,
+      profileId: targetProfileId,
+    };
+
+    updatedSessions[targetProfileId] = {
+      ...currentSession,
+      isShiftActive,
+      activeShiftId: isShiftActive ? activeShiftId : null,
+      shiftStatus,
+      shiftSeconds,
+      staffName: currentStaff,
+      profileId: targetProfileId,
+    };
+
     this.state = {
       ...this.state,
       isShiftActive,
-      activeShiftId,
+      activeShiftId: isShiftActive ? activeShiftId : null,
       shiftStatus,
       shiftSeconds,
       currentStaff,
+      currentProfileId: targetProfileId,
       punchLogs: mergedLogs,
       activeStaffCount: this.calculateActiveStaffCount(mergedLogs),
+      staffSessions: updatedSessions,
       lastError: null,
     };
     this.notify();
@@ -669,6 +833,8 @@ export function usePunchStore(): PunchStoreState & {
   resetTimer: typeof punchStore.resetTimer;
   clearError: typeof punchStore.clearError;
   rehydrateShift: typeof punchStore.rehydrateShift;
+  rehydrateFromStorage: typeof punchStore.rehydrateFromStorage;
+  setActiveShiftId: typeof punchStore.setActiveShiftId;
   handleRealtimeShiftInsert: typeof punchStore.handleRealtimeShiftInsert;
   handleRealtimeShiftUpdate: typeof punchStore.handleRealtimeShiftUpdate;
   getActiveStaffCount: typeof punchStore.getActiveStaffCount;
@@ -691,6 +857,8 @@ export function usePunchStore(): PunchStoreState & {
     resetTimer: punchStore.resetTimer,
     clearError: punchStore.clearError,
     rehydrateShift: punchStore.rehydrateShift,
+    rehydrateFromStorage: punchStore.rehydrateFromStorage,
+    setActiveShiftId: punchStore.setActiveShiftId,
     handleRealtimeShiftInsert: punchStore.handleRealtimeShiftInsert,
     handleRealtimeShiftUpdate: punchStore.handleRealtimeShiftUpdate,
     getActiveStaffCount: punchStore.getActiveStaffCount,

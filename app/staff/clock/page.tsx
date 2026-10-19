@@ -8,19 +8,23 @@ import { useStaffRealtimeShifts } from "@/lib/hooks/use-staff-realtime-shifts";
 import { getStaffAttendanceHistoryAction } from "@/lib/staff/actions";
 
 export default function StaffClockPage() {
-  const { punchLogs, rehydrateShift } = usePunchStore();
+  const { punchLogs, rehydrateShift, rehydrateFromStorage, currentProfileId } = usePunchStore();
 
   // SIAA-63: CDC Realtime Synchronization across all shop floor terminals
   useStaffRealtimeShifts();
 
   // Initial attendance timesheet history hydration
   useEffect(() => {
+    // 1. Rehydrate active shift immediately from client storage cache if available
+    rehydrateFromStorage();
+
+    // 2. Authoritative query for DB active shift and timesheet history
     let isMounted = true;
-    getStaffAttendanceHistoryAction()
+    getStaffAttendanceHistoryAction(20, currentProfileId)
       .then((res) => {
         if (!isMounted) return;
         if (res.success) {
-          rehydrateShift(res.activeShift, res.logs);
+          rehydrateShift(res.activeShift, res.logs, undefined, currentProfileId);
         }
       })
       .catch((err) => {
@@ -30,7 +34,7 @@ export default function StaffClockPage() {
     return () => {
       isMounted = false;
     };
-  }, [rehydrateShift]);
+  }, [rehydrateShift, rehydrateFromStorage, currentProfileId]);
 
   return (
     <section

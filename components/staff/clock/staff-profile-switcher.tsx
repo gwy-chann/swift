@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, UserCheck, ChevronDown, CheckCircle2, ShieldCheck, Clock } from "lucide-react";
+import { Users, ChevronDown, CheckCircle2, ShieldCheck, Clock } from "lucide-react";
 import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { StaffPinModal } from "./staff-pin-modal";
