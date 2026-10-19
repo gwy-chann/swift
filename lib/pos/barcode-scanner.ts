@@ -152,7 +152,7 @@ export type PosHotkeyEvaluationResult =
       action: "CHECKOUT_PAY";
       preventDefault: true;
       canExecute: false;
-      reason: "CART_EMPTY" | "MODAL_ACTIVE";
+      reason: "CART_EMPTY" | "MODAL_ACTIVE" | "SHIFT_INACTIVE";
       message?: string;
     }
   | {
@@ -174,6 +174,7 @@ export function evaluatePosHotkey(
   options: {
     cartItemCount: number;
     isModalOpen: boolean;
+    isShiftActive?: boolean;
   }
 ): PosHotkeyEvaluationResult {
   if (key === "F12") {
@@ -192,6 +193,15 @@ export function evaluatePosHotkey(
         canExecute: false,
         reason: "CART_EMPTY",
         message: "Cannot checkout: Cart is empty."
+      };
+    }
+    if (options.isShiftActive === false) {
+      return {
+        action: "CHECKOUT_PAY",
+        preventDefault: true,
+        canExecute: false,
+        reason: "SHIFT_INACTIVE",
+        message: "Active Shift Required: You must clock in / time in before processing customer orders."
       };
     }
     return {
