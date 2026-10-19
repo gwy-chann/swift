@@ -106,4 +106,21 @@ export interface StaffShiftSession {
   notes?: string | null;
 }
 
+export interface StaffKioskProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'cashier' | 'mechanic' | 'inventory_clerk' | 'staff';
+  roleDisplay: string;
+  avatarInitials: string;
+  pin?: string;
+}
+
+export interface VerifyStaffPinResult {
+  success: boolean;
+  profile?: StaffKioskProfile;
+  code?: 'INVALID_PIN' | 'PROFILE_NOT_FOUND' | 'DATABASE_ERROR' | 'UNAUTHORIZED';
+  error?: string;
+}
+
 
