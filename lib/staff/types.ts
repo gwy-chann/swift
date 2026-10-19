@@ -36,6 +36,8 @@ export interface StaffShiftState {
   isOnShift: boolean;
 }
 
+export type ShiftStatus = 'on_shift' | 'break' | 'completed';
+
 export interface ShiftActionResult {
   success: boolean;
   shiftId?: string;
@@ -44,7 +46,7 @@ export interface ShiftActionResult {
   clockIn?: string;
   clockOut?: string;
   durationFormatted?: string;
-  status?: 'on_shift' | 'break' | 'completed';
+  status?: ShiftStatus;
   error?: string;
   code?: string;
 }

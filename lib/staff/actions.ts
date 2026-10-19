@@ -11,21 +11,14 @@ import type {
   ProductPriceCheckResult,
   AdminElevationResult,
   VerifyStaffPinResult,
+  ShiftStatus,
 } from './types.ts';
 import {
   computeGrossMarkupPercent,
   computeWholesaleMarkupPercent,
   computeScPwdPrice,
 } from './margin-math.ts';
-
-export const DEFAULT_DEMO_PINS: Record<string, string> = {
-  '00000000-0000-0000-0000-000000000002': '1234', // Mike Morales (Cashier)
-  '00000000-0000-0000-0000-000000000003': '2222', // Dante Reyes (Mechanic)
-  '00000000-0000-0000-0000-000000000004': '3333', // Rico Santos (Inventory Clerk)
-  '00000000-0000-0000-0000-000000000001': '8888', // Carlos Rodriguez (Admin)
-};
-
-export type ShiftStatus = 'on_shift' | 'break' | 'completed';
+import { DEFAULT_DEMO_PINS } from './constants.ts';
 
 interface RpcErrorObject {
   message?: string;
