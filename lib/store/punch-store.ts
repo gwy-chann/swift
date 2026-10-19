@@ -5,6 +5,8 @@ import type { PunchLog } from '../types/logs.ts';
 import { mapStaffShiftRow, type DbStaffShift } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
 import { MOCK_STAFF_PROFILES } from '../mock-data/users.ts';
+import type { StaffPermissions } from '../types/auth.ts';
+import { DEFAULT_ROLE_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../types/auth.ts';
 import { ShiftRpcError, SHIFT_RPC_ERROR_CODES, formatDurationToHoursMinutes } from '../contracts/punch-clock-rpcs.ts';
 import {
   SWIFT_STORAGE_KEYS,
@@ -41,6 +43,7 @@ export interface StaffMemberShiftState {
   staffName: string;
   profileId: string;
   role?: string;
+  permissions?: StaffPermissions;
   clockInTime?: string;
 }
 
@@ -52,6 +55,7 @@ export interface PunchStoreState {
   currentStaff: string;
   currentProfileId: string;
   currentStaffRole: string;
+  currentPermissions: StaffPermissions;
   shiftStatus: ShiftStateStatus;
   lastError: PunchStoreError | null;
   activeStaffCount: number;
@@ -98,6 +102,24 @@ export function resolveStaffRole(profileId?: string, explicitRole?: string): str
     if (found?.role) return found.role.toLowerCase();
   }
   return 'cashier';
+}
+
+export function resolveStaffPermissions(
+  profileId?: string,
+  explicitPermissions?: StaffPermissions,
+  role?: string
+): StaffPermissions {
+  if (explicitPermissions) {
+    return { ...DEFAULT_STAFF_PERMISSIONS, ...explicitPermissions };
+  }
+  if (profileId) {
+    const found = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
+    if (found?.permissions) {
+      return { ...DEFAULT_STAFF_PERMISSIONS, ...found.permissions };
+    }
+  }
+  const resolvedRole = (role || 'cashier').toLowerCase() as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+  return DEFAULT_ROLE_PERMISSIONS[resolvedRole] || DEFAULT_STAFF_PERMISSIONS;
 }
 
 export class PunchStore {
@@ -177,6 +199,10 @@ export class PunchStore {
       const staff = parsed.currentStaff || defaultStaff;
       const profileId = parsed.currentProfileId || defaultProfileId;
       const staffRole = parsed.currentStaffRole || resolveStaffRole(profileId);
+      const storedPerms = (
+        parsed as StoredStaffShiftState & { currentPermissions?: StaffPermissions }
+      ).currentPermissions;
+      const staffPermissions = resolveStaffPermissions(profileId, storedPerms, staffRole);
       const logs =
         Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
           ? parsed.punchLogs
@@ -193,6 +219,7 @@ export class PunchStore {
                 staffName: staff,
                 profileId,
                 role: staffRole,
+                permissions: staffPermissions,
               },
             };
 
@@ -204,6 +231,7 @@ export class PunchStore {
         currentStaff: staff,
         currentProfileId: profileId,
         currentStaffRole: staffRole,
+        currentPermissions: staffPermissions,
         shiftStatus,
         lastError: null,
         activeStaffCount: this.calculateActiveStaffCount(logs),
@@ -239,6 +267,7 @@ export class PunchStore {
       const profileId = parsed.profileId || defaultProfileId;
       const staffName = parsed.staffName || defaultStaff;
       const staffRole = resolveStaffRole(profileId);
+      const staffPermissions = resolveStaffPermissions(profileId, undefined, staffRole);
       const shiftId = parsed.shiftId || null;
       const shiftSeconds = status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed;
 
@@ -250,6 +279,7 @@ export class PunchStore {
         currentStaff: staffName,
         currentProfileId: profileId,
         currentStaffRole: staffRole,
+        currentPermissions: staffPermissions,
         shiftStatus: status,
         lastError: null,
         activeStaffCount: this.calculateActiveStaffCount(initialLogs),
@@ -262,6 +292,7 @@ export class PunchStore {
             staffName,
             profileId,
             role: staffRole,
+            permissions: staffPermissions,
           },
         },
       };
@@ -276,6 +307,7 @@ export class PunchStore {
     initialLogs: PunchLog[]
   ): PunchStoreState {
     const defaultRole = resolveStaffRole(defaultProfileId);
+    const defaultPermissions = resolveStaffPermissions(defaultProfileId, undefined, defaultRole);
     return {
       isShiftActive: false,
       activeShiftId: null,
@@ -284,6 +316,7 @@ export class PunchStore {
       currentStaff: defaultStaff,
       currentProfileId: defaultProfileId,
       currentStaffRole: defaultRole,
+      currentPermissions: defaultPermissions,
       shiftStatus: 'idle',
       lastError: null,
       activeStaffCount: this.calculateActiveStaffCount(initialLogs),
@@ -295,6 +328,7 @@ export class PunchStore {
           staffName: defaultStaff,
           profileId: defaultProfileId,
           role: defaultRole,
+          permissions: defaultPermissions,
         },
       },
     };
@@ -458,8 +492,14 @@ export class PunchStore {
     }
   };
 
-  public switchStaff = (profile: { id: string; name: string; role?: string }): void => {
+  public switchStaff = (profile: {
+    id: string;
+    name: string;
+    role?: string;
+    permissions?: StaffPermissions;
+  }): void => {
     const role = resolveStaffRole(profile.id, profile.role);
+    const permissions = resolveStaffPermissions(profile.id, profile.permissions, role);
     const existing = this.state.staffSessions[profile.id];
     if (existing) {
       this.state = {
@@ -467,6 +507,7 @@ export class PunchStore {
         currentStaff: profile.name,
         currentProfileId: profile.id,
         currentStaffRole: role,
+        currentPermissions: permissions,
         isShiftActive: existing.isShiftActive,
         activeShiftId: existing.activeShiftId || null,
         shiftStatus: existing.shiftStatus,
@@ -477,6 +518,7 @@ export class PunchStore {
           [profile.id]: {
             ...existing,
             role,
+            permissions,
           },
         },
       };
@@ -489,12 +531,14 @@ export class PunchStore {
         staffName: profile.name,
         profileId: profile.id,
         role,
+        permissions,
       };
       this.state = {
         ...this.state,
         currentStaff: profile.name,
         currentProfileId: profile.id,
         currentStaffRole: role,
+        currentPermissions: permissions,
         isShiftActive: false,
         activeShiftId: null,
         shiftStatus: 'idle',
@@ -506,6 +550,30 @@ export class PunchStore {
         },
       };
     }
+    this.persistFullStateToStorage();
+    this.notify();
+  };
+
+  public updateStaffPermissions = (profileId: string, permissions: StaffPermissions): void => {
+    const isCurrent = profileId === this.state.currentProfileId;
+    const existing = this.state.staffSessions[profileId];
+    const updatedSessions = {
+      ...this.state.staffSessions,
+      ...(existing
+        ? {
+            [profileId]: {
+              ...existing,
+              permissions,
+            },
+          }
+        : {}),
+    };
+
+    this.state = {
+      ...this.state,
+      ...(isCurrent ? { currentPermissions: permissions } : {}),
+      staffSessions: updatedSessions,
+    };
     this.persistFullStateToStorage();
     this.notify();
   };
@@ -1411,6 +1479,7 @@ export function usePunchStore(): PunchStoreState & {
   dequeueOfflinePunch: typeof punchStore.dequeueOfflinePunch;
   clearOfflineQueue: typeof punchStore.clearOfflineQueue;
   syncOfflineQueue: typeof punchStore.syncOfflineQueue;
+  updateStaffPermissions: typeof punchStore.updateStaffPermissions;
 } {
   const state = useSyncExternalStore(
     punchStore.subscribe,
@@ -1434,6 +1503,7 @@ export function usePunchStore(): PunchStoreState & {
     handleRealtimeShiftUpdate: punchStore.handleRealtimeShiftUpdate,
     getActiveStaffCount: punchStore.getActiveStaffCount,
     switchStaff: punchStore.switchStaff,
+    updateStaffPermissions: punchStore.updateStaffPermissions,
     getStaffSession: punchStore.getStaffSession,
     getOfflineQueue: punchStore.getOfflineQueue,
     enqueueOfflinePunch: punchStore.enqueueOfflinePunch,

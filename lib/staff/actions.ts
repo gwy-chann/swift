@@ -11,8 +11,11 @@ import type {
   ProductPriceCheckResult,
   AdminElevationResult,
   VerifyStaffPinResult,
+  FetchStaffShiftResult,
   ShiftStatus,
 } from './types.ts';
+import type { StaffPermissions } from '../types/auth.ts';
+import { DEFAULT_ROLE_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../types/auth.ts';
 import {
   computeGrossMarkupPercent,
   computeWholesaleMarkupPercent,
@@ -155,57 +158,62 @@ function formatAvatarInitials(fullName?: string): string {
  * Validates a 4-digit PIN for terminal kiosk authentication against public.profiles
  * (or authoritative MOCK_STAFF_PROFILES / DEFAULT_DEMO_PINS in offline mode).
  */
-export async function verifyStaffPinAction(
+async function verifyStaffPinFromSupabase(
   profileId: string,
-  pin: string
-): Promise<VerifyStaffPinResult> {
-  const trimmedPin = (pin || '').trim();
-  if (!/^\d{4}$/.test(trimmedPin)) {
-    return {
-      success: false,
-      code: 'INVALID_PIN',
-      error: 'PIN must be exactly 4 numeric digits.',
-    };
+  trimmedPin: string
+): Promise<VerifyStaffPinResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
   }
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    try {
-      const { createClient } = await import('../supabase/server.ts');
-      const supabase = await createClient();
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, role, pin_code')
-        .eq('id', profileId)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role, pin_code, permissions')
+      .eq('id', profileId)
+      .maybeSingle();
 
-      if (!error && data) {
-        const expectedPin = data.pin_code || DEFAULT_DEMO_PINS[profileId] || '1234';
-        if (expectedPin === trimmedPin) {
-          return {
-            success: true,
-            profile: {
-              id: data.id,
-              name: data.full_name || 'Staff Member',
-              email: data.email,
-              role: data.role,
-              roleDisplay: formatRoleDisplay(data.role),
-              avatarInitials: formatAvatarInitials(data.full_name),
-            },
-          };
-        }
+    if (!error && data) {
+      const expectedPin = data.pin_code || DEFAULT_DEMO_PINS[profileId] || '1234';
+      if (expectedPin === trimmedPin) {
+        const roleKey = (data.role || 'cashier') as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        const resolvedPermissions: StaffPermissions = {
+          ...(DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS),
+          ...(data.permissions && typeof data.permissions === 'object' ? data.permissions : {}),
+        };
+
         return {
-          success: false,
-          code: 'INVALID_PIN',
-          error: 'Invalid employee PIN. Please try again.',
+          success: true,
+          profile: {
+            id: data.id,
+            name: data.full_name || 'Staff Member',
+            email: data.email,
+            role: data.role,
+            roleDisplay: formatRoleDisplay(data.role),
+            avatarInitials: formatAvatarInitials(data.full_name),
+            permissions: resolvedPermissions,
+          },
         };
       }
-    } catch (err) {
-      console.warn('[verifyStaffPinAction] Supabase error, using fallback:', err);
+      return {
+        success: false,
+        code: 'INVALID_PIN',
+        error: 'Invalid employee PIN. Please try again.',
+      };
     }
+  } catch (err) {
+    console.warn('[verifyStaffPinAction] Supabase error, using fallback:', err);
   }
+  return null;
+}
 
-  // Offline / Mock fallback
+function verifyStaffPinOfflineFallback(
+  profileId: string,
+  trimmedPin: string
+): VerifyStaffPinResult {
   const mockProfile = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
   if (!mockProfile) {
     return {
@@ -233,6 +241,106 @@ export async function verifyStaffPinAction(
       role: mockProfile.role,
       roleDisplay: mockProfile.roleDisplay,
       avatarInitials: formatAvatarInitials(mockProfile.name),
+      permissions: { ...mockProfile.permissions },
+    },
+  };
+}
+
+export async function verifyStaffPinAction(
+  profileId: string,
+  pin: string
+): Promise<VerifyStaffPinResult> {
+  const trimmedPin = (pin || '').trim();
+  if (!/^\d{4}$/.test(trimmedPin)) {
+    return {
+      success: false,
+      code: 'INVALID_PIN',
+      error: 'PIN must be exactly 4 numeric digits.',
+    };
+  }
+
+  const supabaseResult = await verifyStaffPinFromSupabase(profileId, trimmedPin);
+  if (supabaseResult) {
+    return supabaseResult;
+  }
+
+  return verifyStaffPinOfflineFallback(profileId, trimmedPin);
+}
+
+/**
+ * Server Action: Fetch Staff Shift & Fresh Permissions JSONB (SIAA-86)
+ * Retrieves active shift for terminal/profile and the profile's full permissions JSONB.
+ */
+export async function fetchStaffShiftAction(
+  profileId?: string
+): Promise<FetchStaffShiftResult> {
+  const targetId = profileId || '00000000-0000-0000-0000-000000000002'; // Mike Morales default
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    try {
+      const { createClient } = await import('../supabase/server.ts');
+      const supabase = await createClient();
+
+      const [profileRes, shiftRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, full_name, email, role, permissions')
+          .eq('id', targetId)
+          .maybeSingle(),
+        supabase
+          .from('staff_shifts')
+          .select('*')
+          .eq('profile_id', targetId)
+          .in('status', ['on_shift', 'break'])
+          .order('clock_in', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (profileRes.data) {
+        const p = profileRes.data;
+        const roleKey = (p.role || 'cashier') as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        const resolvedPermissions: StaffPermissions = {
+          ...(DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS),
+          ...(p.permissions && typeof p.permissions === 'object' ? p.permissions : {}),
+        };
+
+        const activeShift = (shiftRes.data as DbStaffShift) || null;
+
+        return {
+          success: true,
+          shift: activeShift,
+          permissions: resolvedPermissions,
+          profile: {
+            id: p.id,
+            name: p.full_name || 'Staff Member',
+            email: p.email,
+            role: p.role,
+            roleDisplay: formatRoleDisplay(p.role),
+            avatarInitials: formatAvatarInitials(p.full_name),
+            permissions: resolvedPermissions,
+          },
+        };
+      }
+    } catch (err) {
+      console.warn('[fetchStaffShiftAction] Supabase query error, using fallback:', err);
+    }
+  }
+
+  // Offline / Mock Fallback
+  const mockProfile = MOCK_STAFF_PROFILES.find((p) => p.id === targetId) || MOCK_STAFF_PROFILES[1];
+  return {
+    success: true,
+    shift: null,
+    permissions: { ...mockProfile.permissions },
+    profile: {
+      id: mockProfile.id,
+      name: mockProfile.name,
+      email: mockProfile.email,
+      role: mockProfile.role,
+      roleDisplay: mockProfile.roleDisplay,
+      avatarInitials: formatAvatarInitials(mockProfile.name),
+      permissions: { ...mockProfile.permissions },
     },
   };
 }
