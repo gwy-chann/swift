@@ -4,17 +4,27 @@ import type { DbStaffShift, PunchLog } from '../types/logs.ts';
 import { mapStaffShiftRow } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/logs.ts';
 import { MOCK_PRODUCTS } from '../mock-data/products.ts';
+import { MOCK_STAFF_PROFILES } from '../mock-data/users.ts';
 import type {
   ShiftActionResult,
   AttendanceHistoryResult,
   ProductPriceCheckResult,
   AdminElevationResult,
+  StaffKioskProfile,
+  VerifyStaffPinResult,
 } from './types.ts';
 import {
   computeGrossMarkupPercent,
   computeWholesaleMarkupPercent,
   computeScPwdPrice,
 } from './margin-math.ts';
+
+export const DEFAULT_DEMO_PINS: Record<string, string> = {
+  '00000000-0000-0000-0000-000000000002': '1234', // Mike Morales (Cashier)
+  '00000000-0000-0000-0000-000000000003': '2222', // Dante Reyes (Mechanic)
+  '00000000-0000-0000-0000-000000000004': '3333', // Rico Santos (Inventory Clerk)
+  '00000000-0000-0000-0000-000000000001': '8888', // Carlos Rodriguez (Admin)
+};
 
 export type ShiftStatus = 'on_shift' | 'break' | 'completed';
 
@@ -128,13 +138,123 @@ async function triggerShiftRevalidation(): Promise<void> {
 }
 
 /**
+ * Server Action: Verify Staff PIN
+ * Validates a 4-digit PIN for terminal kiosk authentication against public.profiles
+ * (or authoritative MOCK_STAFF_PROFILES / DEFAULT_DEMO_PINS in offline mode).
+ */
+export async function verifyStaffPinAction(
+  profileId: string,
+  pin: string
+): Promise<VerifyStaffPinResult> {
+  const trimmedPin = (pin || '').trim();
+  if (!/^\d{4}$/.test(trimmedPin)) {
+    return {
+      success: false,
+      code: 'INVALID_PIN',
+      error: 'PIN must be exactly 4 numeric digits.',
+    };
+  }
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    try {
+      const { createClient } = await import('../supabase/server.ts');
+      const supabase = await createClient();
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, pin_code')
+        .eq('id', profileId)
+        .maybeSingle();
+
+      if (!error && data) {
+        const expectedPin = data.pin_code || DEFAULT_DEMO_PINS[profileId] || '1234';
+        if (expectedPin === trimmedPin) {
+          const roleDisplay =
+            data.role === 'admin'
+              ? 'Admin'
+              : data.role === 'mechanic'
+              ? 'Mechanic'
+              : data.role === 'inventory_clerk'
+              ? 'Inventory Clerk'
+              : 'Cashier / Floor Staff';
+
+          const nameParts = (data.full_name || 'Staff Member').trim().split(/\s+/);
+          const avatarInitials =
+            nameParts.length >= 2
+              ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+              : nameParts[0]?.substring(0, 2).toUpperCase() || 'ST';
+
+          return {
+            success: true,
+            profile: {
+              id: data.id,
+              name: data.full_name || 'Staff Member',
+              email: data.email,
+              role: data.role,
+              roleDisplay,
+              avatarInitials,
+            },
+          };
+        } else {
+          return {
+            success: false,
+            code: 'INVALID_PIN',
+            error: 'Invalid employee PIN. Please try again.',
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('[verifyStaffPinAction] Supabase error, using fallback:', err);
+    }
+  }
+
+  // Offline / Mock fallback
+  const mockProfile = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
+  if (!mockProfile) {
+    return {
+      success: false,
+      code: 'PROFILE_NOT_FOUND',
+      error: 'Employee profile not found.',
+    };
+  }
+
+  const expectedPin = DEFAULT_DEMO_PINS[profileId] || '1234';
+  if (trimmedPin !== expectedPin) {
+    return {
+      success: false,
+      code: 'INVALID_PIN',
+      error: 'Invalid employee PIN. Please try again.',
+    };
+  }
+
+  const nameParts = mockProfile.name.trim().split(/\s+/);
+  const avatarInitials =
+    nameParts.length >= 2
+      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : nameParts[0]?.substring(0, 2).toUpperCase() || 'ST';
+
+  return {
+    success: true,
+    profile: {
+      id: mockProfile.id,
+      name: mockProfile.name,
+      email: mockProfile.email,
+      role: mockProfile.role,
+      roleDisplay: mockProfile.roleDisplay,
+      avatarInitials,
+    },
+  };
+}
+
+/**
  * Server Action: Clock In (Start Shift)
  * Invokes Supabase RPC public.clock_in_shift, enforcing active shift uniqueness and audit logging.
  * Revalidates cache tag 'staff-shifts'.
  */
 export async function clockInShiftAction(
   terminalId?: string,
-  notes?: string
+  notes?: string,
+  profileId?: string
 ): Promise<ShiftActionResult> {
   const terminal = terminalId?.trim() || 'Terminal #01';
 
@@ -146,6 +266,7 @@ export async function clockInShiftAction(
       const { data, error } = await supabase.rpc('clock_in_shift', {
         p_terminal_id: terminal,
         p_notes: notes || null,
+        p_profile_id: profileId || null,
       });
 
       if (error) {
@@ -182,10 +303,15 @@ export async function clockInShiftAction(
   // Offline / Mock Fallback
   await triggerShiftRevalidation();
   const nowIso = new Date().toISOString();
+  let staffName = 'Mike Morales';
+  if (profileId) {
+    const matched = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
+    if (matched) staffName = matched.name;
+  }
   return {
     success: true,
     shiftId: `mock-shift-${Date.now()}`,
-    staffName: 'Mike Morales',
+    staffName,
     terminalId: terminal,
     clockIn: nowIso,
     status: 'on_shift',
@@ -199,7 +325,8 @@ export async function clockInShiftAction(
  */
 export async function clockOutShiftAction(
   shiftId: string,
-  notes?: string
+  notes?: string,
+  profileId?: string
 ): Promise<ShiftActionResult> {
   if (!shiftId) {
     return {
@@ -219,6 +346,7 @@ export async function clockOutShiftAction(
       const { data, error } = await supabase.rpc('clock_out_shift', {
         p_shift_id: shiftId,
         p_notes: notes || null,
+        p_profile_id: profileId || null,
       });
 
       if (error) {
@@ -267,7 +395,8 @@ export async function clockOutShiftAction(
  * Revalidates cache tag 'staff-shifts'.
  */
 export async function toggleShiftBreakAction(
-  shiftId: string
+  shiftId: string,
+  profileId?: string
 ): Promise<ShiftActionResult> {
   if (!shiftId) {
     return {
@@ -286,6 +415,7 @@ export async function toggleShiftBreakAction(
 
       const { data, error } = await supabase.rpc('toggle_shift_break', {
         p_shift_id: shiftId,
+        p_profile_id: profileId || null,
       });
 
       if (error) {

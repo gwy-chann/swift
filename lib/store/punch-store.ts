@@ -14,15 +14,27 @@ export interface PunchStoreError {
 
 export type ShiftStateStatus = 'on_shift' | 'break' | 'completed' | 'idle';
 
+export interface StaffMemberShiftState {
+  isShiftActive: boolean;
+  activeShiftId?: string | null;
+  shiftStatus: ShiftStateStatus;
+  shiftSeconds: number;
+  shiftId?: string;
+  staffName: string;
+  profileId: string;
+}
+
 export interface PunchStoreState {
   isShiftActive: boolean;
   activeShiftId: string | null;
   shiftSeconds: number;
   punchLogs: PunchLog[];
   currentStaff: string;
+  currentProfileId: string;
   shiftStatus: ShiftStateStatus;
   lastError: PunchStoreError | null;
   activeStaffCount: number;
+  staffSessions: Record<string, StaffMemberShiftState>;
 }
 
 function formatShiftDurationTimer(seconds: number): string {
@@ -39,15 +51,27 @@ export class PunchStore {
 
   constructor() {
     const initialLogs = [...MOCK_PUNCH_LOGS];
+    const defaultProfileId = '00000000-0000-0000-0000-000000000002'; // Mike Morales
+    const defaultStaff = 'Mike Morales';
     this.state = {
       isShiftActive: false,
       activeShiftId: null,
       shiftSeconds: 0,
       punchLogs: initialLogs,
-      currentStaff: 'Mike Morales',
+      currentStaff: defaultStaff,
+      currentProfileId: defaultProfileId,
       shiftStatus: 'idle',
       lastError: null,
       activeStaffCount: this.calculateActiveStaffCount(initialLogs),
+      staffSessions: {
+        [defaultProfileId]: {
+          isShiftActive: false,
+          shiftStatus: 'idle',
+          shiftSeconds: 0,
+          staffName: defaultStaff,
+          profileId: defaultProfileId,
+        },
+      },
     };
   }
 
@@ -160,17 +184,86 @@ export class PunchStore {
   };
 
   public tickSecond = (): void => {
-    if (!this.state.isShiftActive || this.state.shiftStatus === 'break') return;
-    this.state = {
-      ...this.state,
-      shiftSeconds: this.state.shiftSeconds + 1,
-    };
+    let sessionsChanged = false;
+    const newSessions = { ...this.state.staffSessions };
+    for (const pid in newSessions) {
+      const s = newSessions[pid];
+      if (s.isShiftActive && s.shiftStatus === 'on_shift') {
+        newSessions[pid] = { ...s, shiftSeconds: s.shiftSeconds + 1 };
+        sessionsChanged = true;
+      }
+    }
+
+    const currentSession = newSessions[this.state.currentProfileId];
+    if (sessionsChanged || (this.state.isShiftActive && this.state.shiftStatus === 'on_shift')) {
+      this.state = {
+        ...this.state,
+        shiftSeconds: currentSession ? currentSession.shiftSeconds : this.state.shiftSeconds + 1,
+        staffSessions: newSessions,
+      };
+      this.notify();
+    }
+  };
+
+  public switchStaff = (profile: { id: string; name: string }): void => {
+    const existing = this.state.staffSessions[profile.id];
+    if (existing) {
+      this.state = {
+        ...this.state,
+        currentStaff: profile.name,
+        currentProfileId: profile.id,
+        isShiftActive: existing.isShiftActive,
+        activeShiftId: existing.activeShiftId || null,
+        shiftStatus: existing.shiftStatus,
+        shiftSeconds: existing.shiftSeconds,
+        lastError: null,
+      };
+    } else {
+      const newSession: StaffMemberShiftState = {
+        isShiftActive: false,
+        activeShiftId: null,
+        shiftStatus: 'idle',
+        shiftSeconds: 0,
+        staffName: profile.name,
+        profileId: profile.id,
+      };
+      this.state = {
+        ...this.state,
+        currentStaff: profile.name,
+        currentProfileId: profile.id,
+        isShiftActive: false,
+        activeShiftId: null,
+        shiftStatus: 'idle',
+        shiftSeconds: 0,
+        lastError: null,
+        staffSessions: {
+          ...this.state.staffSessions,
+          [profile.id]: newSession,
+        },
+      };
+    }
     this.notify();
   };
 
-  public clockIn = (staff?: string, terminalId: string = 'Terminal #01'): void => {
+  public getStaffSession = (profileId: string): StaffMemberShiftState | undefined => {
+    return this.state.staffSessions[profileId];
+  };
+
+  public clockIn = (
+    staff?: string,
+    terminalId: string = 'Terminal #01',
+    profileId?: string
+  ): void => {
+    const targetProfileId = profileId || this.state.currentProfileId;
+    const targetStaff = staff ?? this.state.currentStaff;
+    const existingSession = this.state.staffSessions[targetProfileId];
+
     // Concurrency / duplicate shift guard
-    if (this.state.isShiftActive && (this.state.shiftStatus === 'on_shift' || this.state.shiftStatus === 'break')) {
+    if (
+      existingSession &&
+      existingSession.isShiftActive &&
+      (existingSession.shiftStatus === 'on_shift' || existingSession.shiftStatus === 'break')
+    ) {
       const err = this.handleShiftError(
         new ShiftRpcError(
           SHIFT_RPC_ERROR_CODES.ACTIVE_SHIFT_EXISTS,
@@ -181,7 +274,6 @@ export class PunchStore {
       throw new ShiftRpcError(err.code, err.message, 409);
     }
 
-    const staffName = staff ?? this.state.currentStaff;
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toLocaleTimeString('en-US', {
@@ -195,7 +287,7 @@ export class PunchStore {
     const newLog: PunchLog = {
       id: shiftId,
       date: dateStr,
-      staff: staffName,
+      staff: targetStaff,
       timeIn: timeStr,
       timeOut: '-- Active Shift --',
       duration: '00h 00m',
@@ -205,22 +297,46 @@ export class PunchStore {
 
     const updatedLogs = [newLog, ...this.state.punchLogs];
 
-    this.state = {
-      ...this.state,
+    const updatedSession: StaffMemberShiftState = {
       isShiftActive: true,
       activeShiftId: shiftId,
       shiftStatus: 'on_shift',
       shiftSeconds: 0,
-      currentStaff: staffName,
+      staffName: targetStaff,
+      profileId: targetProfileId,
+    };
+
+    const isCurrent = targetProfileId === this.state.currentProfileId;
+
+    this.state = {
+      ...this.state,
+      isShiftActive: isCurrent ? true : this.state.isShiftActive,
+      activeShiftId: isCurrent ? shiftId : this.state.activeShiftId,
+      shiftStatus: isCurrent ? 'on_shift' : this.state.shiftStatus,
+      shiftSeconds: isCurrent ? 0 : this.state.shiftSeconds,
+      currentStaff: isCurrent ? targetStaff : this.state.currentStaff,
       lastError: null,
       punchLogs: updatedLogs,
       activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
+      staffSessions: {
+        ...this.state.staffSessions,
+        [targetProfileId]: updatedSession,
+      },
     };
     this.notify();
   };
 
-  public toggleBreak = (): 'break' | 'on_shift' => {
-    if (!this.state.isShiftActive) {
+  public toggleBreak = (profileId?: string): 'break' | 'on_shift' => {
+    const targetProfileId = profileId || this.state.currentProfileId;
+    const currentSession = this.state.staffSessions[targetProfileId] || {
+      isShiftActive: this.state.isShiftActive,
+      shiftStatus: this.state.shiftStatus,
+      shiftSeconds: this.state.shiftSeconds,
+      staffName: this.state.currentStaff,
+      profileId: targetProfileId,
+    };
+
+    if (!currentSession.isShiftActive) {
       const err = this.handleShiftError(
         new ShiftRpcError(
           SHIFT_RPC_ERROR_CODES.SHIFT_NOT_ACTIVE,
@@ -231,8 +347,9 @@ export class PunchStore {
       throw new ShiftRpcError(err.code, err.message, 400);
     }
 
-    const nextStatus: ShiftStateStatus = this.state.shiftStatus === 'on_shift' ? 'break' : 'on_shift';
-    const targetId = this.state.activeShiftId;
+    const nextStatus: ShiftStateStatus =
+      currentSession.shiftStatus === 'on_shift' ? 'break' : 'on_shift';
+    const targetId = this.state.activeShiftId || currentSession.shiftId;
 
     let updated = false;
     const updatedLogs = this.state.punchLogs.map((log, index) => {
@@ -260,19 +377,39 @@ export class PunchStore {
       }
     }
 
+    const updatedSession: StaffMemberShiftState = {
+      ...currentSession,
+      shiftStatus: nextStatus,
+    };
+
+    const isCurrent = targetProfileId === this.state.currentProfileId;
+
     this.state = {
       ...this.state,
-      shiftStatus: nextStatus,
+      shiftStatus: isCurrent ? nextStatus : this.state.shiftStatus,
       punchLogs: updatedLogs,
       activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
       lastError: null,
+      staffSessions: {
+        ...this.state.staffSessions,
+        [targetProfileId]: updatedSession,
+      },
     };
     this.notify();
     return nextStatus;
   };
 
-  public clockOut = (staff?: string): string => {
-    if (!this.state.isShiftActive) {
+  public clockOut = (staff?: string, profileId?: string): string => {
+    const targetProfileId = profileId || this.state.currentProfileId;
+    const currentSession = this.state.staffSessions[targetProfileId] || {
+      isShiftActive: this.state.isShiftActive,
+      shiftStatus: this.state.shiftStatus,
+      shiftSeconds: this.state.shiftSeconds,
+      staffName: this.state.currentStaff,
+      profileId: targetProfileId,
+    };
+
+    if (!currentSession.isShiftActive) {
       const err = this.handleShiftError(
         new ShiftRpcError(
           SHIFT_RPC_ERROR_CODES.SHIFT_NOT_ACTIVE,
@@ -283,7 +420,7 @@ export class PunchStore {
       throw new ShiftRpcError(err.code, err.message, 400);
     }
 
-    const staffName = staff ?? this.state.currentStaff;
+    const staffName = staff ?? currentSession.staffName;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -291,8 +428,8 @@ export class PunchStore {
       second: '2-digit',
       hour12: true,
     });
-    const durationStr = formatDurationToHoursMinutes(this.state.shiftSeconds);
-    const targetId = this.state.activeShiftId;
+    const durationStr = formatDurationToHoursMinutes(currentSession.shiftSeconds);
+    const targetId = this.state.activeShiftId || currentSession.shiftId;
 
     let matched = false;
     const updatedLogs = this.state.punchLogs.map((log, index) => {
@@ -331,14 +468,27 @@ export class PunchStore {
       }
     }
 
-    this.state = {
-      ...this.state,
+    const updatedSession: StaffMemberShiftState = {
+      ...currentSession,
       isShiftActive: false,
       activeShiftId: null,
       shiftStatus: 'completed',
+    };
+
+    const isCurrent = targetProfileId === this.state.currentProfileId;
+
+    this.state = {
+      ...this.state,
+      isShiftActive: isCurrent ? false : this.state.isShiftActive,
+      activeShiftId: isCurrent ? null : this.state.activeShiftId,
+      shiftStatus: isCurrent ? 'completed' : this.state.shiftStatus,
       lastError: null,
       punchLogs: updatedLogs,
       activeStaffCount: this.calculateActiveStaffCount(updatedLogs),
+      staffSessions: {
+        ...this.state.staffSessions,
+        [targetProfileId]: updatedSession,
+      },
     };
     this.notify();
     return durationStr;
@@ -355,8 +505,16 @@ export class PunchStore {
 
   private mergeRecentLogs(current: PunchLog[], recent?: PunchLog[]): PunchLog[] {
     if (!recent || recent.length === 0) return current;
-    const existingIds = new Set(current.map((l) => l.id).filter(Boolean));
-    const newLogsToPrepend = recent.filter((log) => !log.id || !existingIds.has(log.id));
+    const seenIds = new Set(current.map((l) => l.id).filter(Boolean));
+    const newLogsToPrepend: PunchLog[] = [];
+    for (const log of recent) {
+      if (!log.id || !seenIds.has(log.id)) {
+        newLogsToPrepend.push(log);
+        if (log.id) {
+          seenIds.add(log.id);
+        }
+      }
+    }
     return [...newLogsToPrepend, ...current];
   }
 
@@ -514,6 +672,8 @@ export function usePunchStore(): PunchStoreState & {
   handleRealtimeShiftInsert: typeof punchStore.handleRealtimeShiftInsert;
   handleRealtimeShiftUpdate: typeof punchStore.handleRealtimeShiftUpdate;
   getActiveStaffCount: typeof punchStore.getActiveStaffCount;
+  switchStaff: typeof punchStore.switchStaff;
+  getStaffSession: typeof punchStore.getStaffSession;
 } {
   const state = useSyncExternalStore(
     punchStore.subscribe,
@@ -534,5 +694,7 @@ export function usePunchStore(): PunchStoreState & {
     handleRealtimeShiftInsert: punchStore.handleRealtimeShiftInsert,
     handleRealtimeShiftUpdate: punchStore.handleRealtimeShiftUpdate,
     getActiveStaffCount: punchStore.getActiveStaffCount,
+    switchStaff: punchStore.switchStaff,
+    getStaffSession: punchStore.getStaffSession,
   };
 }
