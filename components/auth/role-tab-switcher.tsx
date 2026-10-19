@@ -17,7 +17,7 @@ export function RoleTabSwitcher({
   selectedRole,
   onRoleChange,
   disabled = false,
-}: RoleTabSwitcherProps) {
+}: Readonly<RoleTabSwitcherProps>) {
   return (
     <div
       role="tablist"

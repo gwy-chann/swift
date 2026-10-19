@@ -5,10 +5,10 @@ import { Edit2, Power, Trash2, Clock, MapPin, CheckCircle, XCircle } from "lucid
 import type { LaborService } from "@/lib/types/service";
 
 interface LaborRatesTableProps {
-  services: LaborService[];
-  onEdit: (service: LaborService) => void;
-  onToggleStatus: (service: LaborService) => void;
-  onDelete: (service: LaborService) => void;
+  readonly services: readonly LaborService[];
+  readonly onEdit: (service: LaborService) => void;
+  readonly onToggleStatus: (service: LaborService) => void;
+  readonly onDelete: (service: LaborService) => void;
 }
 
 export function LaborRatesTable({
@@ -16,7 +16,7 @@ export function LaborRatesTable({
   onEdit,
   onToggleStatus,
   onDelete
-}: LaborRatesTableProps) {
+}: Readonly<LaborRatesTableProps>) {
   if (services.length === 0) {
     return (
       <div className="p-8 bg-bg-card border border-border rounded-xl text-center">
@@ -62,7 +62,7 @@ export function LaborRatesTable({
                   </td>
 
                   {/* Title & Description */}
-                  <td className="py-3.5 px-4 min-w-[200px]">
+                  <td className="py-3.5 px-4 min-w-50">
                     <div className="font-bold text-text-primary">{service.name}</div>
                     {service.description && (
                       <p className="text-[11px] text-text-muted line-clamp-1 mt-0.5">

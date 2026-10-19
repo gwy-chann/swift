@@ -100,7 +100,7 @@ export function ServiceBayStatusCard({
       : "4 Bays Active");
 
   return (
-    <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between min-h-[300px]">
+    <div className="bg-bg-card border border-border rounded-lg shadow-xs overflow-hidden flex flex-col justify-between min-h-75">
       {/* Header */}
       <div className="px-4 sm:px-5 py-3.5 border-b border-border flex items-center justify-between gap-2 bg-bg-surface">
         <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-primary">

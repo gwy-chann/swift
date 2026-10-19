@@ -292,7 +292,7 @@ export function ComparisonMatrix({
         <button
           type="button"
           onClick={() => handleMobileTabChange("oem")}
-          className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          className={`flex-1 min-h-11 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             activeMobileTab === "oem"
               ? "bg-bg-surface text-primary shadow-xs border border-primary/20"
               : "text-text-secondary hover:text-text-primary"
@@ -309,7 +309,7 @@ export function ComparisonMatrix({
         <button
           type="button"
           onClick={() => handleMobileTabChange("aftermarket")}
-          className={`flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          className={`flex-1 min-h-11 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             activeMobileTab === "aftermarket"
               ? "bg-bg-surface text-secondary shadow-xs border border-secondary/20"
               : "text-text-secondary hover:text-text-primary"

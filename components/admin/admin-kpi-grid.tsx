@@ -80,7 +80,7 @@ function getBadgeStyleClass(variant: string): string {
   return 'bg-bg-muted text-text-secondary border border-border-subtle';
 }
 
-function KpiCardInner({ kpi }: { kpi: KpiCardItem }) {
+function KpiCardInner({ kpi }: Readonly<{ kpi: KpiCardItem }>) {
   const Icon = kpi.icon;
   return (
     <>
@@ -121,7 +121,7 @@ function KpiCardInner({ kpi }: { kpi: KpiCardItem }) {
   );
 }
 
-export function AdminKpiGrid(props: AdminKpiGridProps = {}) {
+export function AdminKpiGrid(props: Readonly<AdminKpiGridProps> = {}) {
   const [internalGrossRevenue, setInternalGrossRevenue] = useState(45230.0);
   const [internalLivePulse, setInternalLivePulse] = useState(false);
   const [internalSalesIncrement, setInternalSalesIncrement] = useState<number | null>(null);

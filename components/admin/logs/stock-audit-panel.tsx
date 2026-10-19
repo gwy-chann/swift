@@ -157,7 +157,7 @@ export function StockAuditPanel({
           {/* Action Toolbar */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* SKU / Fulltext Search */}
-            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+            <div className="relative min-w-50 flex-1 sm:flex-initial">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 id="stockAuditFilterSku"

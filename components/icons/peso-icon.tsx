@@ -8,7 +8,7 @@ interface PesoIconProps extends React.SVGProps<SVGSVGElement> {
 /**
  * Standardized Philippine Peso (₱) SVG icon styled to match Lucide Icon specifications
  */
-export function PesoIcon({ className = "w-4 h-4", size, ...props }: PesoIconProps) {
+export function PesoIcon({ className = "w-4 h-4", size, ...props }: Readonly<PesoIconProps>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

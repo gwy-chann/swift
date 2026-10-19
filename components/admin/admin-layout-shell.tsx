@@ -6,10 +6,10 @@ import { AdminTopbar } from "./admin-topbar";
 import { AdminMobileDrawer } from "./admin-mobile-drawer";
 
 interface AdminLayoutShellProps {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
-export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
+export function AdminLayoutShell({ children }: Readonly<AdminLayoutShellProps>) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   return (

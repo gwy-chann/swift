@@ -58,7 +58,7 @@ export function MotorcycleSelector({
   className = "",
   title = "Select Motorcycle Make, Model & Displacement",
   subtitle = "Filter 100% verified motorcycle parts and compare OEM vs aftermarket compatibility.",
-}: MotorcycleSelectorProps) {
+}: Readonly<MotorcycleSelectorProps>) {
   // Uncontrolled state when selectedModelId is not provided
   const [uncontrolledId, setUncontrolledId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");

@@ -17,7 +17,7 @@ interface DemoCredentialsBoxProps {
 export function DemoCredentialsBox({
   onSelectDemo,
   disabled = false,
-}: DemoCredentialsBoxProps) {
+}: Readonly<DemoCredentialsBoxProps>) {
   return (
     <div className="mt-6 p-4 rounded-md bg-bg-muted border border-border text-xs">
       <div className="flex items-center gap-1.5 font-bold text-text-primary mb-3 text-xs tracking-wide">

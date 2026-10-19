@@ -30,7 +30,7 @@ const PRESET_DURATIONS = [
 export function HourlyBenchmarkCard({
   initialHourlyRate,
   onRateUpdated
-}: HourlyBenchmarkCardProps) {
+}: Readonly<HourlyBenchmarkCardProps>) {
   const [baseRate, setBaseRate] = useState<number>(initialHourlyRate);
   const [inputRate, setInputRate] = useState<string>(initialHourlyRate.toString());
   const [selectedMinutes, setSelectedMinutes] = useState<number>(60);
@@ -47,8 +47,8 @@ export function HourlyBenchmarkCard({
   const durationHours = (selectedMinutes / 60).toFixed(2);
 
   const handleSaveBaseRate = async () => {
-    const parsed = parseFloat(inputRate);
-    if (isNaN(parsed) || parsed <= 0) {
+    const parsed = Number.parseFloat(inputRate);
+    if (Number.isNaN(parsed) || parsed <= 0) {
       setSaveError("Please enter a valid rate greater than ₱0.00");
       return;
     }
@@ -82,8 +82,8 @@ export function HourlyBenchmarkCard({
 
   const handleCustomMinutesChange = (val: string) => {
     setCustomMinutes(val);
-    const parsed = parseInt(val, 10);
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = Number.parseInt(val, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
       setSelectedMinutes(parsed);
     }
   };

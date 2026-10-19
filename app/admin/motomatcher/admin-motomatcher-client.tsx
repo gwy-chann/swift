@@ -23,7 +23,7 @@ export interface AdminMotoMatcherClientProps {
 export function AdminMotoMatcherClient({
   initialModels,
   initialProducts,
-}: AdminMotoMatcherClientProps) {
+}: Readonly<AdminMotoMatcherClientProps>) {
   const [selectedModel, setSelectedModel] = useState<MotorcycleModelRecord | null>(
     initialModels.length > 0 ? initialModels[0] : null
   );

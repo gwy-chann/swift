@@ -3,9 +3,9 @@ import Link from "next/link";
 import { AdminNavItem } from "@/lib/admin/types";
 
 interface NavMenuItemProps {
-  item: AdminNavItem;
-  isActive: boolean;
-  onClick?: () => void;
+  readonly item: AdminNavItem;
+  readonly isActive: boolean;
+  readonly onClick?: () => void;
 }
 
 function getBadgeStyle(variant?: string): string {
@@ -21,7 +21,7 @@ function getBadgeStyle(variant?: string): string {
   }
 }
 
-export function NavMenuItem({ item, isActive, onClick }: NavMenuItemProps) {
+export function NavMenuItem({ item, isActive, onClick }: Readonly<NavMenuItemProps>) {
   const Icon = item.icon;
   const badgeStyle = getBadgeStyle(item.badge?.variant);
 

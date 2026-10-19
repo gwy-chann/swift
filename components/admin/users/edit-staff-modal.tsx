@@ -292,7 +292,7 @@ function PermissionCheckbox({
           checked ? "bg-primary border-primary text-text-light" : "border-border bg-bg-card"
         }`}
       >
-        {checked && <Check className="w-3 h-3 stroke-[3]" />}
+        {checked && <Check className="w-3 h-3 stroke-3" />}
       </div>
       <div>
         <div className="text-xs font-semibold text-text-primary leading-tight">{label}</div>
