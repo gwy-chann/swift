@@ -10,14 +10,17 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
     store = new PunchStore();
   });
 
-  it('initializes with active shift and idle error state', () => {
+  it('initializes with idle shift and null error state', () => {
     const state = store.getState();
-    assert.equal(state.isShiftActive, true);
-    assert.equal(state.shiftStatus, 'on_shift');
+    assert.equal(state.isShiftActive, false);
+    assert.equal(state.shiftStatus, 'idle');
     assert.equal(state.lastError, null);
   });
 
   it('intercepts clockIn when shift is already active and fires ACTIVE_SHIFT_EXISTS error', () => {
+    // Initiate first shift
+    store.clockIn('Mike Morales');
+
     const errorsCaptured: PunchStoreError[] = [];
     const unsubscribe = store.onError((err) => {
       errorsCaptured.push(err);
@@ -50,6 +53,9 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
   });
 
   it('allows clockOut to transition shift to completed and calculates duration', () => {
+    store.clockIn('Mike Morales');
+    store.tickSecond();
+
     const duration = store.clockOut('Mike Morales');
     assert.ok(duration.length > 0);
 
@@ -61,6 +67,7 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
   });
 
   it('allows clockIn after clockOut and resets active duration', () => {
+    store.clockIn('Mike Morales');
     store.clockOut('Mike Morales');
     assert.equal(store.getState().isShiftActive, false);
 
@@ -74,6 +81,8 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
   });
 
   it('supports toggleBreak back and forth between on_shift and break', () => {
+    store.clockIn('Mike Morales');
+
     const firstStatus = store.toggleBreak();
     assert.equal(firstStatus, 'break');
     assert.equal(store.getState().shiftStatus, 'break');
@@ -86,18 +95,18 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
   });
 
   it('freezes tickSecond timer progression when on break', () => {
-    const initialSeconds = store.getState().shiftSeconds;
+    store.clockIn('Mike Morales');
     store.tickSecond();
-    assert.equal(store.getState().shiftSeconds, initialSeconds + 1);
+    assert.equal(store.getState().shiftSeconds, 1);
 
     store.toggleBreak();
     store.tickSecond();
     // Seconds must not increment during break
-    assert.equal(store.getState().shiftSeconds, initialSeconds + 1);
+    assert.equal(store.getState().shiftSeconds, 1);
   });
 
   it('rejects toggleBreak and clockOut when shift is not active', () => {
-    store.clockOut('Mike Morales');
+    assert.equal(store.getState().isShiftActive, false);
 
     assert.throws(() => {
       store.toggleBreak();
@@ -109,6 +118,7 @@ describe('PunchStore Concurrency Guards & Error Handling (SIAA-61)', () => {
   });
 
   it('clears error state when clearError is called', () => {
+    store.clockIn('Mike Morales');
     try {
       store.clockIn('Mike Morales');
     } catch {

@@ -63,11 +63,12 @@ describe('STORY-5.3: Staff Shift Attendance Log History & Timesheet Tracking (SI
   describe('Scenario 2: Dynamic Append on Shift Completion', () => {
     it('updates Time-Out with exact timestamp, computes final shift duration, and transitions status to Completed', () => {
       // Start in active shift
+      store.clockIn('Mike Morales');
       const initialLogs = store.getState().punchLogs;
       assert.equal(initialLogs[0].status, 'On Shift');
       assert.equal(initialLogs[0].timeOut, '-- Active Shift --');
 
-      // Advance timer to 32340 seconds (08h 59m 00s)
+      // Advance timer
       for (let i = 0; i < 10; i++) {
         store.tickSecond();
       }
@@ -90,6 +91,7 @@ describe('STORY-5.3: Staff Shift Attendance Log History & Timesheet Tracking (SI
 
   describe('Scenario 3: Active Shift Indication in History', () => {
     it('displays "-- Active Shift --" in time-out column and green "On Shift" badge while shift is running', () => {
+      store.clockIn('Mike Morales');
       const state = store.getState();
       const activeLog = state.punchLogs.find((l) => l.status === 'On Shift');
 
@@ -99,11 +101,8 @@ describe('STORY-5.3: Staff Shift Attendance Log History & Timesheet Tracking (SI
     });
 
     it('displays "-- Active Shift --" when starting a new shift via clockIn', () => {
-      // End current shift first
-      store.clockOut('Mike Morales');
+      // Start a new shift from idle
       assert.equal(store.getState().isShiftActive, false);
-
-      // Start a new shift
       store.clockIn('Mike Morales', 'Terminal #01');
       const state = store.getState();
 
