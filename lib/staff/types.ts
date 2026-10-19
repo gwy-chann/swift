@@ -1,4 +1,5 @@
-import { ElementType } from "react";
+import type { ElementType } from "react";
+import type { DbUserRole } from "../types/auth.ts";
 
 /**
  * Staff Shop Floor Terminal Types & Schemas
@@ -19,6 +20,7 @@ export interface StaffNavItem {
   category?: string;
   badge?: StaffNavBadge;
   icon?: ElementType;
+  allowedRoles?: DbUserRole[];
 }
 
 export interface StaffUserProfile {
