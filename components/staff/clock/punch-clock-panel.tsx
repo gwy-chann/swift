@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TerminalLiveClock } from "./terminal-live-clock";
 import { StaffProfileSwitcher } from "./staff-profile-switcher";
 import { StaffPinModal } from "./staff-pin-modal";
-import { usePunchStore } from "@/lib/store/punch-store";
-import { LogIn, LogOut, Coffee, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { usePunchStore, registerOfflineSyncDispatcher } from "@/lib/store/punch-store";
+import { LogIn, LogOut, Coffee, AlertCircle, CheckCircle2, X, WifiOff } from "lucide-react";
 import { DEFAULT_STAFF_USER, DEFAULT_STAFF_SHIFT } from "@/lib/staff/navigation";
 import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
 import {
@@ -14,6 +14,7 @@ import {
   toggleShiftBreakAction,
 } from "@/lib/staff/actions";
 import type { StaffKioskProfile } from "@/lib/staff/types";
+import type { QueuedPunchAction } from "@/lib/contracts/offline-shift-sync";
 
 interface PunchClockPanelProps {
   className?: string;
@@ -72,6 +73,9 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     currentStaff,
     currentProfileId,
     setActiveShiftId,
+    enqueueOfflinePunch,
+    getOfflineQueue,
+    syncOfflineQueue,
   } = usePunchStore();
 
   const [feedback, setFeedback] = useState<{
@@ -80,6 +84,32 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
   } | null>(null);
 
   const [isClockInPinOpen, setIsClockInPinOpen] = useState(false);
+
+  // Register production RPC sync dispatcher on mount
+  useEffect(() => {
+    registerOfflineSyncDispatcher(async (action: QueuedPunchAction) => {
+      if (action.type === "clock_in") {
+        const res = await clockInShiftAction(action.terminalId, undefined, action.profileId);
+        return { success: res.success, shiftId: res.shiftId, error: res.error };
+      }
+      if (action.type === "toggle_break") {
+        const res = await toggleShiftBreakAction(action.shiftId || "", action.profileId);
+        return { success: res.success, shiftId: action.shiftId, error: res.error };
+      }
+      if (action.type === "clock_out") {
+        const res = await clockOutShiftAction(action.shiftId || "", undefined, action.profileId);
+        return { success: res.success, shiftId: action.shiftId, error: res.error };
+      }
+      return { success: false, error: "Unknown action type" };
+    });
+
+    // Opportunistically sync queue if online on mount
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      syncOfflineQueue().catch((err) => {
+        console.warn("[PunchClockPanel] Initial queue sync error:", err);
+      });
+    }
+  }, [syncOfflineQueue]);
 
   const displayStaffName = currentStaff || DEFAULT_STAFF_USER.name;
   const currentProfile =
@@ -110,16 +140,47 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     setIsClockInPinOpen(false);
     try {
       clockIn(profile.name, DEFAULT_STAFF_SHIFT.terminalId, profile.id);
-      showNotification(`Clock-In recorded successfully. Shift started for ${profile.name}!`, "success");
-      clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id)
-        .then((res) => {
-          if (res.success && res.shiftId) {
-            setActiveShiftId(res.shiftId, profile.id);
-          }
-        })
-        .catch((err) => {
-          console.warn("[PunchClockPanel] clockInShiftAction error:", err);
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+      if (isOffline) {
+        enqueueOfflinePunch({
+          type: "clock_in",
+          profileId: profile.id,
+          staffName: profile.name,
+          terminalId: DEFAULT_STAFF_SHIFT.terminalId,
         });
+        showNotification(
+          `Clock-In recorded locally (offline mode). Will sync automatically when connectivity returns.`,
+          "warning"
+        );
+      } else {
+        showNotification(
+          `Clock-In recorded successfully. Shift started for ${profile.name}!`,
+          "success"
+        );
+        clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id)
+          .then((res) => {
+            if (res.success && res.shiftId) {
+              setActiveShiftId(res.shiftId, profile.id);
+            } else if (!res.success) {
+              enqueueOfflinePunch({
+                type: "clock_in",
+                profileId: profile.id,
+                staffName: profile.name,
+                terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+              });
+            }
+          })
+          .catch((err) => {
+            console.warn("[PunchClockPanel] clockInShiftAction error, enqueuing offline punch:", err);
+            enqueueOfflinePunch({
+              type: "clock_in",
+              profileId: profile.id,
+              staffName: profile.name,
+              terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+            });
+          });
+      }
     } catch {
       showNotification("You are already clocked in for this shift!", "error");
     }
@@ -132,17 +193,40 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     }
 
     const currentShiftId = activeShiftId || "";
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
     try {
       const durationStr = clockOut(displayStaffName, currentProfileId);
-      showNotification(
-        `Clock-Out recorded. Shift ended (${durationStr}) and logged to attendance history.`,
-        "success"
-      );
-      if (currentShiftId) {
-        clockOutShiftAction(currentShiftId, undefined, currentProfileId).catch((err) => {
-          console.warn("[PunchClockPanel] clockOutShiftAction error:", err);
+
+      if (isOffline) {
+        enqueueOfflinePunch({
+          type: "clock_out",
+          profileId: currentProfileId,
+          staffName: displayStaffName,
+          terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+          shiftId: currentShiftId,
         });
+        showNotification(
+          `Clock-Out recorded locally (${durationStr}). Queued for offline sync.`,
+          "warning"
+        );
+      } else {
+        showNotification(
+          `Clock-Out recorded. Shift ended (${durationStr}) and logged to attendance history.`,
+          "success"
+        );
+        if (currentShiftId) {
+          clockOutShiftAction(currentShiftId, undefined, currentProfileId).catch((err) => {
+            console.warn("[PunchClockPanel] clockOutShiftAction error, enqueuing offline punch:", err);
+            enqueueOfflinePunch({
+              type: "clock_out",
+              profileId: currentProfileId,
+              staffName: displayStaffName,
+              terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+              shiftId: currentShiftId,
+            });
+          });
+        }
       }
     } catch {
       showNotification("No active shift to clock out from.", "error");
@@ -156,18 +240,38 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     }
 
     const currentShiftId = activeShiftId || "";
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
     try {
       const next = toggleBreak(currentProfileId);
-      if (next === "break") {
-        showNotification("Meal / rest break started. Shift duration paused.", "warning");
-      } else {
-        showNotification("Break concluded. Resumed active shift clock.", "success");
-      }
-      if (currentShiftId) {
-        toggleShiftBreakAction(currentShiftId, currentProfileId).catch((err) => {
-          console.warn("[PunchClockPanel] toggleShiftBreakAction error:", err);
+
+      if (isOffline) {
+        enqueueOfflinePunch({
+          type: "toggle_break",
+          profileId: currentProfileId,
+          staffName: displayStaffName,
+          terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+          shiftId: currentShiftId,
         });
+        showNotification("Break toggled locally (offline mode). Queued for sync.", "warning");
+      } else {
+        if (next === "break") {
+          showNotification("Meal / rest break started. Shift duration paused.", "warning");
+        } else {
+          showNotification("Break concluded. Resumed active shift clock.", "success");
+        }
+        if (currentShiftId) {
+          toggleShiftBreakAction(currentShiftId, currentProfileId).catch((err) => {
+            console.warn("[PunchClockPanel] toggleShiftBreakAction error, enqueuing offline punch:", err);
+            enqueueOfflinePunch({
+              type: "toggle_break",
+              profileId: currentProfileId,
+              staffName: displayStaffName,
+              terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+              shiftId: currentShiftId,
+            });
+          });
+        }
       }
     } catch {
       showNotification("Cannot toggle break when no shift is currently active.", "warning");
@@ -177,6 +281,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
   const statusBadgeClass = getStatusBadgeClass(isShiftActive, shiftStatus);
   const statusDotClass = getStatusDotClass(isShiftActive, shiftStatus);
   const statusText = getStatusText(isShiftActive, shiftStatus);
+  const offlineQueueCount = getOfflineQueue().length;
 
   return (
     <div
@@ -225,6 +330,20 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
           <span className={`w-2 h-2 rounded-full ${statusDotClass}`} />
           <span>{statusText}</span>
         </div>
+
+        {/* Offline Queue Indicator */}
+        {offlineQueueCount > 0 && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-light text-accent border border-accent/30 animate-in fade-in"
+          >
+            <WifiOff className="w-3 h-3 shrink-0" />
+            <span>
+              {offlineQueueCount} pending offline action{offlineQueueCount > 1 ? "s" : ""} — syncing when online
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Staff Profile Switcher & Operator Attribution */}
