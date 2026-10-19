@@ -39,6 +39,7 @@ export interface StoredStaffSessionItem {
   shiftId?: string;
   staffName: string;
   profileId: string;
+  role?: string;
 }
 
 export interface StoredStaffShiftState {
@@ -46,6 +47,7 @@ export interface StoredStaffShiftState {
   lastSavedAt: number;
   currentStaff: string;
   currentProfileId: string;
+  currentStaffRole?: string;
   isShiftActive: boolean;
   activeShiftId: string | null;
   shiftStatus: ActiveShiftStatus;
