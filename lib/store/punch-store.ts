@@ -5,6 +5,23 @@ import type { PunchLog } from '../types/logs.ts';
 import { mapStaffShiftRow, type DbStaffShift } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
 import { ShiftRpcError, SHIFT_RPC_ERROR_CODES, formatDurationToHoursMinutes } from '../contracts/punch-clock-rpcs.ts';
+import {
+  SWIFT_STORAGE_KEYS,
+  type OfflinePunchActionType,
+  type QueuedPunchAction,
+  type ActiveShiftCacheItem,
+  type StoredStaffShiftState,
+  type OfflineSyncResult,
+} from '../contracts/offline-shift-sync.ts';
+
+export {
+  SWIFT_STORAGE_KEYS,
+  type OfflinePunchActionType,
+  type QueuedPunchAction,
+  type ActiveShiftCacheItem,
+  type StoredStaffShiftState,
+  type OfflineSyncResult,
+};
 
 export interface PunchStoreError {
   code: string;
@@ -22,6 +39,7 @@ export interface StaffMemberShiftState {
   shiftId?: string;
   staffName: string;
   profileId: string;
+  clockInTime?: string;
 }
 
 export interface PunchStoreState {
@@ -35,6 +53,32 @@ export interface PunchStoreState {
   lastError: PunchStoreError | null;
   activeStaffCount: number;
   staffSessions: Record<string, StaffMemberShiftState>;
+}
+
+export type OfflineSyncDispatcher = (
+  action: QueuedPunchAction
+) => Promise<{ success: boolean; shiftId?: string; error?: string }>;
+
+let defaultSyncDispatcher: OfflineSyncDispatcher | null = null;
+let offlineActionSequence = 0;
+
+function generateOfflineActionId(): string {
+  offlineActionSequence += 1;
+  return `OFFLINE-${Date.now()}-${offlineActionSequence}`;
+}
+
+export function registerOfflineSyncDispatcher(dispatcher: OfflineSyncDispatcher): void {
+  defaultSyncDispatcher = dispatcher;
+}
+
+function getStorage(): Storage | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  if (typeof globalThis !== 'undefined' && (globalThis as { localStorage?: Storage }).localStorage) {
+    return (globalThis as { localStorage?: Storage }).localStorage || null;
+  }
+  return null;
 }
 
 function formatShiftDurationTimer(seconds: number): string {
@@ -53,7 +97,167 @@ export class PunchStore {
     const initialLogs = [...MOCK_PUNCH_LOGS];
     const defaultProfileId = '00000000-0000-0000-0000-000000000002'; // Mike Morales
     const defaultStaff = 'Mike Morales';
-    this.state = {
+
+    this.state = this.loadInitialState(defaultStaff, defaultProfileId, initialLogs);
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('online', () => {
+        this.syncOfflineQueue().catch((err) => {
+          console.warn('[PunchStore] Auto-sync on reconnect error:', err);
+        });
+      });
+    }
+  }
+
+  private computeActiveShiftDelta(
+    activeShift: ActiveShiftCacheItem | null,
+    now: number
+  ): {
+    isShiftActive: boolean;
+    shiftStatus: ShiftStateStatus;
+    shiftSeconds: number;
+    activeShiftId: string | null;
+  } {
+    if (!activeShift) {
+      return { isShiftActive: false, shiftStatus: 'idle', shiftSeconds: 0, activeShiftId: null };
+    }
+    const clockInMs = new Date(activeShift.clockIn).getTime();
+    const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+    if (activeShift.status === 'on_shift') {
+      return {
+        isShiftActive: true,
+        shiftStatus: 'on_shift',
+        shiftSeconds: elapsed,
+        activeShiftId: activeShift.shiftId,
+      };
+    }
+    if (activeShift.status === 'break') {
+      return {
+        isShiftActive: true,
+        shiftStatus: 'break',
+        shiftSeconds: activeShift.durationSeconds ?? elapsed,
+        activeShiftId: activeShift.shiftId,
+      };
+    }
+    return { isShiftActive: false, shiftStatus: 'completed', shiftSeconds: 0, activeShiftId: null };
+  }
+
+  private tryLoadStoredState(
+    storage: Storage,
+    defaultStaff: string,
+    defaultProfileId: string,
+    initialLogs: PunchLog[]
+  ): PunchStoreState | null {
+    const storedJson = storage.getItem(SWIFT_STORAGE_KEYS.SHIFT_STATE);
+    if (!storedJson) return null;
+
+    try {
+      const parsed = JSON.parse(storedJson) as StoredStaffShiftState;
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      const now = Date.now();
+      const delta = this.computeActiveShiftDelta(parsed.activeShift, now);
+      const isShiftActive = parsed.activeShift ? delta.isShiftActive : Boolean(parsed.isShiftActive);
+      const shiftStatus = parsed.activeShift ? delta.shiftStatus : parsed.shiftStatus || 'idle';
+      const shiftSeconds = parsed.activeShift ? delta.shiftSeconds : parsed.shiftSeconds || 0;
+      const activeShiftId = parsed.activeShift ? delta.activeShiftId : parsed.activeShiftId || null;
+
+      const staff = parsed.currentStaff || defaultStaff;
+      const profileId = parsed.currentProfileId || defaultProfileId;
+      const logs =
+        Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
+          ? parsed.punchLogs
+          : initialLogs;
+      const sessions =
+        parsed.staffSessions && typeof parsed.staffSessions === 'object'
+          ? parsed.staffSessions
+          : {
+              [profileId]: {
+                isShiftActive,
+                activeShiftId,
+                shiftStatus,
+                shiftSeconds,
+                staffName: staff,
+                profileId,
+              },
+            };
+
+      return {
+        isShiftActive,
+        activeShiftId,
+        shiftSeconds,
+        punchLogs: logs,
+        currentStaff: staff,
+        currentProfileId: profileId,
+        shiftStatus,
+        lastError: null,
+        activeStaffCount: this.calculateActiveStaffCount(logs),
+        staffSessions: sessions,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private tryLoadLegacyState(
+    storage: Storage,
+    defaultStaff: string,
+    defaultProfileId: string,
+    initialLogs: PunchLog[]
+  ): PunchStoreState | null {
+    const legacyJson = storage.getItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT);
+    if (!legacyJson) return null;
+
+    try {
+      const parsed = JSON.parse(legacyJson);
+      if (
+        !parsed ||
+        !parsed.clockIn ||
+        (parsed.status !== 'on_shift' && parsed.status !== 'break')
+      ) {
+        return null;
+      }
+      const now = Date.now();
+      const clockInMs = new Date(parsed.clockIn).getTime();
+      const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+      const status: ShiftStateStatus = parsed.status;
+      const profileId = parsed.profileId || defaultProfileId;
+      const staffName = parsed.staffName || defaultStaff;
+      const shiftId = parsed.shiftId || null;
+      const shiftSeconds = status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed;
+
+      return {
+        isShiftActive: true,
+        activeShiftId: shiftId,
+        shiftSeconds,
+        punchLogs: initialLogs,
+        currentStaff: staffName,
+        currentProfileId: profileId,
+        shiftStatus: status,
+        lastError: null,
+        activeStaffCount: this.calculateActiveStaffCount(initialLogs),
+        staffSessions: {
+          [profileId]: {
+            isShiftActive: true,
+            activeShiftId: shiftId,
+            shiftStatus: status,
+            shiftSeconds,
+            staffName,
+            profileId,
+          },
+        },
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private createDefaultState(
+    defaultStaff: string,
+    defaultProfileId: string,
+    initialLogs: PunchLog[]
+  ): PunchStoreState {
+    return {
       isShiftActive: false,
       activeShiftId: null,
       shiftSeconds: 0,
@@ -73,6 +277,31 @@ export class PunchStore {
         },
       },
     };
+  }
+
+  private loadInitialState(
+    defaultStaff: string,
+    defaultProfileId: string,
+    initialLogs: PunchLog[]
+  ): PunchStoreState {
+    const storage = getStorage();
+    if (storage) {
+      const fromStored = this.tryLoadStoredState(
+        storage,
+        defaultStaff,
+        defaultProfileId,
+        initialLogs
+      );
+      if (fromStored) return fromStored;
+      const fromLegacy = this.tryLoadLegacyState(
+        storage,
+        defaultStaff,
+        defaultProfileId,
+        initialLogs
+      );
+      if (fromLegacy) return fromLegacy;
+    }
+    return this.createDefaultState(defaultStaff, defaultProfileId, initialLogs);
   }
 
   private calculateActiveStaffCount(logs: PunchLog[]): number {
@@ -152,7 +381,10 @@ export class PunchStore {
       code = error.code;
       message = error.message;
     } else if (error instanceof Error) {
-      if (error.message.includes('ACTIVE_SHIFT_EXISTS') || (error as { code?: string }).code === 'P0409') {
+      if (
+        error.message.includes('ACTIVE_SHIFT_EXISTS') ||
+        (error as { code?: string }).code === 'P0409'
+      ) {
         code = SHIFT_RPC_ERROR_CODES.ACTIVE_SHIFT_EXISTS;
         message = 'Active shift already in progress. Please clock out before starting a new shift.';
       } else {
@@ -242,6 +474,7 @@ export class PunchStore {
         },
       };
     }
+    this.persistFullStateToStorage();
     this.notify();
   };
 
@@ -257,12 +490,13 @@ export class PunchStore {
     status: string;
     durationSeconds?: number;
   }): void {
-    if (typeof window === 'undefined' || !window.localStorage) return;
+    const storage = getStorage();
+    if (!storage) return;
     try {
       if (data.status === 'completed' || data.status === 'idle') {
-        window.localStorage.removeItem('swift_active_shift');
+        storage.removeItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT);
       } else {
-        window.localStorage.setItem('swift_active_shift', JSON.stringify(data));
+        storage.setItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT, JSON.stringify(data));
       }
     } catch {
       // Ignore
@@ -270,54 +504,302 @@ export class PunchStore {
   }
 
   private clearActiveShiftFromStorage(): void {
-    if (typeof window === 'undefined' || !window.localStorage) return;
+    const storage = getStorage();
+    if (!storage) return;
     try {
-      window.localStorage.removeItem('swift_active_shift');
+      storage.removeItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT);
+      const stored = storage.getItem(SWIFT_STORAGE_KEYS.SHIFT_STATE);
+      if (stored) {
+        const parsed = JSON.parse(stored) as StoredStaffShiftState;
+        parsed.isShiftActive = false;
+        parsed.activeShiftId = null;
+        parsed.shiftStatus = 'completed';
+        parsed.activeShift = null;
+        storage.setItem(SWIFT_STORAGE_KEYS.SHIFT_STATE, JSON.stringify(parsed));
+      }
     } catch {
       // Ignore
     }
   }
 
-  public rehydrateFromStorage = (): void => {
-    if (typeof window === 'undefined' || !window.localStorage) return;
+  private persistFullStateToStorage(): void {
+    const storage = getStorage();
+    if (!storage) return;
     try {
-      const stored = window.localStorage.getItem('swift_active_shift');
-      if (!stored) return;
-      const parsed = JSON.parse(stored);
-      if (parsed && (parsed.status === 'on_shift' || parsed.status === 'break') && parsed.clockIn) {
-        const now = Date.now();
-        const clockInMs = new Date(parsed.clockIn).getTime();
-        const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
-        const status: ShiftStateStatus = parsed.status;
-        const profileId = parsed.profileId || this.state.currentProfileId;
-        const staffName = parsed.staffName || this.state.currentStaff;
-        const shiftId = parsed.shiftId || this.state.activeShiftId;
+      const currentSession = this.state.staffSessions[this.state.currentProfileId];
+      const activeShiftId = this.state.activeShiftId || currentSession?.activeShiftId || null;
+      const clockInIso =
+        currentSession?.clockInTime ||
+        new Date(Date.now() - this.state.shiftSeconds * 1000).toISOString();
 
-        const updatedSessions = { ...this.state.staffSessions };
-        updatedSessions[profileId] = {
-          isShiftActive: true,
-          activeShiftId: shiftId,
-          shiftStatus: status,
-          shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
-          staffName,
-          profileId,
-        };
+      const storedState: StoredStaffShiftState = {
+        version: 1,
+        lastSavedAt: Date.now(),
+        currentStaff: this.state.currentStaff,
+        currentProfileId: this.state.currentProfileId,
+        isShiftActive: this.state.isShiftActive,
+        activeShiftId,
+        shiftStatus: this.state.shiftStatus,
+        shiftSeconds: this.state.shiftSeconds,
+        activeShift: this.state.isShiftActive
+          ? {
+              shiftId: activeShiftId || `PUNCH-${Date.now()}`,
+              staffName: this.state.currentStaff,
+              profileId: this.state.currentProfileId,
+              clockIn: clockInIso,
+              status: this.state.shiftStatus,
+              durationSeconds: this.state.shiftSeconds,
+            }
+          : null,
+        punchLogs: this.state.punchLogs,
+        staffSessions: this.state.staffSessions,
+      };
 
-        this.state = {
-          ...this.state,
-          isShiftActive: true,
-          activeShiftId: shiftId,
-          shiftStatus: status,
-          shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
-          currentStaff: staffName,
-          currentProfileId: profileId,
-          staffSessions: updatedSessions,
-        };
-        this.notify();
+      storage.setItem(SWIFT_STORAGE_KEYS.SHIFT_STATE, JSON.stringify(storedState));
+    } catch (err) {
+      console.warn('[PunchStore] Failed to persist state to storage:', err);
+    }
+  }
+
+  private applyStoredStateRehydration(parsed: StoredStaffShiftState): void {
+    const now = Date.now();
+    const delta = this.computeActiveShiftDelta(parsed.activeShift, now);
+    const profileId = parsed.currentProfileId || this.state.currentProfileId;
+    const staffName = parsed.currentStaff || this.state.currentStaff;
+
+    const isShiftActive = parsed.activeShift ? delta.isShiftActive : Boolean(parsed.isShiftActive);
+    const shiftStatus = parsed.activeShift ? delta.shiftStatus : parsed.shiftStatus || 'idle';
+    const shiftSeconds = parsed.activeShift ? delta.shiftSeconds : parsed.shiftSeconds || 0;
+    const activeShiftId = parsed.activeShift ? delta.activeShiftId : parsed.activeShiftId || null;
+
+    const updatedSessions = { ...this.state.staffSessions, ...(parsed.staffSessions || {}) };
+    if (isShiftActive) {
+      updatedSessions[profileId] = {
+        ...(updatedSessions[profileId] || {}),
+        isShiftActive: true,
+        activeShiftId,
+        shiftStatus,
+        shiftSeconds,
+        staffName,
+        profileId,
+      };
+    }
+
+    const logs =
+      Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
+        ? this.mergeRecentLogs(this.state.punchLogs, parsed.punchLogs)
+        : this.state.punchLogs;
+
+    this.state = {
+      ...this.state,
+      isShiftActive,
+      activeShiftId,
+      shiftStatus,
+      shiftSeconds,
+      currentStaff: staffName,
+      currentProfileId: profileId,
+      punchLogs: logs,
+      activeStaffCount: this.calculateActiveStaffCount(logs),
+      staffSessions: updatedSessions,
+    };
+    this.notify();
+  }
+
+  private applyLegacyStorageRehydration(parsed: {
+    status: ShiftStateStatus;
+    clockIn: string;
+    profileId?: string;
+    staffName?: string;
+    shiftId?: string;
+    durationSeconds?: number;
+  }): void {
+    const now = Date.now();
+    const clockInMs = new Date(parsed.clockIn).getTime();
+    const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+    const status: ShiftStateStatus = parsed.status;
+    const profileId = parsed.profileId || this.state.currentProfileId;
+    const staffName = parsed.staffName || this.state.currentStaff;
+    const shiftId = parsed.shiftId || this.state.activeShiftId;
+
+    const updatedSessions = { ...this.state.staffSessions };
+    updatedSessions[profileId] = {
+      isShiftActive: true,
+      activeShiftId: shiftId,
+      shiftStatus: status,
+      shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
+      staffName,
+      profileId,
+    };
+
+    this.state = {
+      ...this.state,
+      isShiftActive: true,
+      activeShiftId: shiftId,
+      shiftStatus: status,
+      shiftSeconds: status === 'break' ? (parsed.durationSeconds ?? elapsed) : elapsed,
+      currentStaff: staffName,
+      currentProfileId: profileId,
+      staffSessions: updatedSessions,
+    };
+    this.notify();
+  }
+
+  public rehydrateFromStorage = (): void => {
+    const storage = getStorage();
+    if (!storage) return;
+    try {
+      const stored = storage.getItem(SWIFT_STORAGE_KEYS.SHIFT_STATE);
+      if (stored) {
+        const parsed = JSON.parse(stored) as StoredStaffShiftState;
+        if (parsed && typeof parsed === 'object') {
+          this.applyStoredStateRehydration(parsed);
+          return;
+        }
+      }
+
+      const legacyStored = storage.getItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT);
+      if (!legacyStored) return;
+      const parsed = JSON.parse(legacyStored);
+      if (
+        parsed &&
+        (parsed.status === 'on_shift' || parsed.status === 'break') &&
+        parsed.clockIn
+      ) {
+        this.applyLegacyStorageRehydration(parsed);
       }
     } catch (err) {
-      console.warn('Failed to rehydrate active shift from storage:', err);
+      console.warn('[PunchStore] Failed to rehydrate active shift from storage:', err);
     }
+  };
+
+  public getOfflineQueue = (): QueuedPunchAction[] => {
+    const storage = getStorage();
+    if (!storage) return [];
+    try {
+      const stored = storage.getItem(SWIFT_STORAGE_KEYS.OFFLINE_QUEUE);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  public enqueueOfflinePunch = (
+    action: Omit<QueuedPunchAction, 'id' | 'timestamp' | 'retryCount' | 'status'>
+  ): QueuedPunchAction => {
+    const item: QueuedPunchAction = {
+      ...action,
+      id: generateOfflineActionId(),
+      timestamp: new Date().toISOString(),
+      retryCount: 0,
+      status: 'pending',
+    };
+
+    const storage = getStorage();
+    if (storage) {
+      try {
+        const queue = this.getOfflineQueue();
+        queue.push(item);
+        storage.setItem(SWIFT_STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+      } catch (err) {
+        console.warn('[PunchStore] Failed to enqueue offline punch:', err);
+      }
+    }
+
+    this.notify();
+    return item;
+  };
+
+  public dequeueOfflinePunch = (actionId: string): void => {
+    const storage = getStorage();
+    if (!storage) return;
+    try {
+      const queue = this.getOfflineQueue().filter((item) => item.id !== actionId);
+      storage.setItem(SWIFT_STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(queue));
+      this.notify();
+    } catch (err) {
+      console.warn('[PunchStore] Failed to dequeue offline punch:', err);
+    }
+  };
+
+  public clearOfflineQueue = (): void => {
+    const storage = getStorage();
+    if (!storage) return;
+    try {
+      storage.setItem(SWIFT_STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify([]));
+      this.notify();
+    } catch {
+      // Ignore
+    }
+  };
+
+  private async processSyncItem(
+    item: QueuedPunchAction,
+    dispatcher: OfflineSyncDispatcher
+  ): Promise<{ success: boolean; shiftId?: string; error?: string }> {
+    item.status = 'syncing';
+    try {
+      const res = await dispatcher(item);
+      if (res.success) {
+        return { success: true, shiftId: res.shiftId };
+      }
+      return { success: false, error: res.error || 'Sync dispatch failed' };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message };
+    }
+  }
+
+  public syncOfflineQueue = async (
+    customDispatcher?: OfflineSyncDispatcher
+  ): Promise<OfflineSyncResult> => {
+    const activeDispatcher = customDispatcher || defaultSyncDispatcher;
+    const queue = this.getOfflineQueue();
+    const result: OfflineSyncResult = {
+      synced: 0,
+      failed: 0,
+      remaining: queue.length,
+      errors: [],
+    };
+
+    if (queue.length === 0 || !activeDispatcher) {
+      return result;
+    }
+
+    const remainingQueue: QueuedPunchAction[] = [];
+
+    for (const item of queue) {
+      const outcome = await this.processSyncItem(item, activeDispatcher);
+      if (outcome.success) {
+        result.synced += 1;
+        if (outcome.shiftId && (item.type === 'clock_in' || !this.state.activeShiftId)) {
+          this.setActiveShiftId(outcome.shiftId, item.profileId);
+        }
+      } else {
+        item.status = 'failed';
+        item.retryCount += 1;
+        item.error = outcome.error;
+        result.failed += 1;
+        if (outcome.error) {
+          result.errors.push(outcome.error);
+        }
+        remainingQueue.push(item);
+      }
+    }
+
+    const storage = getStorage();
+    if (storage) {
+      try {
+        storage.setItem(SWIFT_STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(remainingQueue));
+      } catch {
+        // Ignore
+      }
+    }
+
+    result.remaining = remainingQueue.length;
+    this.notify();
+    return result;
   };
 
   public setActiveShiftId = (shiftId: string, profileId?: string): void => {
@@ -343,19 +825,21 @@ export class PunchStore {
       staffSessions: updatedSessions,
     };
 
-    if (this.state.isShiftActive && typeof window !== 'undefined' && window.localStorage) {
+    const storage = getStorage();
+    if (this.state.isShiftActive && storage) {
       try {
-        const stored = window.localStorage.getItem('swift_active_shift');
+        const stored = storage.getItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT);
         if (stored) {
           const parsed = JSON.parse(stored);
           parsed.shiftId = shiftId;
-          window.localStorage.setItem('swift_active_shift', JSON.stringify(parsed));
+          storage.setItem(SWIFT_STORAGE_KEYS.LEGACY_ACTIVE_SHIFT, JSON.stringify(parsed));
         }
       } catch {
         // Ignore
       }
     }
 
+    this.persistFullStateToStorage();
     this.notify();
   };
 
@@ -414,6 +898,7 @@ export class PunchStore {
       shiftSeconds: 0,
       staffName: targetStaff,
       profileId: targetProfileId,
+      clockInTime: now.toISOString(),
     };
 
     const isCurrent = targetProfileId === this.state.currentProfileId;
@@ -442,6 +927,7 @@ export class PunchStore {
         [targetProfileId]: updatedSession,
       },
     };
+    this.persistFullStateToStorage();
     this.notify();
   };
 
@@ -472,12 +958,24 @@ export class PunchStore {
 
     let updated = false;
     const updatedLogs = this.state.punchLogs.map((log, index) => {
-      const isTarget = targetId ? log.id === targetId : (index === 0 && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break'));
-      if (isTarget && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break')) {
+      const isTarget = targetId
+        ? log.id === targetId
+        : index === 0 &&
+          (log.status === 'On Shift' ||
+            log.status === 'Break' ||
+            log.status === 'on_shift' ||
+            log.status === 'break');
+      if (
+        isTarget &&
+        (log.status === 'On Shift' ||
+          log.status === 'Break' ||
+          log.status === 'on_shift' ||
+          log.status === 'break')
+      ) {
         updated = true;
         return {
           ...log,
-          status: nextStatus === 'break' ? 'Break' : 'On Shift',
+          status: (nextStatus === 'break' ? 'Break' : 'On Shift') as PunchLog['status'],
         };
       }
       return log;
@@ -486,10 +984,15 @@ export class PunchStore {
     if (!updated && updatedLogs.length > 0) {
       for (let i = 0; i < updatedLogs.length; i++) {
         const log = updatedLogs[i];
-        if (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break') {
+        if (
+          log.status === 'On Shift' ||
+          log.status === 'Break' ||
+          log.status === 'on_shift' ||
+          log.status === 'break'
+        ) {
           updatedLogs[i] = {
             ...log,
-            status: nextStatus === 'break' ? 'Break' : 'On Shift',
+            status: (nextStatus === 'break' ? 'Break' : 'On Shift') as PunchLog['status'],
           };
           break;
         }
@@ -506,7 +1009,7 @@ export class PunchStore {
         shiftId: targetId,
         staffName: currentSession.staffName,
         profileId: targetProfileId,
-        clockIn: new Date().toISOString(),
+        clockIn: currentSession.clockInTime || new Date().toISOString(),
         status: nextStatus,
         durationSeconds: currentSession.shiftSeconds,
       });
@@ -525,6 +1028,7 @@ export class PunchStore {
         [targetProfileId]: updatedSession,
       },
     };
+    this.persistFullStateToStorage();
     this.notify();
     return nextStatus;
   };
@@ -565,16 +1069,27 @@ export class PunchStore {
     const updatedLogs = this.state.punchLogs.map((log, index) => {
       const isTarget = targetId
         ? log.id === targetId
-        : (index === 0 || log.timeOut === '-- Active Shift --' || log.status === 'On Shift' || log.status === 'Break');
+        : index === 0 ||
+          log.timeOut === '-- Active Shift --' ||
+          log.status === 'On Shift' ||
+          log.status === 'Break';
 
-      if (!matched && isTarget && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break' || log.timeOut === '-- Active Shift --')) {
+      if (
+        !matched &&
+        isTarget &&
+        (log.status === 'On Shift' ||
+          log.status === 'Break' ||
+          log.status === 'on_shift' ||
+          log.status === 'break' ||
+          log.timeOut === '-- Active Shift --')
+      ) {
         matched = true;
         return {
           ...log,
           staff: staffName,
           timeOut: timeStr,
           duration: durationStr,
-          status: 'Completed',
+          status: 'Completed' as const,
         };
       }
       return log;
@@ -584,13 +1099,17 @@ export class PunchStore {
     if (!matched && updatedLogs.length > 0) {
       for (let i = 0; i < updatedLogs.length; i++) {
         const log = updatedLogs[i];
-        if (log.status === 'On Shift' || log.status === 'Break' || log.timeOut === '-- Active Shift --') {
+        if (
+          log.status === 'On Shift' ||
+          log.status === 'Break' ||
+          log.timeOut === '-- Active Shift --'
+        ) {
           updatedLogs[i] = {
             ...log,
             staff: staffName,
             timeOut: timeStr,
             duration: durationStr,
-            status: 'Completed',
+            status: 'Completed' as const,
           };
           matched = true;
           break;
@@ -622,6 +1141,7 @@ export class PunchStore {
         [targetProfileId]: updatedSession,
       },
     };
+    this.persistFullStateToStorage();
     this.notify();
     return durationStr;
   };
@@ -720,6 +1240,7 @@ export class PunchStore {
       shiftSeconds,
       staffName: currentStaff,
       profileId: targetProfileId,
+      clockInTime: activeShift?.clock_in || currentSession.clockInTime,
     };
 
     this.state = {
@@ -735,6 +1256,7 @@ export class PunchStore {
       staffSessions: updatedSessions,
       lastError: null,
     };
+    this.persistFullStateToStorage();
     this.notify();
   };
 
@@ -749,7 +1271,10 @@ export class PunchStore {
     let nextStaff = this.state.currentStaff;
     let nextSeconds = this.state.shiftSeconds;
 
-    if (row.staff_name === this.state.currentStaff && (row.status === 'on_shift' || row.status === 'break')) {
+    if (
+      row.staff_name === this.state.currentStaff &&
+      (row.status === 'on_shift' || row.status === 'break')
+    ) {
       nextIsActive = true;
       nextActiveShiftId = row.id;
       nextStatus = row.status as ShiftStateStatus;
@@ -768,6 +1293,7 @@ export class PunchStore {
       punchLogs: newLogs,
       activeStaffCount: this.calculateActiveStaffCount(newLogs),
     };
+    this.persistFullStateToStorage();
     this.notify();
   };
 
@@ -818,6 +1344,7 @@ export class PunchStore {
       punchLogs: newLogs,
       activeStaffCount: this.calculateActiveStaffCount(newLogs),
     };
+    this.persistFullStateToStorage();
     this.notify();
   };
 }
@@ -840,6 +1367,11 @@ export function usePunchStore(): PunchStoreState & {
   getActiveStaffCount: typeof punchStore.getActiveStaffCount;
   switchStaff: typeof punchStore.switchStaff;
   getStaffSession: typeof punchStore.getStaffSession;
+  getOfflineQueue: typeof punchStore.getOfflineQueue;
+  enqueueOfflinePunch: typeof punchStore.enqueueOfflinePunch;
+  dequeueOfflinePunch: typeof punchStore.dequeueOfflinePunch;
+  clearOfflineQueue: typeof punchStore.clearOfflineQueue;
+  syncOfflineQueue: typeof punchStore.syncOfflineQueue;
 } {
   const state = useSyncExternalStore(
     punchStore.subscribe,
@@ -864,5 +1396,10 @@ export function usePunchStore(): PunchStoreState & {
     getActiveStaffCount: punchStore.getActiveStaffCount,
     switchStaff: punchStore.switchStaff,
     getStaffSession: punchStore.getStaffSession,
+    getOfflineQueue: punchStore.getOfflineQueue,
+    enqueueOfflinePunch: punchStore.enqueueOfflinePunch,
+    dequeueOfflinePunch: punchStore.dequeueOfflinePunch,
+    clearOfflineQueue: punchStore.clearOfflineQueue,
+    syncOfflineQueue: punchStore.syncOfflineQueue,
   };
 }
