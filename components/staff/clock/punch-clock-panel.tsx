@@ -71,6 +71,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     toggleBreak,
     currentStaff,
     currentProfileId,
+    setActiveShiftId,
   } = usePunchStore();
 
   const [feedback, setFeedback] = useState<{
@@ -110,9 +111,15 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     try {
       clockIn(profile.name, DEFAULT_STAFF_SHIFT.terminalId, profile.id);
       showNotification(`Clock-In recorded successfully. Shift started for ${profile.name}!`, "success");
-      clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id).catch((err) => {
-        console.warn("[PunchClockPanel] clockInShiftAction error:", err);
-      });
+      clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id)
+        .then((res) => {
+          if (res.success && res.shiftId) {
+            setActiveShiftId(res.shiftId, profile.id);
+          }
+        })
+        .catch((err) => {
+          console.warn("[PunchClockPanel] clockInShiftAction error:", err);
+        });
     } catch {
       showNotification("You are already clocked in for this shift!", "error");
     }
@@ -124,7 +131,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       return;
     }
 
-    const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
+    const currentShiftId = activeShiftId || "";
 
     try {
       const durationStr = clockOut(displayStaffName, currentProfileId);
@@ -132,9 +139,11 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
         `Clock-Out recorded. Shift ended (${durationStr}) and logged to attendance history.`,
         "success"
       );
-      clockOutShiftAction(currentShiftId, undefined, currentProfileId).catch((err) => {
-        console.warn("[PunchClockPanel] clockOutShiftAction error:", err);
-      });
+      if (currentShiftId) {
+        clockOutShiftAction(currentShiftId, undefined, currentProfileId).catch((err) => {
+          console.warn("[PunchClockPanel] clockOutShiftAction error:", err);
+        });
+      }
     } catch {
       showNotification("No active shift to clock out from.", "error");
     }
@@ -146,7 +155,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       return;
     }
 
-    const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
+    const currentShiftId = activeShiftId || "";
 
     try {
       const next = toggleBreak(currentProfileId);
@@ -155,9 +164,11 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       } else {
         showNotification("Break concluded. Resumed active shift clock.", "success");
       }
-      toggleShiftBreakAction(currentShiftId, currentProfileId).catch((err) => {
-        console.warn("[PunchClockPanel] toggleShiftBreakAction error:", err);
-      });
+      if (currentShiftId) {
+        toggleShiftBreakAction(currentShiftId, currentProfileId).catch((err) => {
+          console.warn("[PunchClockPanel] toggleShiftBreakAction error:", err);
+        });
+      }
     } catch {
       showNotification("Cannot toggle break when no shift is currently active.", "warning");
     }

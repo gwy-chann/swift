@@ -34,13 +34,15 @@ export function StaffPinModal({
     setError(null);
   }, []);
 
-  const handleAppendDigit = useCallback((digit: string) => {
-    setPin((prev) => {
-      if (prev.length >= 4) return prev;
-      return prev + digit;
-    });
-    setError(null);
-  }, []);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setPin("");
+      setError(null);
+      setIsVerifying(false);
+    }
+  }
 
   const handleSubmit = useCallback(
     async (pinToVerify?: string) => {
@@ -72,12 +74,22 @@ export function StaffPinModal({
     [pin, targetProfile.id, handleClear, onSuccess]
   );
 
-  // Auto-submit when 4th digit is entered
-  useEffect(() => {
-    if (pin.length === 4 && !isVerifying) {
-      handleSubmit(pin);
-    }
-  }, [pin, isVerifying, handleSubmit]);
+  const handleAppendDigit = useCallback(
+    (digit: string) => {
+      setPin((prev) => {
+        if (prev.length >= 4) return prev;
+        const next = prev + digit;
+        if (next.length === 4) {
+          setTimeout(() => {
+            handleSubmit(next);
+          }, 0);
+        }
+        return next;
+      });
+      setError(null);
+    },
+    [handleSubmit]
+  );
 
   // Physical keyboard support
   useEffect(() => {
@@ -99,23 +111,14 @@ export function StaffPinModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, pin, onClose, handleAppendDigit, handleBackspace, handleSubmit]);
 
-  // Reset state when opening/closing
-  useEffect(() => {
-    if (isOpen) {
-      setPin("");
-      setError(null);
-      setIsVerifying(false);
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
-  const actionTitle =
-    actionContext === "switch_staff"
-      ? "Authenticate Staff Switch"
-      : actionContext === "clock_out"
-      ? "Confirm Clock-Out Identity"
-      : "Terminal Shift Clock-In";
+  let actionTitle = "Terminal Shift Clock-In";
+  if (actionContext === "switch_staff") {
+    actionTitle = "Authenticate Staff Switch";
+  } else if (actionContext === "clock_out") {
+    actionTitle = "Confirm Clock-Out Identity";
+  }
 
   return (
     <div
