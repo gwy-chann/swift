@@ -1,11 +1,20 @@
-"use client";
-
+'use client';
+ 
 import React, { useState, useEffect, useMemo } from "react";
-import { PackageSearch, Search, MapPin, AlertCircle, X } from "lucide-react";
+import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
+import { usePunchStore } from "@/lib/store/punch-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
+import { StockAdjustmentModal } from "@/components/admin/inventory/stock-adjustment-modal";
+import { ManagerOverrideModal } from "@/components/pos/manager-override-modal";
+import type { Product } from "@/lib/types/product";
+import type { AdjustmentType } from "@/lib/inventory/stock-adjustment";
 
 export default function StaffSearchPage() {
+  const punchState = usePunchStore();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
   const [toastMessage, setToastMessage] = useState<string | null>(() => {
@@ -20,7 +29,7 @@ export default function StaffSearchPage() {
     } catch {}
     return null;
   });
-  const { products, hydrateProducts } = useInventoryStore();
+  const { products, hydrateProducts, adjustStock } = useInventoryStore();
 
   // SIAA-85: Auto-dismiss redirect toast notification after 5 seconds
   useEffect(() => {
@@ -64,6 +73,37 @@ export default function StaffSearchPage() {
       return matchCat && matchSearch;
     });
   }, [products, category, searchTerm]);
+
+  const handleRequestAdjustStock = (item: Product) => {
+    setSelectedProduct(item);
+    if (punchState.currentPermissions?.can_adjust_stock) {
+      setIsAdjustmentModalOpen(true);
+    } else {
+      setIsOverrideModalOpen(true);
+    }
+  };
+
+  const handleOverrideSuccess = () => {
+    setIsOverrideModalOpen(false);
+    setIsAdjustmentModalOpen(true);
+  };
+
+  const handleAdjustmentSubmit = (params: {
+    sku: string;
+    type: AdjustmentType;
+    delta: number;
+    reason: string;
+  }) => {
+    adjustStock({
+      sku: params.sku,
+      type: params.type,
+      units: params.delta,
+      reason: params.reason,
+      user: punchState.currentStaff || "Staff Member",
+    });
+    setIsAdjustmentModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -132,6 +172,7 @@ export default function StaffSearchPage() {
                 <th className="py-3 px-4">Physical Shelf Location</th>
                 <th className="py-3 px-4 text-right">Available Stock</th>
                 <th className="py-3 px-4 text-right">Retail Price</th>
+                <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -148,12 +189,42 @@ export default function StaffSearchPage() {
                   </td>
                   <td className="py-3 px-4 text-right font-mono font-bold text-text-primary">{item.stock}</td>
                   <td className="py-3 px-4 text-right font-mono font-bold text-primary">₱{item.retail.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleRequestAdjustStock(item)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs"
+                      title="Adjust physical stock count"
+                    >
+                      <SlidersHorizontal className="w-3 h-3" />
+                      <span>Adjust Stock</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <StockAdjustmentModal
+        isOpen={isAdjustmentModalOpen}
+        product={selectedProduct}
+        onClose={() => {
+          setIsAdjustmentModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSubmit={handleAdjustmentSubmit}
+      />
+
+      <ManagerOverrideModal
+        isOpen={isOverrideModalOpen}
+        onClose={() => {
+          setIsOverrideModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onOverrideSuccess={handleOverrideSuccess}
+      />
     </div>
   );
 }
