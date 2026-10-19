@@ -10,7 +10,6 @@ import type {
   AttendanceHistoryResult,
   ProductPriceCheckResult,
   AdminElevationResult,
-  StaffKioskProfile,
   VerifyStaffPinResult,
 } from './types.ts';
 import {
@@ -137,6 +136,27 @@ async function triggerShiftRevalidation(): Promise<void> {
   }
 }
 
+function formatRoleDisplay(role?: string): string {
+  switch (role) {
+    case 'admin':
+      return 'Admin';
+    case 'mechanic':
+      return 'Mechanic';
+    case 'inventory_clerk':
+      return 'Inventory Clerk';
+    default:
+      return 'Cashier / Floor Staff';
+  }
+}
+
+function formatAvatarInitials(fullName?: string): string {
+  const parts = (fullName || 'Staff Member').trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0]?.substring(0, 2).toUpperCase() || 'ST';
+}
+
 /**
  * Server Action: Verify Staff PIN
  * Validates a 4-digit PIN for terminal kiosk authentication against public.profiles
@@ -169,21 +189,6 @@ export async function verifyStaffPinAction(
       if (!error && data) {
         const expectedPin = data.pin_code || DEFAULT_DEMO_PINS[profileId] || '1234';
         if (expectedPin === trimmedPin) {
-          const roleDisplay =
-            data.role === 'admin'
-              ? 'Admin'
-              : data.role === 'mechanic'
-              ? 'Mechanic'
-              : data.role === 'inventory_clerk'
-              ? 'Inventory Clerk'
-              : 'Cashier / Floor Staff';
-
-          const nameParts = (data.full_name || 'Staff Member').trim().split(/\s+/);
-          const avatarInitials =
-            nameParts.length >= 2
-              ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
-              : nameParts[0]?.substring(0, 2).toUpperCase() || 'ST';
-
           return {
             success: true,
             profile: {
@@ -191,17 +196,16 @@ export async function verifyStaffPinAction(
               name: data.full_name || 'Staff Member',
               email: data.email,
               role: data.role,
-              roleDisplay,
-              avatarInitials,
+              roleDisplay: formatRoleDisplay(data.role),
+              avatarInitials: formatAvatarInitials(data.full_name),
             },
           };
-        } else {
-          return {
-            success: false,
-            code: 'INVALID_PIN',
-            error: 'Invalid employee PIN. Please try again.',
-          };
         }
+        return {
+          success: false,
+          code: 'INVALID_PIN',
+          error: 'Invalid employee PIN. Please try again.',
+        };
       }
     } catch (err) {
       console.warn('[verifyStaffPinAction] Supabase error, using fallback:', err);
@@ -227,12 +231,6 @@ export async function verifyStaffPinAction(
     };
   }
 
-  const nameParts = mockProfile.name.trim().split(/\s+/);
-  const avatarInitials =
-    nameParts.length >= 2
-      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
-      : nameParts[0]?.substring(0, 2).toUpperCase() || 'ST';
-
   return {
     success: true,
     profile: {
@@ -241,9 +239,62 @@ export async function verifyStaffPinAction(
       email: mockProfile.email,
       role: mockProfile.role,
       roleDisplay: mockProfile.roleDisplay,
-      avatarInitials,
+      avatarInitials: formatAvatarInitials(mockProfile.name),
     },
   };
+}
+
+async function invokeSupabaseClockIn(
+  terminal: string,
+  notes?: string,
+  profileId?: string
+): Promise<ShiftActionResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.rpc('clock_in_shift', {
+      p_terminal_id: terminal,
+      p_notes: notes || null,
+      p_profile_id: profileId || null,
+    });
+
+    if (error) {
+      return parseClockInError(error);
+    }
+
+    if (data && typeof data === 'object') {
+      const shift = data as {
+        id?: string;
+        staff_name?: string;
+        terminal_id?: string;
+        clock_in?: string;
+        status?: ShiftStatus;
+      };
+
+      await triggerShiftRevalidation();
+
+      return {
+        success: true,
+        shiftId: shift.id,
+        staffName: shift.staff_name,
+        terminalId: shift.terminal_id || terminal,
+        clockIn: shift.clock_in,
+        status: shift.status || 'on_shift',
+      };
+    }
+  } catch (err) {
+    console.warn(
+      '[clockInShiftAction] Supabase invocation issue, using offline fallback:',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -258,46 +309,9 @@ export async function clockInShiftAction(
 ): Promise<ShiftActionResult> {
   const terminal = terminalId?.trim() || 'Terminal #01';
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    try {
-      const { createClient } = await import('../supabase/server.ts');
-      const supabase = await createClient();
-
-      const { data, error } = await supabase.rpc('clock_in_shift', {
-        p_terminal_id: terminal,
-        p_notes: notes || null,
-        p_profile_id: profileId || null,
-      });
-
-      if (error) {
-        const handled = parseClockInError(error);
-        if (handled) return handled;
-      } else if (data && typeof data === 'object') {
-        const shift = data as {
-          id?: string;
-          staff_name?: string;
-          terminal_id?: string;
-          clock_in?: string;
-          status?: ShiftStatus;
-        };
-
-        await triggerShiftRevalidation();
-
-        return {
-          success: true,
-          shiftId: shift.id,
-          staffName: shift.staff_name,
-          terminalId: shift.terminal_id || terminal,
-          clockIn: shift.clock_in,
-          status: shift.status || 'on_shift',
-        };
-      }
-    } catch (err) {
-      console.warn(
-        '[clockInShiftAction] Supabase invocation issue, using offline fallback:',
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+  const supabaseResult = await invokeSupabaseClockIn(terminal, notes, profileId);
+  if (supabaseResult) {
+    return supabaseResult;
   }
 
   // Offline / Mock Fallback
@@ -457,7 +471,8 @@ export async function toggleShiftBreakAction(
  * Queries public.staff_shifts ordered by clock_in descending and identifies active shift.
  */
 export async function getStaffAttendanceHistoryAction(
-  limit: number = 20
+  limit: number = 20,
+  profileId?: string
 ): Promise<AttendanceHistoryResult> {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
@@ -473,7 +488,15 @@ export async function getStaffAttendanceHistoryAction(
       if (!error && data && data.length > 0) {
         const rows = data as DbStaffShift[];
         const mappedLogs: PunchLog[] = rows.map(mapStaffShiftRow);
-        const activeShift = rows.find((r) => r.status === 'on_shift' || r.status === 'break') || null;
+        let activeShift = rows.find(
+          (r) =>
+            (profileId ? r.profile_id === profileId : true) &&
+            (r.status === 'on_shift' || r.status === 'break')
+        ) || null;
+
+        if (!activeShift && !profileId) {
+          activeShift = rows.find((r) => r.status === 'on_shift' || r.status === 'break') || null;
+        }
 
         return {
           success: true,
