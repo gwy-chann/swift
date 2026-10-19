@@ -61,6 +61,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
   const {
     isShiftActive,
     shiftStatus,
+    activeShiftId,
     clockIn,
     clockOut,
     toggleBreak,
@@ -108,13 +109,15 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       return;
     }
 
+    const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
+
     try {
       const durationStr = clockOut(displayStaffName);
       showNotification(
         `Clock-Out recorded. Shift ended (${durationStr}) and logged to attendance history.`,
         "success"
       );
-      clockOutShiftAction("00000000-0000-0000-0000-000000000000").catch((err) => {
+      clockOutShiftAction(currentShiftId).catch((err) => {
         console.warn("[PunchClockPanel] clockOutShiftAction error:", err);
       });
     } catch {
@@ -128,6 +131,8 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       return;
     }
 
+    const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
+
     try {
       const next = toggleBreak();
       if (next === "break") {
@@ -135,7 +140,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
       } else {
         showNotification("Break concluded. Resumed active shift clock.", "success");
       }
-      toggleShiftBreakAction("00000000-0000-0000-0000-000000000000").catch((err) => {
+      toggleShiftBreakAction(currentShiftId).catch((err) => {
         console.warn("[PunchClockPanel] toggleShiftBreakAction error:", err);
       });
     } catch {
