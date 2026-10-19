@@ -8,7 +8,7 @@
 
 ## Phase 1: Contracts & Type Definitions
 
-- [ ] **TASK-001**: Define checkout authorization contracts and evaluator logic in `lib/contracts/checkout-guard.ts`.
+- [x] **TASK-001**: Define checkout authorization contracts and evaluator logic in `lib/contracts/checkout-guard.ts`.
   - Export `StaffRole`, `PosCheckoutGuardContext`, and `PosCheckoutGuardResult`.
   - Implement pure evaluator `evaluatePosCheckoutAuthorization(context)`.
 
@@ -16,13 +16,13 @@
 
 ## Phase 2: Core Store & Hotkey Guard Extensions
 
-- [ ] **TASK-002**: Extend `PunchStore` (`lib/store/punch-store.ts`) with `currentStaffRole`.
+- [x] **TASK-002**: Extend `PunchStore` (`lib/store/punch-store.ts`) with `currentStaffRole`.
   - Add `currentStaffRole: StaffRole` to `PunchStoreState` and `role?: StaffRole` to `StaffMemberShiftState`.
   - Initialize `currentStaffRole` from profile (defaulting to `'cashier'` for Mike Morales).
   - Update `switchStaff` to accept optional `role` and resolve from `MOCK_STAFF_PROFILES`.
   - Expose `currentStaffRole` from `usePunchStore()`.
   - Preserve `currentStaffRole` in `localStorage` serialization (`swift_staff_shift_state`).
-- [ ] **TASK-003**: Extend `evaluatePosHotkey` in `lib/pos/barcode-scanner.ts`.
+- [x] **TASK-003**: Extend `evaluatePosHotkey` in `lib/pos/barcode-scanner.ts`.
   - Add `userRole?: string` to options.
   - Support `F12` and `F9` keys.
   - Reject checkout with `reason: 'UNAUTHORIZED_ROLE'` when role is neither `'cashier'` nor `'admin'`.
@@ -31,7 +31,7 @@
 
 ## Phase 3: Unit & Integration Testing (TDD)
 
-- [ ] **TASK-004**: Create comprehensive test suite in `lib/pos/__tests__/staff-pos-checkout-guard.test.ts`.
+- [x] **TASK-004**: Create comprehensive test suite in `lib/pos/__tests__/staff-pos-checkout-guard.test.ts`.
   - Test pure evaluator `evaluatePosCheckoutAuthorization` with cashier, admin, mechanic, inventory clerk, and staff roles.
   - Test one-time manager override allowance.
   - Test inactive shift and empty cart rejection precedence.
@@ -42,10 +42,10 @@
 
 ## Phase 4: UI Components & Modal Creation
 
-- [ ] **TASK-005**: Create `UnauthorizedRoleModal` component in `components/pos/unauthorized-role-modal.tsx`.
+- [x] **TASK-005**: Create `UnauthorizedRoleModal` component in `components/pos/unauthorized-role-modal.tsx`.
   - Semantic SWIFT tokens (`bg-bg-surface`, `bg-bg-card`, `border-danger`, `text-text-primary`, `bg-danger/10`, `text-danger`).
   - Clear heading, operator badge, restriction explanation, "Cancel / Return to Cart" button, and "Request Manager Override" button.
-- [ ] **TASK-006**: Create `ManagerOverrideModal` component in `components/pos/manager-override-modal.tsx`.
+- [x] **TASK-006**: Create `ManagerOverrideModal` component in `components/pos/manager-override-modal.tsx`.
   - Prompt for Manager PIN / Admin Password.
   - Integrate with `verifyAdminElevationAction` server action.
   - Provide keypad and keyboard input with validation and error states.
@@ -54,7 +54,7 @@
 
 ## Phase 5: Staff POS Page Wiring & Security Audit Logging
 
-- [ ] **TASK-007**: Wire checkout guard and modals in `app/staff/pos/page.tsx`.
+- [x] **TASK-007**: Wire checkout guard and modals in `app/staff/pos/page.tsx`.
   - Consume `currentStaffRole` from `usePunchStore()`.
   - Update `handleOpenPayment` to evaluate role guard.
   - Open `UnauthorizedRoleModal` when unauthorized role attempts checkout.
@@ -66,6 +66,6 @@
 
 ## Phase 6: Verification, Quality Gates & Sync
 
-- [ ] **TASK-008**: Run test suite (`npm test -- lib/pos/__tests__/staff-pos-checkout-guard.test.ts`).
-- [ ] **TASK-009**: Run static analysis (`npx tsc --noEmit` and `npm run lint`).
-- [ ] **TASK-010**: Trigger Graphify auto-sync (`graphify . --update`) and review AST map.
+- [x] **TASK-008**: Run test suite (`npm test -- lib/pos/__tests__/staff-pos-checkout-guard.test.ts`).
+- [x] **TASK-009**: Run static analysis (`npx tsc --noEmit` and `npm run lint`).
+- [x] **TASK-010**: Trigger Graphify auto-sync (`graphify . --update`) and review AST map.
