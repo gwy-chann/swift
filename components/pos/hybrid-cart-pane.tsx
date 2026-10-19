@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag, Clock } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import { usePunchStore, type ShiftStateStatus } from '@/lib/store/punch-store';
-import { DISCOUNT_TIERS } from '@/lib/pos/discount-matrix';
+import { DISCOUNT_TIERS, type DiscountTierId } from '@/lib/pos/discount-matrix';
+import { ManagerOverrideModal } from './manager-override-modal';
 import type { CartItem, Product } from '@/lib/types';
 
 export interface HybridCartPaneProps {
@@ -101,6 +102,32 @@ export function HybridCartPane({
     updateQuantity,
     removeItem
   } = useCartStore();
+
+  const [pendingDiscountTier, setPendingDiscountTier] = React.useState<DiscountTierId | null>(null);
+  const [isDiscountOverrideOpen, setIsDiscountOverrideOpen] = React.useState(false);
+
+  const handleSelectDiscountTier = (tierId: DiscountTierId) => {
+    if (tierId === 'none') {
+      setDiscountTier('none');
+      return;
+    }
+
+    const canOverride = punchState.currentPermissions?.can_override_discount;
+    if (canOverride) {
+      setDiscountTier(tierId);
+    } else {
+      setPendingDiscountTier(tierId);
+      setIsDiscountOverrideOpen(true);
+    }
+  };
+
+  const handleDiscountOverrideSuccess = () => {
+    if (pendingDiscountTier) {
+      setDiscountTier(pendingDiscountTier);
+    }
+    setIsDiscountOverrideOpen(false);
+    setPendingDiscountTier(null);
+  };
 
   const handleStepQuantity = (item: CartItem, delta: number) => {
     const nextQty = item.qty + delta;
@@ -303,7 +330,7 @@ export function HybridCartPane({
               <button
                 key={tier.id}
                 type="button"
-                onClick={() => setDiscountTier(tier.id)}
+                onClick={() => handleSelectDiscountTier(tier.id)}
                 title={tier.description}
                 aria-pressed={isActive}
                 className={`flex-1 py-1 px-1 rounded text-[10px] font-bold text-center border transition-all cursor-pointer select-none ${
@@ -395,6 +422,15 @@ export function HybridCartPane({
           <span>{checkoutLabel}</span>
         </button>
       </div>
+
+      <ManagerOverrideModal
+        isOpen={isDiscountOverrideOpen}
+        onClose={() => {
+          setIsDiscountOverrideOpen(false);
+          setPendingDiscountTier(null);
+        }}
+        onOverrideSuccess={handleDiscountOverrideSuccess}
+      />
     </div>
   );
 }

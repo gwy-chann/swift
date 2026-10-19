@@ -34,6 +34,7 @@ export function StaffProfileSwitcher({
       email: profile.email,
       role: profile.role,
       roleDisplay: profile.roleDisplay,
+      permissions: profile.permissions,
       avatarInitials: profile.name
         .split(" ")
         .map((n) => n[0])
@@ -44,7 +45,12 @@ export function StaffProfileSwitcher({
   }
 
   function handlePinSuccess(profile: StaffKioskProfile) {
-    switchStaff({ id: profile.id, name: profile.name });
+    switchStaff({
+      id: profile.id,
+      name: profile.name,
+      role: profile.role,
+      permissions: profile.permissions,
+    });
     setIsPinModalOpen(false);
     setSelectedTarget(null);
     if (onStaffSwitched) {

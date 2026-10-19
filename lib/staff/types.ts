@@ -1,5 +1,5 @@
 import type { ElementType } from "react";
-import type { DbUserRole } from "../types/auth.ts";
+import type { DbUserRole, StaffPermissions } from "../types/auth.ts";
 
 /**
  * Staff Shop Floor Terminal Types & Schemas
@@ -118,6 +118,7 @@ export interface StaffKioskProfile {
   roleDisplay: string;
   avatarInitials: string;
   pin?: string;
+  permissions?: StaffPermissions;
 }
 
 export interface VerifyStaffPinResult {
@@ -126,5 +127,14 @@ export interface VerifyStaffPinResult {
   code?: 'INVALID_PIN' | 'PROFILE_NOT_FOUND' | 'DATABASE_ERROR' | 'UNAUTHORIZED';
   error?: string;
 }
+
+export interface FetchStaffShiftResult {
+  success: boolean;
+  shift?: import("../types/logs.ts").DbStaffShift | null;
+  permissions: StaffPermissions;
+  profile?: StaffKioskProfile;
+  error?: string;
+}
+
 
 
