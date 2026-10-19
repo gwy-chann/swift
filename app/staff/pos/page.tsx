@@ -6,6 +6,8 @@ import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
+import { UnauthorizedRoleModal } from "@/components/pos/unauthorized-role-modal";
+import { PosManagerOverrideModal } from "@/components/pos/manager-override-modal";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { CashTenderModal } from "@/components/pos/cash-tender-modal";
 import { ActiveShiftGuardModal } from "@/components/pos/active-shift-guard-modal";
@@ -15,12 +17,14 @@ import { getProductsAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import { evaluatePosHotkey } from "@/lib/pos/barcode-scanner";
+import { evaluatePosCheckoutAuthorization } from "@/lib/contracts/checkout-guard";
+import { logSecurityEventAction } from "@/lib/admin/audit-actions";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 
 export default function StaffPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
-  const { isShiftActive, shiftStatus, currentStaff } = usePunchStore();
+  const { isShiftActive, shiftStatus, currentStaff, currentStaffRole } = usePunchStore();
   const {
     items,
     totals,
@@ -37,6 +41,9 @@ export default function StaffPosPage() {
   const [laborServices, setLaborServices] = useState<LaborService[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isShiftGuardModalOpen, setIsShiftGuardModalOpen] = useState(false);
+  const [isUnauthorizedRoleModalOpen, setIsUnauthorizedRoleModalOpen] = useState(false);
+  const [isManagerElevationModalOpen, setIsManagerElevationModalOpen] = useState(false);
+  const [hasOneTimeManagerOverride, setHasOneTimeManagerOverride] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -144,14 +151,89 @@ export default function StaffPosPage() {
     setIsOverrideModalOpen(true);
   }, []);
 
+  const logUnauthorizedCheckoutAttempt = useCallback(
+    (attemptedRole: string) => {
+      logSecurityEventAction({
+        action: `Unauthorized POS Checkout Attempt by ${currentStaff || 'Floor Staff'} (${attemptedRole})`,
+        severity: 'warning',
+        terminalIp: 'Terminal #01 (Shop Floor)',
+        userEmail: `${attemptedRole}@swift.local`,
+        metadata: {
+          attemptedRole,
+          staffName: currentStaff || 'Floor Staff',
+          cartItemCount: items.length,
+          cartTotal: totals.total,
+          reason: 'UNAUTHORIZED_ROLE',
+          attemptedAt: new Date().toISOString(),
+        },
+      }).catch((err) => {
+        console.warn('[Staff POS] Audit logging warning:', err);
+      });
+    },
+    [currentStaff, items.length, totals.total]
+  );
+
   const handleOpenPayment = useCallback(() => {
     if (items.length === 0 || isProcessing) return;
+
     if (!isShiftActive || shiftStatus !== "on_shift") {
       setIsShiftGuardModalOpen(true);
       return;
     }
+
+    const auth = evaluatePosCheckoutAuthorization({
+      isShiftActive: isShiftActive && shiftStatus === "on_shift",
+      shiftStatus,
+      currentStaffRole,
+      cartItemCount: items.length,
+      isProcessing,
+      hasOneTimeManagerOverride,
+    });
+
+    if (!auth.allowed) {
+      if (auth.reason === "UNAUTHORIZED_ROLE") {
+        setIsUnauthorizedRoleModalOpen(true);
+        logUnauthorizedCheckoutAttempt(auth.attemptedRole);
+        return;
+      }
+      if (auth.reason === "SHIFT_INACTIVE") {
+        setIsShiftGuardModalOpen(true);
+        return;
+      }
+      if (auth.reason === "CART_EMPTY") {
+        showToast("error", auth.message);
+        return;
+      }
+      return;
+    }
+
+    if (hasOneTimeManagerOverride) {
+      setHasOneTimeManagerOverride(false);
+    }
     openPaymentModal();
-  }, [items.length, isProcessing, isShiftActive, shiftStatus, openPaymentModal]);
+  }, [
+    items.length,
+    isProcessing,
+    isShiftActive,
+    shiftStatus,
+    currentStaffRole,
+    hasOneTimeManagerOverride,
+    logUnauthorizedCheckoutAttempt,
+    openPaymentModal,
+    showToast,
+  ]);
+
+  const handleRequestManagerOverride = useCallback(() => {
+    setIsUnauthorizedRoleModalOpen(false);
+    setIsManagerElevationModalOpen(true);
+  }, []);
+
+  const handleManagerOverrideSuccess = useCallback(() => {
+    setIsManagerElevationModalOpen(false);
+    setHasOneTimeManagerOverride(true);
+    showToast("success", "Manager override approved: One-time checkout authorized.");
+    openPaymentModal();
+  }, [openPaymentModal, showToast]);
 
   const handleConfirmPayment = useCallback(async (cashTendered: number) => {
     if (items.length === 0 || isProcessing) return;
@@ -194,6 +276,8 @@ export default function StaffPosPage() {
     if (isPaymentModalOpen) closePaymentModal();
     if (isReceiptModalOpen) closeReceiptModal();
     if (isShiftGuardModalOpen) setIsShiftGuardModalOpen(false);
+    if (isUnauthorizedRoleModalOpen) setIsUnauthorizedRoleModalOpen(false);
+    if (isManagerElevationModalOpen) setIsManagerElevationModalOpen(false);
     if (isOverrideModalOpen) {
       setIsOverrideModalOpen(false);
       setPendingOverrideProduct(null);
@@ -202,30 +286,40 @@ export default function StaffPosPage() {
     isPaymentModalOpen,
     isReceiptModalOpen,
     isShiftGuardModalOpen,
+    isUnauthorizedRoleModalOpen,
+    isManagerElevationModalOpen,
     isOverrideModalOpen,
     closePaymentModal,
     closeReceiptModal
   ]);
 
-  // Keyboard hotkey for F12 checkout: if modal is not open, open payment modal
+  // Keyboard hotkey for F12 / F9 checkout: if modal is not open, open payment modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isAnyModalOpen =
         isPaymentModalOpen ||
         isReceiptModalOpen ||
         isOverrideModalOpen ||
-        isShiftGuardModalOpen;
+        isShiftGuardModalOpen ||
+        isUnauthorizedRoleModalOpen ||
+        isManagerElevationModalOpen;
 
       const evaluation = evaluatePosHotkey(e.key, {
         cartItemCount: items.length,
         isModalOpen: isAnyModalOpen,
-        isShiftActive: isShiftActive && shiftStatus === "on_shift"
+        isShiftActive: isShiftActive && shiftStatus === "on_shift",
+        userRole: hasOneTimeManagerOverride ? "admin" : currentStaffRole,
       });
 
       if (evaluation.action === "CHECKOUT_PAY") {
         if (evaluation.preventDefault) e.preventDefault();
         if (evaluation.canExecute) {
           handleOpenPayment();
+          return;
+        }
+        if (evaluation.reason === "UNAUTHORIZED_ROLE") {
+          setIsUnauthorizedRoleModalOpen(true);
+          logUnauthorizedCheckoutAttempt(currentStaffRole);
           return;
         }
         if (evaluation.reason === "SHIFT_INACTIVE") {
@@ -250,8 +344,13 @@ export default function StaffPosPage() {
     isReceiptModalOpen,
     isOverrideModalOpen,
     isShiftGuardModalOpen,
+    isUnauthorizedRoleModalOpen,
+    isManagerElevationModalOpen,
     isShiftActive,
     shiftStatus,
+    currentStaffRole,
+    hasOneTimeManagerOverride,
+    logUnauthorizedCheckoutAttempt,
     handleOpenPayment,
     handleCloseModals,
     showToast
@@ -321,7 +420,23 @@ export default function StaffPosPage() {
         onClose={() => setIsShiftGuardModalOpen(false)}
       />
 
-      {/* Manager Override Modal */}
+      {/* Unauthorized Role Checkout Guard Modal (SIAA-84) */}
+      <UnauthorizedRoleModal
+        isOpen={isUnauthorizedRoleModalOpen}
+        currentStaff={currentStaff}
+        currentStaffRole={currentStaffRole}
+        onClose={() => setIsUnauthorizedRoleModalOpen(false)}
+        onRequestOverride={handleRequestManagerOverride}
+      />
+
+      {/* Manager Elevation Override for Checkout (SIAA-84) */}
+      <PosManagerOverrideModal
+        isOpen={isManagerElevationModalOpen}
+        onClose={() => setIsManagerElevationModalOpen(false)}
+        onOverrideSuccess={handleManagerOverrideSuccess}
+      />
+
+      {/* Stock Depletion Manager Override Modal */}
       <ManagerOverrideModal
         isOpen={isOverrideModalOpen}
         product={pendingOverrideProduct}
