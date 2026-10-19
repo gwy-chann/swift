@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { TerminalLiveClock } from "./terminal-live-clock";
 import { StaffProfileSwitcher } from "./staff-profile-switcher";
 import { StaffPinModal } from "./staff-pin-modal";
+import { TerminalEnrollmentModal } from "./terminal-enrollment-modal";
 import { usePunchStore, registerOfflineSyncDispatcher } from "@/lib/store/punch-store";
-import { LogIn, LogOut, Coffee, AlertCircle, CheckCircle2, X, WifiOff } from "lucide-react";
+import { LogIn, LogOut, Coffee, AlertCircle, CheckCircle2, X, WifiOff, Laptop, ShieldAlert } from "lucide-react";
 import { DEFAULT_STAFF_USER, DEFAULT_STAFF_SHIFT } from "@/lib/staff/navigation";
 import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
 import {
@@ -13,6 +14,12 @@ import {
   clockOutShiftAction,
   toggleShiftBreakAction,
 } from "@/lib/staff/actions";
+import {
+  getStoredTerminalDevice,
+  getStoredTerminalDeviceToken,
+  autoEnrollPrimaryTerminalIfFirstRun,
+} from "@/lib/terminal/device-binding";
+import type { TerminalDevice } from "@/lib/terminal/types";
 import type { StaffKioskProfile } from "@/lib/staff/types";
 import type { QueuedPunchAction } from "@/lib/contracts/offline-shift-sync";
 
@@ -84,12 +91,38 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
   } | null>(null);
 
   const [isClockInPinOpen, setIsClockInPinOpen] = useState(false);
+  const [terminalDevice, setTerminalDevice] = useState<TerminalDevice | null>(() => {
+    if (typeof window !== "undefined") {
+      return autoEnrollPrimaryTerminalIfFirstRun();
+    }
+    return null;
+  });
+  const [isTerminalEnrollmentOpen, setIsTerminalEnrollmentOpen] = useState(false);
+
+  // Synchronize terminal device binding events
+  useEffect(() => {
+    const handleDeviceChange = (e: Event) => {
+      const customEvent = e as CustomEvent<TerminalDevice | null>;
+      setTerminalDevice(customEvent.detail || getStoredTerminalDevice());
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("swift:terminal-device-changed", handleDeviceChange);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("swift:terminal-device-changed", handleDeviceChange);
+      }
+    };
+  }, []);
 
   // Register production RPC sync dispatcher on mount
   useEffect(() => {
     registerOfflineSyncDispatcher(async (action: QueuedPunchAction) => {
       if (action.type === "clock_in") {
-        const res = await clockInShiftAction(action.terminalId, undefined, action.profileId);
+        const deviceToken = action.deviceToken || getStoredTerminalDeviceToken() || "";
+        const res = await clockInShiftAction(action.terminalId, undefined, action.profileId, deviceToken);
         return { success: res.success, shiftId: res.shiftId, error: res.error };
       }
       if (action.type === "toggle_break") {
@@ -136,50 +169,72 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     setIsClockInPinOpen(true);
   }
 
-  function handleClockInPinSuccess(profile: StaffKioskProfile) {
+  async function handleClockInPinSuccess(profile: StaffKioskProfile) {
     setIsClockInPinOpen(false);
-    try {
-      clockIn(profile.name, DEFAULT_STAFF_SHIFT.terminalId, profile.id);
-      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
+    const currentToken = getStoredTerminalDeviceToken();
+    const isAuthorized = Boolean(terminalDevice?.isAuthorized && currentToken);
+    const assignedTerminal = terminalDevice?.terminalId || DEFAULT_STAFF_SHIFT.terminalId;
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+    // SIAA-82: Pre-check device authorization. Unauthorized personal phones cannot punch in.
+    if (!isAuthorized) {
+      showNotification(
+        "Clock-in blocked: UNAUTHORIZED_TERMINAL_DEVICE. Attendance punch actions are restricted to authorized physical store counter terminals.",
+        "error"
+      );
+      return;
+    }
+
+    try {
       if (isOffline) {
+        clockIn(profile.name, assignedTerminal, profile.id);
         enqueueOfflinePunch({
           type: "clock_in",
           profileId: profile.id,
           staffName: profile.name,
-          terminalId: DEFAULT_STAFF_SHIFT.terminalId,
+          terminalId: assignedTerminal,
+          deviceToken: currentToken || undefined,
         });
         showNotification(
           `Clock-In recorded locally (offline mode). Will sync automatically when connectivity returns.`,
           "warning"
         );
       } else {
-        showNotification(
-          `Clock-In recorded successfully. Shift started for ${profile.name}!`,
-          "success"
+        const res = await clockInShiftAction(
+          assignedTerminal,
+          undefined,
+          profile.id,
+          currentToken || ""
         );
-        clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id)
-          .then((res) => {
-            if (res.success && res.shiftId) {
-              setActiveShiftId(res.shiftId, profile.id);
-            } else if (!res.success) {
-              enqueueOfflinePunch({
-                type: "clock_in",
-                profileId: profile.id,
-                staffName: profile.name,
-                terminalId: DEFAULT_STAFF_SHIFT.terminalId,
-              });
-            }
-          })
-          .catch((err) => {
-            console.warn("[PunchClockPanel] clockInShiftAction error, enqueuing offline punch:", err);
-            enqueueOfflinePunch({
-              type: "clock_in",
-              profileId: profile.id,
-              staffName: profile.name,
-              terminalId: DEFAULT_STAFF_SHIFT.terminalId,
-            });
+
+        if (res.success && res.shiftId) {
+          clockIn(profile.name, res.terminalId || assignedTerminal, profile.id);
+          setActiveShiftId(res.shiftId, profile.id);
+          showNotification(
+            `Clock-In recorded successfully. Shift started for ${profile.name}!`,
+            "success"
+          );
+        } else if (res.code === "UNAUTHORIZED_TERMINAL_DEVICE" || res.error === "UNAUTHORIZED_TERMINAL_DEVICE") {
+          showNotification(
+            "Clock-in blocked: UNAUTHORIZED_TERMINAL_DEVICE. Attendance punch actions are restricted to physical store counter terminals.",
+            "error"
+          );
+        } else {
+          // General server fallback: enqueue offline punch
+          clockIn(profile.name, assignedTerminal, profile.id);
+          enqueueOfflinePunch({
+            type: "clock_in",
+            profileId: profile.id,
+            staffName: profile.name,
+            terminalId: assignedTerminal,
+            deviceToken: currentToken || undefined,
           });
+          showNotification(
+            `Clock-In recorded locally (offline mode). Will sync automatically when connectivity returns.`,
+            "warning"
+          );
+        }
       }
     } catch {
       showNotification("You are already clocked in for this shift!", "error");
@@ -313,6 +368,40 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
         </div>
       )}
 
+      {/* SIAA-82: Terminal Device Binding Status Badge */}
+      <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 rounded-lg bg-bg-base border border-border text-xs">
+        {terminalDevice?.isAuthorized && getStoredTerminalDeviceToken() ? (
+          <div className="flex items-center gap-2 text-success font-semibold">
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <Laptop className="w-3.5 h-3.5" />
+            <span>
+              Authorized Terminal:{" "}
+              <strong className="text-text-primary">
+                {terminalDevice.terminalId || "Terminal #01"}
+              </strong>{" "}
+              ({terminalDevice.deviceName || "Counter Laptop"})
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-danger font-semibold">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>
+              UNAUTHORIZED REMOTE DEVICE: Punch-in restricted to store counter terminals
+            </span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsTerminalEnrollmentOpen(true)}
+          className="text-[11px] font-semibold text-text-muted hover:text-primary transition-colors underline cursor-pointer"
+        >
+          {terminalDevice?.isAuthorized && getStoredTerminalDeviceToken()
+            ? "Terminal Settings"
+            : "Enroll as Counter Terminal (Master PIN)"}
+        </button>
+      </div>
+
       {/* Header Label */}
       <div className="text-text-muted text-xs font-black tracking-wider uppercase">
         TERMINAL DIGITAL TIME CLOCK
@@ -405,6 +494,20 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
         }}
         onSuccess={handleClockInPinSuccess}
         actionContext="clock_in"
+      />
+
+      {/* SIAA-82: Terminal Device Enrollment & Elevation Modal */}
+      <TerminalEnrollmentModal
+        isOpen={isTerminalEnrollmentOpen}
+        onClose={() => setIsTerminalEnrollmentOpen(false)}
+        currentDevice={terminalDevice}
+        onSuccess={(device) => {
+          setTerminalDevice(device);
+          showNotification(
+            `Device authorized successfully as ${device.terminalId} (${device.deviceName}).`,
+            "success"
+          );
+        }}
       />
     </div>
   );
