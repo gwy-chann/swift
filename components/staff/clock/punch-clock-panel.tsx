@@ -2,14 +2,18 @@
 
 import React, { useState } from "react";
 import { TerminalLiveClock } from "./terminal-live-clock";
+import { StaffProfileSwitcher } from "./staff-profile-switcher";
+import { StaffPinModal } from "./staff-pin-modal";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { LogIn, LogOut, Coffee, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { DEFAULT_STAFF_USER, DEFAULT_STAFF_SHIFT } from "@/lib/staff/navigation";
+import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
 import {
   clockInShiftAction,
   clockOutShiftAction,
   toggleShiftBreakAction,
 } from "@/lib/staff/actions";
+import type { StaffKioskProfile } from "@/lib/staff/types";
 
 interface PunchClockPanelProps {
   className?: string;
@@ -66,6 +70,7 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     clockOut,
     toggleBreak,
     currentStaff,
+    currentProfileId,
   } = usePunchStore();
 
   const [feedback, setFeedback] = useState<{
@@ -73,7 +78,11 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     message: string;
   } | null>(null);
 
+  const [isClockInPinOpen, setIsClockInPinOpen] = useState(false);
+
   const displayStaffName = currentStaff || DEFAULT_STAFF_USER.name;
+  const currentProfile =
+    MOCK_STAFF_PROFILES.find((p) => p.id === currentProfileId) || MOCK_STAFF_PROFILES[1];
 
   function showNotification(message: string, type: FeedbackType) {
     setFeedback({ type, message });
@@ -86,16 +95,22 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     }
   }
 
-  function handleClockIn() {
+  function handleClockInClick() {
     if (isShiftActive && (shiftStatus === "on_shift" || shiftStatus === "break")) {
       showNotification("You are already clocked in for this shift!", "error");
       return;
     }
 
+    // Open PIN verification modal to authenticate before starting shift
+    setIsClockInPinOpen(true);
+  }
+
+  function handleClockInPinSuccess(profile: StaffKioskProfile) {
+    setIsClockInPinOpen(false);
     try {
-      clockIn(displayStaffName, DEFAULT_STAFF_SHIFT.terminalId);
-      showNotification("Clock-In recorded successfully. Shift started!", "success");
-      clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId).catch((err) => {
+      clockIn(profile.name, DEFAULT_STAFF_SHIFT.terminalId, profile.id);
+      showNotification(`Clock-In recorded successfully. Shift started for ${profile.name}!`, "success");
+      clockInShiftAction(DEFAULT_STAFF_SHIFT.terminalId, undefined, profile.id).catch((err) => {
         console.warn("[PunchClockPanel] clockInShiftAction error:", err);
       });
     } catch {
@@ -112,12 +127,12 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
 
     try {
-      const durationStr = clockOut(displayStaffName);
+      const durationStr = clockOut(displayStaffName, currentProfileId);
       showNotification(
         `Clock-Out recorded. Shift ended (${durationStr}) and logged to attendance history.`,
         "success"
       );
-      clockOutShiftAction(currentShiftId).catch((err) => {
+      clockOutShiftAction(currentShiftId, undefined, currentProfileId).catch((err) => {
         console.warn("[PunchClockPanel] clockOutShiftAction error:", err);
       });
     } catch {
@@ -134,13 +149,13 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
     const currentShiftId = activeShiftId || "00000000-0000-0000-0000-000000000000";
 
     try {
-      const next = toggleBreak();
+      const next = toggleBreak(currentProfileId);
       if (next === "break") {
         showNotification("Meal / rest break started. Shift duration paused.", "warning");
       } else {
         showNotification("Break concluded. Resumed active shift clock.", "success");
       }
-      toggleShiftBreakAction(currentShiftId).catch((err) => {
+      toggleShiftBreakAction(currentShiftId, currentProfileId).catch((err) => {
         console.warn("[PunchClockPanel] toggleShiftBreakAction error:", err);
       });
     } catch {
@@ -201,16 +216,18 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
         </div>
       </div>
 
-      {/* Staff Terminal Info */}
-      <div className="text-xs text-text-muted mb-6">
-        Operator: <strong className="text-text-primary">{displayStaffName}</strong> • {DEFAULT_STAFF_SHIFT.terminalId}
-      </div>
+      {/* Staff Profile Switcher & Operator Attribution */}
+      <StaffProfileSwitcher
+        onStaffSwitched={(profile) => {
+          showNotification(`Switched operator to ${profile.name} (${profile.roleDisplay}).`, "success");
+        }}
+      />
 
       {/* Primary Punch Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-w-lg mx-auto">
         <button
           type="button"
-          onClick={handleClockIn}
+          onClick={handleClockInClick}
           className="w-full py-3.5 px-5 bg-success hover:bg-success/90 text-white rounded-lg font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
         >
           <LogIn className="w-4 h-4" />
@@ -241,6 +258,24 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
           <span>{shiftStatus === "break" ? "End Break & Resume Shift" : "Take Meal / Rest Break"}</span>
         </button>
       </div>
+
+      {/* PIN Verification Modal on Clock In */}
+      <StaffPinModal
+        isOpen={isClockInPinOpen}
+        onClose={() => setIsClockInPinOpen(false)}
+        targetProfile={{
+          id: currentProfile.id,
+          name: currentProfile.name,
+          role: currentProfile.roleDisplay,
+          avatarInitials: currentProfile.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase(),
+        }}
+        onSuccess={handleClockInPinSuccess}
+        actionContext="clock_in"
+      />
     </div>
   );
 }

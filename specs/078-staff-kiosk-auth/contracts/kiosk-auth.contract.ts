@@ -9,15 +9,17 @@ export const StaffPinSchema = z
   .trim()
   .regex(/^\d{4}$/, 'PIN must be exactly 4 numeric digits');
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const VerifyStaffPinSchema = z.object({
-  profileId: z.string().uuid('Invalid employee profile ID'),
+  profileId: z.string().regex(uuidRegex, 'Invalid employee profile ID'),
   pin: StaffPinSchema,
 });
 
 export type VerifyStaffPinInput = z.infer<typeof VerifyStaffPinSchema>;
 
 export const StaffKioskProfileSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().regex(uuidRegex, 'Invalid employee profile ID'),
   name: z.string().min(1),
   email: z.string().email(),
   role: z.enum(['admin', 'cashier', 'mechanic', 'inventory_clerk', 'staff']),
@@ -40,7 +42,7 @@ export const VerifyStaffPinResultSchema = z.object({
 export type VerifyStaffPinResult = z.infer<typeof VerifyStaffPinResultSchema>;
 
 export const ClockInPayloadSchema = z.object({
-  profileId: z.string().uuid('Invalid employee profile ID'),
+  profileId: z.string().regex(uuidRegex, 'Invalid employee profile ID'),
   terminalId: z.string().optional(),
   notes: z.string().optional(),
 });
