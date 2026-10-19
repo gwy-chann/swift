@@ -51,8 +51,19 @@ export default function StaffCompatPage() {
   const [systemCategory, setSystemCategory] = useState("ALL");
   const [includeUniversal, setIncludeUniversal] = useState(true);
   const [addedSku, setAddedSku] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<"success" | "warning">("success");
+  const [toastMessage, setToastMessage] = useState<string | null>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const storedToast = sessionStorage.getItem("swift_staff_redirect_toast");
+        if (storedToast) {
+          sessionStorage.removeItem("swift_staff_redirect_toast");
+          return storedToast;
+        }
+      }
+    } catch {}
+    return null;
+  });
+  const [toastType, setToastType] = useState<"success" | "warning">("warning");
   const { products, hydrateProducts } = useInventoryStore();
 
   const refreshProducts = useCallback(() => {
@@ -86,6 +97,14 @@ export default function StaffCompatPage() {
       isMounted = false;
     };
   }, [refreshProducts]);
+
+  // SIAA-85: Auto-dismiss redirect toast notification after 5 seconds
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   // Supabase Realtime multi-terminal fitment updates & stock broadcast
   const { isConnected, status } = useMotoMatcherRealtime(selectedModel?.id, {

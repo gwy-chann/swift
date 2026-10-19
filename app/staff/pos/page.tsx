@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
+import { getRolePrimaryRoute } from "@/lib/staff/navigation";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { UnauthorizedRoleModal } from "@/components/pos/unauthorized-role-modal";
 import { PosManagerOverrideModal } from "@/components/pos/manager-override-modal";
@@ -23,8 +25,12 @@ import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 
 export default function StaffPosPage() {
+  const router = useRouter();
   const { products, hydrateProducts } = useInventoryStore();
   const { isShiftActive, shiftStatus, currentStaff, currentStaffRole } = usePunchStore();
+  const isUnauthorizedRole = Boolean(
+    currentStaffRole && currentStaffRole !== "cashier" && currentStaffRole !== "admin"
+  );
   const {
     items,
     totals,
@@ -49,13 +55,25 @@ export default function StaffPosPage() {
     text: string;
   } | null>(null);
 
-
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
     setTimeout(() => {
       setToastMessage((prev) => (prev?.text === text ? null : prev));
     }, 5000);
   }, []);
+
+  // SIAA-85: Route guard redirecting non-cashier roles (mechanic, inventory_clerk, staff) to authorized workspace
+  useEffect(() => {
+    if (isUnauthorizedRole) {
+      const { targetPath, notificationMessage } = getRolePrimaryRoute(currentStaffRole);
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("swift_staff_redirect_toast", notificationMessage);
+        }
+      } catch {}
+      router.replace(targetPath);
+    }
+  }, [isUnauthorizedRole, currentStaffRole, router]);
 
   // Manager override modal state
   const [pendingOverrideProduct, setPendingOverrideProduct] = useState<Product | null>(null);
@@ -355,6 +373,26 @@ export default function StaffPosPage() {
     handleCloseModals,
     showToast
   ]);
+
+  if (isUnauthorizedRole) {
+    const { targetPath, notificationMessage } = getRolePrimaryRoute(currentStaffRole);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-in fade-in">
+        <div className="p-4 rounded-full bg-secondary/10 text-secondary mb-4">
+          <AlertCircle className="w-8 h-8 animate-pulse" />
+        </div>
+        <h2 className="text-lg font-bold text-text-primary mb-2">Redirecting to Authorized Tool</h2>
+        <p className="text-sm text-text-muted max-w-md mb-4">{notificationMessage}</p>
+        <button
+          type="button"
+          onClick={() => router.replace(targetPath)}
+          className="px-4 py-2 rounded-md bg-secondary text-white font-medium text-xs hover:bg-secondary-hover cursor-pointer"
+        >
+          Proceed to Workspace
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section

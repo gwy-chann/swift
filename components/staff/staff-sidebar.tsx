@@ -3,12 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { STAFF_NAV_ITEMS, DEFAULT_STAFF_USER } from "@/lib/staff/navigation";
+import {
+  STAFF_NAV_ITEMS,
+  DEFAULT_STAFF_USER,
+  filterNavItemsByRole,
+  getRolePrimaryRoute,
+} from "@/lib/staff/navigation";
 import { StaffNavItemComponent } from "./staff-nav-item";
 import { logoutAction } from "@/lib/auth/actions";
 import { Wrench, LogOut, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
+import { mapDbRoleToDisplay, type DbUserRole } from "@/lib/types/auth";
 
 interface StaffSidebarProps {
   onItemClick?: () => void;
@@ -32,7 +38,24 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { totals } = useCartStore();
   const cartItemCount = totals?.itemCount ?? 0;
-  const { isShiftActive, shiftStatus } = usePunchStore();
+  const { isShiftActive, shiftStatus, currentStaff, currentStaffRole } = usePunchStore();
+
+  const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, currentStaffRole);
+  const primaryRoute = getRolePrimaryRoute(currentStaffRole);
+  const homeHref = primaryRoute.isAuthorizedForPos ? "/staff/pos" : primaryRoute.targetPath;
+
+  const displayName = currentStaff || DEFAULT_STAFF_USER.name;
+  const displayRole = currentStaffRole
+    ? mapDbRoleToDisplay(currentStaffRole.toLowerCase() as DbUserRole)
+    : DEFAULT_STAFF_USER.role;
+  const avatarInitials =
+    displayName
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || DEFAULT_STAFF_USER.avatarInitials;
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -59,7 +82,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
       {/* Brand Header */}
       <div>
         <div className="p-5 flex items-center justify-between border-b border-white/10">
-          <Link href="/staff/pos" className="flex items-center gap-2.5">
+          <Link href={homeHref} className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center text-white shadow-xs">
               <Wrench className="w-4 h-4" />
             </div>
@@ -77,7 +100,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
               Shop Floor Operations
             </div>
             <div className="space-y-0.5">
-              {STAFF_NAV_ITEMS.map((item) => {
+              {visibleNavItems.map((item) => {
                 let itemWithBadge = item;
 
                 if (item.id === "pos" && cartItemCount > 0) {
@@ -94,7 +117,6 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
                     badge: getClockBadge(isShiftActive, shiftStatus),
                   };
                 }
-
 
                 return (
                   <StaffNavItemComponent
@@ -115,14 +137,14 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
       <div className="p-4 border-t border-white/10 bg-black/20">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-9 h-9 rounded-full bg-info flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
-            {DEFAULT_STAFF_USER.avatarInitials}
+            {avatarInitials}
           </div>
           <div className="truncate">
             <div className="text-xs font-bold text-white truncate">
-              {DEFAULT_STAFF_USER.name}
+              {displayName}
             </div>
             <div className="text-[11px] text-text-muted font-medium truncate">
-              {DEFAULT_STAFF_USER.role}
+              {displayRole}
             </div>
           </div>
         </div>
