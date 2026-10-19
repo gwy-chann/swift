@@ -67,9 +67,9 @@ export const MOCK_PUNCH_LOGS: PunchLog[] = [
     date: '2026-09-28',
     staff: 'Mike Morales',
     timeIn: '08:00:15 AM',
-    timeOut: '-- Active Shift --',
+    timeOut: '12:12:45 PM',
     duration: '04h 12m',
-    status: 'On Shift'
+    status: 'Completed'
   },
   {
     id: 'PUNCH-102',

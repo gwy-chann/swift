@@ -16,6 +16,7 @@ export type ShiftStateStatus = 'on_shift' | 'break' | 'completed' | 'idle';
 
 export interface PunchStoreState {
   isShiftActive: boolean;
+  activeShiftId: string | null;
   shiftSeconds: number;
   punchLogs: PunchLog[];
   currentStaff: string;
@@ -39,11 +40,12 @@ export class PunchStore {
   constructor() {
     const initialLogs = [...MOCK_PUNCH_LOGS];
     this.state = {
-      isShiftActive: true,
-      shiftSeconds: 15150, // 04h 12m 30s as in mockup/app.js line 724
+      isShiftActive: false,
+      activeShiftId: null,
+      shiftSeconds: 0,
       punchLogs: initialLogs,
       currentStaff: 'Mike Morales',
-      shiftStatus: 'on_shift',
+      shiftStatus: 'idle',
       lastError: null,
       activeStaffCount: this.calculateActiveStaffCount(initialLogs),
     };
@@ -188,9 +190,10 @@ export class PunchStore {
       second: '2-digit',
       hour12: true,
     });
+    const shiftId = `PUNCH-${Date.now()}`;
 
     const newLog: PunchLog = {
-      id: `PUNCH-${Date.now()}`,
+      id: shiftId,
       date: dateStr,
       staff: staffName,
       timeIn: timeStr,
@@ -205,6 +208,7 @@ export class PunchStore {
     this.state = {
       ...this.state,
       isShiftActive: true,
+      activeShiftId: shiftId,
       shiftStatus: 'on_shift',
       shiftSeconds: 0,
       currentStaff: staffName,
@@ -228,9 +232,13 @@ export class PunchStore {
     }
 
     const nextStatus: ShiftStateStatus = this.state.shiftStatus === 'on_shift' ? 'break' : 'on_shift';
+    const targetId = this.state.activeShiftId;
 
+    let updated = false;
     const updatedLogs = this.state.punchLogs.map((log, index) => {
-      if (index === 0 && (log.status === 'On Shift' || log.status === 'Break')) {
+      const isTarget = targetId ? log.id === targetId : (index === 0 && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break'));
+      if (isTarget && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break')) {
+        updated = true;
         return {
           ...log,
           status: nextStatus === 'break' ? 'Break' : 'On Shift',
@@ -238,6 +246,19 @@ export class PunchStore {
       }
       return log;
     });
+
+    if (!updated && updatedLogs.length > 0) {
+      for (let i = 0; i < updatedLogs.length; i++) {
+        const log = updatedLogs[i];
+        if (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break') {
+          updatedLogs[i] = {
+            ...log,
+            status: nextStatus === 'break' ? 'Break' : 'On Shift',
+          };
+          break;
+        }
+      }
+    }
 
     this.state = {
       ...this.state,
@@ -271,9 +292,16 @@ export class PunchStore {
       hour12: true,
     });
     const durationStr = formatDurationToHoursMinutes(this.state.shiftSeconds);
+    const targetId = this.state.activeShiftId;
 
+    let matched = false;
     const updatedLogs = this.state.punchLogs.map((log, index) => {
-      if (index === 0 && (log.status === 'On Shift' || log.status === 'Break')) {
+      const isTarget = targetId
+        ? log.id === targetId
+        : (index === 0 || log.timeOut === '-- Active Shift --' || log.status === 'On Shift' || log.status === 'Break');
+
+      if (!matched && isTarget && (log.status === 'On Shift' || log.status === 'Break' || log.status === 'on_shift' || log.status === 'break' || log.timeOut === '-- Active Shift --')) {
+        matched = true;
         return {
           ...log,
           staff: staffName,
@@ -285,9 +313,28 @@ export class PunchStore {
       return log;
     });
 
+    // Fallback if targetId wasn't found in initial map
+    if (!matched && updatedLogs.length > 0) {
+      for (let i = 0; i < updatedLogs.length; i++) {
+        const log = updatedLogs[i];
+        if (log.status === 'On Shift' || log.status === 'Break' || log.timeOut === '-- Active Shift --') {
+          updatedLogs[i] = {
+            ...log,
+            staff: staffName,
+            timeOut: timeStr,
+            duration: durationStr,
+            status: 'Completed',
+          };
+          matched = true;
+          break;
+        }
+      }
+    }
+
     this.state = {
       ...this.state,
       isShiftActive: false,
+      activeShiftId: null,
       shiftStatus: 'completed',
       lastError: null,
       punchLogs: updatedLogs,
@@ -306,19 +353,28 @@ export class PunchStore {
     this.notify();
   };
 
+  private mergeRecentLogs(current: PunchLog[], recent?: PunchLog[]): PunchLog[] {
+    if (!recent || recent.length === 0) return current;
+    const existingIds = new Set(current.map((l) => l.id).filter(Boolean));
+    const newLogsToPrepend = recent.filter((log) => !log.id || !existingIds.has(log.id));
+    return [...newLogsToPrepend, ...current];
+  }
+
   public rehydrateShift = (
     activeShift: DbStaffShift | null,
     recentLogs?: PunchLog[],
     nowTimestamp?: number
   ): void => {
     const now = nowTimestamp ?? Date.now();
-    let isShiftActive = false;
-    let shiftStatus: ShiftStateStatus = 'idle';
-    let shiftSeconds = 0;
+    let isShiftActive = this.state.isShiftActive;
+    let activeShiftId = this.state.activeShiftId;
+    let shiftStatus: ShiftStateStatus = this.state.shiftStatus;
+    let shiftSeconds = this.state.shiftSeconds;
     let currentStaff = this.state.currentStaff;
 
     if (activeShift) {
       currentStaff = activeShift.staff_name;
+      activeShiftId = activeShift.id;
       const clockInMs = new Date(activeShift.clock_in).getTime();
       const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
 
@@ -331,27 +387,25 @@ export class PunchStore {
         shiftStatus = 'on_shift';
         shiftSeconds = elapsed;
       } else {
+        isShiftActive = false;
+        activeShiftId = null;
         shiftStatus = 'completed';
         shiftSeconds = activeShift.duration_seconds ?? 0;
       }
+    } else if (!this.state.isShiftActive) {
+      // Remote returned activeShift === null and local shift is inactive
+      isShiftActive = false;
+      activeShiftId = null;
+      shiftStatus = 'idle';
+      shiftSeconds = 0;
     }
 
-    let mergedLogs = [...this.state.punchLogs];
-    if (recentLogs && recentLogs.length > 0) {
-      const existingIds = new Set(mergedLogs.map((l) => l.id).filter(Boolean));
-      const newLogsToPrepend: PunchLog[] = [];
-      for (const log of recentLogs) {
-        if (log.id && !existingIds.has(log.id)) {
-          newLogsToPrepend.push(log);
-          existingIds.add(log.id);
-        }
-      }
-      mergedLogs = [...newLogsToPrepend, ...mergedLogs];
-    }
+    const mergedLogs = this.mergeRecentLogs(this.state.punchLogs, recentLogs);
 
     this.state = {
       ...this.state,
       isShiftActive,
+      activeShiftId,
       shiftStatus,
       shiftSeconds,
       currentStaff,
@@ -368,12 +422,14 @@ export class PunchStore {
     const newLogs = exists ? this.state.punchLogs : [mapped, ...this.state.punchLogs];
 
     let nextIsActive = this.state.isShiftActive;
+    let nextActiveShiftId = this.state.activeShiftId;
     let nextStatus = this.state.shiftStatus;
     let nextStaff = this.state.currentStaff;
     let nextSeconds = this.state.shiftSeconds;
 
     if (row.staff_name === this.state.currentStaff && (row.status === 'on_shift' || row.status === 'break')) {
       nextIsActive = true;
+      nextActiveShiftId = row.id;
       nextStatus = row.status as ShiftStateStatus;
       nextStaff = row.staff_name;
       const clockInMs = new Date(row.clock_in).getTime();
@@ -383,6 +439,7 @@ export class PunchStore {
     this.state = {
       ...this.state,
       isShiftActive: nextIsActive,
+      activeShiftId: nextActiveShiftId,
       shiftStatus: nextStatus,
       currentStaff: nextStaff,
       shiftSeconds: nextSeconds,
@@ -408,20 +465,24 @@ export class PunchStore {
     }
 
     let nextIsActive = this.state.isShiftActive;
+    let nextActiveShiftId = this.state.activeShiftId;
     let nextStatus = this.state.shiftStatus;
     let nextSeconds = this.state.shiftSeconds;
 
     if (row.staff_name === this.state.currentStaff) {
       if (row.status === 'completed') {
         nextIsActive = false;
+        nextActiveShiftId = null;
         nextStatus = 'completed';
         if (row.duration_seconds !== null && row.duration_seconds !== undefined) {
           nextSeconds = row.duration_seconds;
         }
       } else if (row.status === 'break') {
         nextStatus = 'break';
+        nextActiveShiftId = row.id;
       } else if (row.status === 'on_shift') {
         nextIsActive = true;
+        nextActiveShiftId = row.id;
         nextStatus = 'on_shift';
       }
     }
@@ -429,6 +490,7 @@ export class PunchStore {
     this.state = {
       ...this.state,
       isShiftActive: nextIsActive,
+      activeShiftId: nextActiveShiftId,
       shiftStatus: nextStatus,
       shiftSeconds: nextSeconds,
       punchLogs: newLogs,
