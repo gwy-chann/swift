@@ -2,8 +2,33 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { evaluateShiftGuard } from '../shift-guard.ts';
 import { evaluatePosHotkey } from '../barcode-scanner.ts';
+import { ShiftGuardEvaluationSchema } from '../../../specs/070-staff-pos-time-in-guard/contracts/shift-guard.contract.ts';
 
 describe('Active Shift Time-In Guard Evaluator (SIAA-74)', () => {
+  describe('Contracts & Schema Validation', () => {
+    it('validates compliant shift guard evaluation schema', () => {
+      const evaluation = evaluateShiftGuard(true, 'on_shift', 'Mike Morales');
+      const parsed = ShiftGuardEvaluationSchema.safeParse(evaluation);
+      assert.strictEqual(parsed.success, true);
+      if (parsed.success) {
+        assert.strictEqual(parsed.data.isAllowed, true);
+        assert.strictEqual(parsed.data.reason, 'OK');
+        assert.strictEqual(parsed.data.currentStaff, 'Mike Morales');
+      }
+    });
+
+    it('validates blocked shift guard evaluation schema on idle', () => {
+      const evaluation = evaluateShiftGuard(false, 'idle', null);
+      const parsed = ShiftGuardEvaluationSchema.safeParse(evaluation);
+      assert.strictEqual(parsed.success, true);
+      if (parsed.success) {
+        assert.strictEqual(parsed.data.isAllowed, false);
+        assert.strictEqual(parsed.data.reason, 'NOT_CLOCKED_IN');
+        assert.ok(parsed.data.message?.includes('Active Shift Required'));
+      }
+    });
+  });
+
   describe('evaluateShiftGuard pure evaluator', () => {
     it('blocks checkout and returns NOT_CLOCKED_IN when shift is not active', () => {
       const result = evaluateShiftGuard(false, 'idle', 'John Doe');
@@ -31,7 +56,7 @@ describe('Active Shift Time-In Guard Evaluator (SIAA-74)', () => {
     it('blocks checkout and returns SHIFT_COMPLETED when cashier shift is completed', () => {
       const result = evaluateShiftGuard(false, 'completed', 'Alice Smith');
       assert.strictEqual(result.isAllowed, false);
-      assert.strictEqual(result.reason, 'NOT_CLOCKED_IN'); // !isShiftActive triggers first or completed check
+      assert.strictEqual(result.reason, 'NOT_CLOCKED_IN');
     });
 
     it('blocks checkout when isShiftActive is true but status is completed', () => {
@@ -117,6 +142,27 @@ describe('Active Shift Time-In Guard Evaluator (SIAA-74)', () => {
 
       assert.strictEqual(evaluation.action, 'CHECKOUT_PAY');
       assert.strictEqual(evaluation.canExecute, true);
+    });
+  });
+
+  describe('Cashier Attribution & Cart State Logic', () => {
+    it('resolves dynamic cashier name from active staff and falls back safely', () => {
+      const resolveCashier = (staff?: string | null) => staff?.trim() || 'Staff Cashier';
+
+      assert.strictEqual(resolveCashier('Mike Morales'), 'Mike Morales');
+      assert.strictEqual(resolveCashier('  '), 'Staff Cashier');
+      assert.strictEqual(resolveCashier(null), 'Staff Cashier');
+      assert.strictEqual(resolveCashier(undefined), 'Staff Cashier');
+    });
+
+    it('evaluates isShiftReady condition correctly', () => {
+      const isShiftReady = (active: boolean, status: string) => active && status === 'on_shift';
+
+      assert.strictEqual(isShiftReady(true, 'on_shift'), true);
+      assert.strictEqual(isShiftReady(true, 'break'), false);
+      assert.strictEqual(isShiftReady(false, 'on_shift'), false);
+      assert.strictEqual(isShiftReady(false, 'idle'), false);
+      assert.strictEqual(isShiftReady(true, 'completed'), false);
     });
   });
 });

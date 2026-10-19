@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag } from 'lucide-react';
+import Link from 'next/link';
+import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag, Clock } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
+import { usePunchStore, type ShiftStateStatus } from '@/lib/store/punch-store';
 import { DISCOUNT_TIERS } from '@/lib/pos/discount-matrix';
 import type { CartItem, Product } from '@/lib/types';
 
@@ -12,6 +14,65 @@ export interface HybridCartPaneProps {
   onRequireOverride?: (product: Product) => void;
   onCompleteSale?: () => void;
   isProcessing?: boolean;
+  isShiftActive?: boolean;
+  shiftStatus?: ShiftStateStatus;
+}
+
+function isDiscountTierActive(
+  tierId: string,
+  tierRate: number,
+  discountRate: number,
+  discountType: string
+): boolean {
+  if (tierId === 'none') {
+    return discountRate === 0 || discountType === 'none';
+  }
+  return discountType === tierId || Math.abs(discountRate - tierRate) < 0.001;
+}
+
+function getShiftWarningBannerContent(status: ShiftStateStatus) {
+  if (status === 'break') {
+    return {
+      title: 'SHIFT ON BREAK',
+      subtitle: 'Resume shift at punch clock to process sales'
+    };
+  }
+  if (status === 'completed') {
+    return {
+      title: 'SHIFT COMPLETED',
+      subtitle: 'Time-in required before completing sales'
+    };
+  }
+  return {
+    title: 'NOT TIMED IN / SHIFT INACTIVE',
+    subtitle: 'Time-in required before completing sales'
+  };
+}
+
+function getCheckoutButtonTitle(isReady: boolean, itemCount: number): string {
+  if (!isReady) {
+    return 'Active shift required: Time in at punch clock before processing customer orders';
+  }
+  if (itemCount === 0) {
+    return 'Active ticket is empty';
+  }
+  return 'Complete sale (F12)';
+}
+
+function getCheckoutButtonClass(isDisabled: boolean, isReady: boolean): string {
+  if (isDisabled) {
+    return 'bg-bg-muted text-text-muted border border-border-subtle cursor-not-allowed';
+  }
+  if (!isReady) {
+    return 'bg-warning/20 text-warning border border-warning/40 hover:bg-warning/30 cursor-pointer';
+  }
+  return 'bg-primary hover:bg-primary-hover text-text-light cursor-pointer';
+}
+
+function getCheckoutButtonLabel(isProcessing: boolean, isReady: boolean): string {
+  if (isProcessing) return 'PROCESSING...';
+  if (!isReady) return 'TIME-IN REQUIRED (F12)';
+  return 'COMPLETE SALE (F12)';
 }
 
 export function HybridCartPane({
@@ -19,8 +80,16 @@ export function HybridCartPane({
   catalogProducts = [],
   onRequireOverride,
   onCompleteSale,
-  isProcessing = false
+  isProcessing = false,
+  isShiftActive: isShiftActiveProp,
+  shiftStatus: shiftStatusProp
 }: Readonly<HybridCartPaneProps>) {
+  const punchState = usePunchStore();
+  const shiftActive = isShiftActiveProp ?? punchState.isShiftActive;
+  const activeShiftStatus = shiftStatusProp ?? punchState.shiftStatus;
+  const isShiftReady = shiftActive && activeShiftStatus === 'on_shift';
+  const shiftBanner = getShiftWarningBannerContent(activeShiftStatus);
+
   const {
     items,
     pricingMode,
@@ -43,16 +112,19 @@ export function HybridCartPane({
     if (item.type === 'part' && delta > 0 && !item.isOverridden) {
       const product = catalogProducts.find((p) => p.sku === item.sku);
       const availableStock = product?.stock ?? item.stock ?? 999;
-      if (nextQty > availableStock) {
-        if (onRequireOverride && product) {
-          onRequireOverride(product);
-          return;
-        }
+      if (nextQty > availableStock && onRequireOverride && product) {
+        onRequireOverride(product);
+        return;
       }
     }
 
     updateQuantity(item.id, nextQty);
   };
+
+  const isCheckoutDisabled = items.length === 0 || isProcessing;
+  const checkoutTitle = getCheckoutButtonTitle(isShiftReady, items.length);
+  const checkoutClass = getCheckoutButtonClass(isCheckoutDisabled, isShiftReady);
+  const checkoutLabel = getCheckoutButtonLabel(isProcessing, isShiftReady);
 
   return (
     <div className="w-full lg:w-96 flex flex-col bg-bg-surface border border-border rounded-xl shadow-xs overflow-hidden shrink-0">
@@ -225,10 +297,7 @@ export function HybridCartPane({
         {/* Standardized Customer Discount Matrix Chips (SIAA-20) */}
         <div className="flex items-center gap-1.5 pt-1">
           {DISCOUNT_TIERS.map((tier) => {
-            const isActive =
-              tier.id === 'none'
-                ? discountRate === 0 || discountType === 'none'
-                : discountType === tier.id || Math.abs(discountRate - tier.rate) < 0.001;
+            const isActive = isDiscountTierActive(tier.id, tier.rate, discountRate, discountType);
 
             return (
               <button
@@ -283,19 +352,47 @@ export function HybridCartPane({
           </div>
         )}
 
+        {/* Visual Inactive Shift Warning Indicator (SIAA-74) */}
+        {!isShiftReady && (
+          <div
+            data-testid="shift-inactive-warning-banner"
+            className="p-2.5 rounded-lg bg-warning/15 border border-warning/40 text-warning flex items-center justify-between gap-2 shadow-2xs transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-warning animate-pulse" />
+              <div>
+                <div className="text-[11px] font-black tracking-wider uppercase flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-warning" />
+                  <span>{shiftBanner.title}</span>
+                </div>
+                <div className="text-[10px] text-text-muted font-medium">
+                  {shiftBanner.subtitle}
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/staff/clock"
+              className="px-2 py-1 rounded text-[10px] font-extrabold uppercase tracking-wide bg-warning text-text-light hover:bg-warning/90 transition-colors shadow-2xs"
+            >
+              Punch Clock
+            </Link>
+          </div>
+        )}
+
         {/* Complete Sale Action */}
         <button
           type="button"
-          disabled={items.length === 0 || isProcessing}
+          disabled={isCheckoutDisabled}
           onClick={onCompleteSale}
-          className={`w-full py-3 px-4 rounded-lg text-xs font-extrabold shadow-md uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
-            items.length === 0 || isProcessing
-              ? 'bg-bg-muted text-text-muted border border-border-subtle cursor-not-allowed'
-              : 'bg-primary hover:bg-primary-hover text-text-light cursor-pointer'
-          }`}
+          title={checkoutTitle}
+          className={`w-full py-3 px-4 rounded-lg text-xs font-extrabold shadow-md uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${checkoutClass}`}
         >
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{isProcessing ? 'PROCESSING...' : 'COMPLETE SALE (F12)'}</span>
+          {!isShiftReady ? (
+            <Clock className="w-4 h-4" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4" />
+          )}
+          <span>{checkoutLabel}</span>
         </button>
       </div>
     </div>

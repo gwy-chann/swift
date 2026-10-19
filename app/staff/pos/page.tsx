@@ -4,9 +4,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
+import { usePunchStore } from "@/lib/store/punch-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { CashTenderModal } from "@/components/pos/cash-tender-modal";
+import { ActiveShiftGuardModal } from "@/components/pos/active-shift-guard-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
@@ -18,6 +20,7 @@ import type { LaborService } from "@/lib/types/service";
 
 export default function StaffPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
+  const { isShiftActive, shiftStatus, currentStaff } = usePunchStore();
   const {
     items,
     totals,
@@ -33,6 +36,7 @@ export default function StaffPosPage() {
   } = useCartStore();
   const [laborServices, setLaborServices] = useState<LaborService[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isShiftGuardModalOpen, setIsShiftGuardModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -142,16 +146,21 @@ export default function StaffPosPage() {
 
   const handleOpenPayment = useCallback(() => {
     if (items.length === 0 || isProcessing) return;
+    if (!isShiftActive || shiftStatus !== "on_shift") {
+      setIsShiftGuardModalOpen(true);
+      return;
+    }
     openPaymentModal();
-  }, [items.length, isProcessing, openPaymentModal]);
+  }, [items.length, isProcessing, isShiftActive, shiftStatus, openPaymentModal]);
 
   const handleConfirmPayment = useCallback(async (cashTendered: number) => {
     if (items.length === 0 || isProcessing) return;
     setIsProcessing(true);
 
     try {
+      const cashierName = currentStaff?.trim() || "Staff Cashier";
       const result = await checkout({
-        cashier: "Fast-Lane Cashier",
+        cashier: cashierName,
         cashTendered,
         paymentMethod: "Cash"
       });
@@ -175,39 +184,62 @@ export default function StaffPosPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [items, isProcessing, checkout, showToast, hydrateProducts]);
+  }, [items, isProcessing, currentStaff, checkout, showToast, hydrateProducts]);
 
   const handleScanNotFound = useCallback(() => {
     showToast("error", "Item code or barcode not found");
   }, [showToast]);
 
+  const handleCloseModals = useCallback(() => {
+    if (isPaymentModalOpen) closePaymentModal();
+    if (isReceiptModalOpen) closeReceiptModal();
+    if (isShiftGuardModalOpen) setIsShiftGuardModalOpen(false);
+    if (isOverrideModalOpen) {
+      setIsOverrideModalOpen(false);
+      setPendingOverrideProduct(null);
+    }
+  }, [
+    isPaymentModalOpen,
+    isReceiptModalOpen,
+    isShiftGuardModalOpen,
+    isOverrideModalOpen,
+    closePaymentModal,
+    closeReceiptModal
+  ]);
+
   // Keyboard hotkey for F12 checkout: if modal is not open, open payment modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isAnyModalOpen =
-        isPaymentModalOpen || isReceiptModalOpen || isOverrideModalOpen;
+        isPaymentModalOpen ||
+        isReceiptModalOpen ||
+        isOverrideModalOpen ||
+        isShiftGuardModalOpen;
 
       const evaluation = evaluatePosHotkey(e.key, {
         cartItemCount: items.length,
-        isModalOpen: isAnyModalOpen
+        isModalOpen: isAnyModalOpen,
+        isShiftActive: isShiftActive && shiftStatus === "on_shift"
       });
 
       if (evaluation.action === "CHECKOUT_PAY") {
-        if (evaluation.preventDefault) {
-          e.preventDefault();
-        }
+        if (evaluation.preventDefault) e.preventDefault();
         if (evaluation.canExecute) {
           handleOpenPayment();
-        } else if (evaluation.reason === "CART_EMPTY") {
+          return;
+        }
+        if (evaluation.reason === "SHIFT_INACTIVE") {
+          setIsShiftGuardModalOpen(true);
+          return;
+        }
+        if (evaluation.reason === "CART_EMPTY") {
           showToast("error", evaluation.message || "Cannot checkout: Cart is empty.");
         }
-      } else if (evaluation.action === "CLOSE_MODAL" && evaluation.canExecute) {
-        if (isPaymentModalOpen) closePaymentModal();
-        if (isReceiptModalOpen) closeReceiptModal();
-        if (isOverrideModalOpen) {
-          setIsOverrideModalOpen(false);
-          setPendingOverrideProduct(null);
-        }
+        return;
+      }
+
+      if (evaluation.action === "CLOSE_MODAL" && evaluation.canExecute) {
+        handleCloseModals();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -217,9 +249,11 @@ export default function StaffPosPage() {
     isPaymentModalOpen,
     isReceiptModalOpen,
     isOverrideModalOpen,
+    isShiftGuardModalOpen,
+    isShiftActive,
+    shiftStatus,
     handleOpenPayment,
-    closePaymentModal,
-    closeReceiptModal,
+    handleCloseModals,
     showToast
   ]);
 
@@ -274,8 +308,18 @@ export default function StaffPosPage() {
           onRequireOverride={handleRequireOverride}
           onCompleteSale={handleOpenPayment}
           isProcessing={isProcessing}
+          isShiftActive={isShiftActive}
+          shiftStatus={shiftStatus}
         />
       </div>
+
+      {/* Active Shift Time-In Guard Modal (SIAA-74) */}
+      <ActiveShiftGuardModal
+        isOpen={isShiftGuardModalOpen}
+        shiftStatus={shiftStatus}
+        currentStaff={currentStaff}
+        onClose={() => setIsShiftGuardModalOpen(false)}
+      />
 
       {/* Manager Override Modal */}
       <ManagerOverrideModal
