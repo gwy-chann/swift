@@ -36,7 +36,7 @@ export function AttendanceHistoryTable({
   title = "My Attendance & Shift Log History",
   terminalLabel = "Terminal #01",
 }: AttendanceHistoryTableProps) {
-  const { punchLogs: storeLogs, isShiftActive, formattedTimer } = usePunchStore();
+  const { punchLogs: storeLogs, isShiftActive, activeShiftId, formattedTimer } = usePunchStore();
 
   const logs = useMemo(() => {
     const raw = storeLogs.length > 0 ? storeLogs : (initialLogs ?? []);
@@ -80,8 +80,9 @@ export function AttendanceHistoryTable({
             {logs.length > 0 ? (
               logs.map((log, index) => {
                 const isActive =
-                  (log.status === "On Shift" || log.status === "on_shift") &&
-                  (log.timeOut === "-- Active Shift --" || (index === 0 && isShiftActive));
+                  isShiftActive &&
+                  (log.status === "On Shift" || log.status === "on_shift" || log.status === "Break" || log.status === "break") &&
+                  (activeShiftId ? log.id === activeShiftId : (index === 0 && log.timeOut === "-- Active Shift --"));
 
                 return (
                   <tr
