@@ -36,7 +36,7 @@ async function fetchMotorcycleModelsDirect(): Promise<MotorcycleModelRecord[]> {
         year_start: Number(m.year_start),
         year_end: m.year_end !== null && m.year_end !== undefined ? Number(m.year_end) : null,
         category: String(m.category),
-        image_url: m.image_url ? String(m.image_url) : null,
+        image_url: typeof m.image_url === 'string' ? m.image_url : null,
         created_at: m.created_at as string | Date | undefined,
         updated_at: m.updated_at as string | Date | undefined,
       }));

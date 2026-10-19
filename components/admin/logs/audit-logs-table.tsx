@@ -18,14 +18,14 @@ import {
 } from '@/lib/admin/audit-actions';
 
 interface AuditLogsTableProps {
-  initialLogs: SecurityAuditLog[];
-  totalCount?: number;
+  readonly initialLogs: SecurityAuditLog[];
+  readonly totalCount?: number;
 }
 
 export function AuditLogsTable({
   initialLogs,
   totalCount: initialTotal,
-}: AuditLogsTableProps) {
+}: Readonly<AuditLogsTableProps>) {
   const [logs, setLogs] = useState<SecurityAuditLog[]>(initialLogs);
   const [totalCount, setTotalCount] = useState<number>(initialTotal ?? initialLogs.length);
   const [selectedSeverity, setSelectedSeverity] = useState<AuditLogSeverity | 'all'>('all');
@@ -70,7 +70,7 @@ export function AuditLogsTable({
       link.setAttribute('download', `swift-security-audit-logs-${new Date().toISOString().slice(0, 10)}.${extension}`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
       URL.revokeObjectURL(url);
     } catch {
       // Graceful error suppression on export
@@ -127,7 +127,7 @@ export function AuditLogsTable({
         {/* Toolbar Controls */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search Input */}
-          <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+          <div className="relative min-w-50 flex-1 sm:flex-initial">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
               type="text"

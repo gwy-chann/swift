@@ -15,16 +15,16 @@ import type { CategoryPnlData } from '@/lib/types/analytics';
 export type PeriodOption = AnalyticsPeriod;
 
 export interface ReportsViewClientProps {
-  initialData: CategoryPnlData;
-  initialPeriod?: PeriodOption;
-  initialInvoiceCount?: number;
+  readonly initialData: CategoryPnlData;
+  readonly initialPeriod?: PeriodOption;
+  readonly initialInvoiceCount?: number;
 }
 
 export function ReportsViewClient({
   initialData,
   initialPeriod = 'daily',
   initialInvoiceCount,
-}: ReportsViewClientProps) {
+}: Readonly<ReportsViewClientProps>) {
   const [data, setData] = useState<CategoryPnlData>(initialData);
   const [period, setPeriod] = useState<PeriodOption>(initialPeriod);
   const [invoiceCount, setInvoiceCount] = useState<number>(
@@ -56,7 +56,7 @@ export function ReportsViewClient({
     link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
     URL.revokeObjectURL(url);
   };
 
@@ -86,11 +86,11 @@ export function ReportsViewClient({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Multi-Period Filter Buttons */}
-          <div
-            className="flex bg-bg-muted p-1 rounded-lg border border-border"
-            role="group"
+          <fieldset
+            className="flex bg-bg-muted p-1 rounded-lg border border-border m-0"
             aria-label="Sales Period Filter"
           >
+            <legend className="sr-only">Sales Period Filter</legend>
             <button
               type="button"
               data-testid="filter-daily"
@@ -133,7 +133,7 @@ export function ReportsViewClient({
             >
               Monthly Sales
             </button>
-          </div>
+          </fieldset>
 
           {/* Action Buttons: Export CSV & Print */}
           <div className="flex items-center gap-1.5">

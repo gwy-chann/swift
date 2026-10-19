@@ -16,17 +16,38 @@ import {
   getEmptyCategoryPnl,
 } from './mapper.ts';
 
-function formatRpcError(error: unknown): string {
-  if (!error) return 'No data returned';
-  if (typeof error === 'object' && error !== null) {
-    const err = error as Record<string, unknown>;
-    const msg = err.message || err.details || err.code;
-    if (msg) {
-      return `${err.message ?? ''} ${err.code ? `(${err.code})` : ''} ${err.details ? `- ${err.details}` : ''}`.trim();
-    }
-    return JSON.stringify(error);
+function formatObjectError(error: object): string {
+  const err = error as { message?: unknown; details?: unknown; code?: unknown };
+  const parts: string[] = [];
+
+  const msg = typeof err.message === 'string' ? err.message.trim() : '';
+  if (msg) parts.push(msg);
+
+  const code = typeof err.code === 'string' || typeof err.code === 'number' ? String(err.code) : '';
+  if (code) parts.push(`(${code})`);
+
+  const details = typeof err.details === 'string' ? err.details.trim() : '';
+  if (details) parts.push(`- ${details}`);
+
+  if (parts.length > 0) {
+    return parts.join(' ');
   }
-  return String(error);
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return '[Unserializable Error]';
+  }
+}
+
+function formatRpcError(error: unknown): string {
+  if (!error) {
+    return 'No data returned';
+  }
+  if (typeof error === 'object') {
+    return formatObjectError(error);
+  }
+  return typeof error === 'string' ? error : String(error);
 }
 
 /**

@@ -25,7 +25,7 @@ export const ComparisonPartItemSchema = z.object({
 });
 
 export type ComparisonPartItem = z.infer<typeof ComparisonPartItemSchema> & {
-  rawProduct?: Product | MotoMatcherMatrixPart | unknown;
+  rawProduct?: Product | MotoMatcherMatrixPart;
 };
 
 /**
@@ -48,11 +48,12 @@ export interface ComparisonMatrixProps {
 export function fromProductToComparisonPart(product: Product): ComparisonPartItem {
   const isOem = Boolean(product.oem);
   const isUniversal = product.model?.toLowerCase() === 'universal';
-  const fitmentType: 'oem' | 'aftermarket' | 'universal' = isOem
-    ? 'oem'
-    : isUniversal
-    ? 'universal'
-    : 'aftermarket';
+  let fitmentType: 'oem' | 'aftermarket' | 'universal' = 'aftermarket';
+  if (isOem) {
+    fitmentType = 'oem';
+  } else if (isUniversal) {
+    fitmentType = 'universal';
+  }
 
   return {
     id: product.sku,

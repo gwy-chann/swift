@@ -58,6 +58,42 @@ export function getStockBadgeLabel(product: Pick<Product, 'stock' | 'minThreshol
 /**
  * Pure predicate filtering products across search query, category, stock status, and low-stock quick filter.
  */
+function matchesTextQuery(product: Product, query: string): boolean {
+  if (!query) return true;
+  const isUnassignedSearch = query === 'unassigned' || query === 'unassigned bay';
+  const isProductUnassigned = !isShelfLocationAssigned(product.location);
+
+  return (
+    (isUnassignedSearch && isProductUnassigned) ||
+    product.sku.toLowerCase().includes(query) ||
+    product.name.toLowerCase().includes(query) ||
+    product.brand.toLowerCase().includes(query) ||
+    product.model.toLowerCase().includes(query) ||
+    product.category.toLowerCase().includes(query) ||
+    Boolean(product.location?.toLowerCase().includes(query))
+  );
+}
+
+function matchesCategory(productCategory: string, selectedCategory: string): boolean {
+  if (!selectedCategory || selectedCategory === 'All' || selectedCategory === 'All Categories') {
+    return true;
+  }
+  return productCategory.toLowerCase() === selectedCategory.toLowerCase();
+}
+
+function matchesStockStatus(product: Product, stockStatus: string): boolean {
+  switch (stockStatus) {
+    case 'in_stock':
+      return product.stock > product.minThreshold;
+    case 'low_stock':
+      return product.stock <= product.minThreshold && product.stock > 0;
+    case 'out_of_stock':
+      return product.stock <= 0;
+    default:
+      return true;
+  }
+}
+
 export function filterCatalogProducts(
   products: Product[],
   criteria: CatalogFilterCriteria = {}
@@ -68,47 +104,10 @@ export function filterCatalogProducts(
   const lowStockOnly = criteria.lowStockOnly ?? false;
 
   return products.filter((product) => {
-    // 1. Text Query Matching across multiple product attributes
-    if (query) {
-      const isUnassignedSearch = query === 'unassigned' || query === 'unassigned bay';
-      const isProductUnassigned = !isShelfLocationAssigned(product.location);
-
-      const matchesQuery =
-        (isUnassignedSearch && isProductUnassigned) ||
-        product.sku.toLowerCase().includes(query) ||
-        product.name.toLowerCase().includes(query) ||
-        product.brand.toLowerCase().includes(query) ||
-        product.model.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query) ||
-        (product.location && product.location.toLowerCase().includes(query));
-
-      if (!matchesQuery) return false;
-    }
-
-    // 2. Category matching
-    if (category && category !== 'All' && category !== 'All Categories') {
-      if (product.category.toLowerCase() !== category.toLowerCase()) {
-        return false;
-      }
-    }
-
-    // 3. Dedicated Low Stock quick-filter toggle (stock <= minThreshold)
-    if (lowStockOnly) {
-      if (product.stock > product.minThreshold) {
-        return false;
-      }
-    }
-
-    // 4. Stock availability status matching
-    if (stockStatus === 'in_stock') {
-      if (product.stock <= product.minThreshold) return false;
-    } else if (stockStatus === 'low_stock') {
-      if (product.stock > product.minThreshold || product.stock <= 0) return false;
-    } else if (stockStatus === 'out_of_stock') {
-      if (product.stock > 0) return false;
-    }
-
-    return true;
+    if (!matchesTextQuery(product, query)) return false;
+    if (!matchesCategory(product.category, category)) return false;
+    if (lowStockOnly && product.stock > product.minThreshold) return false;
+    return matchesStockStatus(product, stockStatus);
   });
 }
 
