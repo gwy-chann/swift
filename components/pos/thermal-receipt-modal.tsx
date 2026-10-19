@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useId } from 'react';
-import { Printer, X, Search, AlertCircle } from 'lucide-react';
+import React, { useCallback, useId, useEffect } from 'react';
+import { Printer, X } from 'lucide-react';
 import type { ThermalReceiptData, ThermalRollWidth } from '@/lib/types/transaction';
-import { getThermalReceiptByReceiptAction } from '@/lib/pos/transaction-actions';
 import {
   STORE_RECEIPT_CONFIG,
-  getThermalRollDimensions,
-  generateReceiptBarcodePattern
+  getThermalRollDimensions
 } from '@/lib/pos/thermal-receipt';
 
 export interface ThermalReceiptModalProps {
@@ -15,6 +13,7 @@ export interface ThermalReceiptModalProps {
   readonly onClose: () => void;
   readonly onFinish?: () => void;
   readonly receiptData?: ThermalReceiptData | null;
+  /** Roll width is locked strictly to 80mm standard POS format */
   readonly initialRollWidth?: ThermalRollWidth;
 }
 
@@ -22,24 +21,10 @@ export function ThermalReceiptModal({
   isOpen,
   onClose,
   onFinish,
-  receiptData: initialReceiptData,
-  initialRollWidth = '80mm'
+  receiptData
 }: Readonly<ThermalReceiptModalProps>) {
-  const [rollWidth, setRollWidth] = useState<ThermalRollWidth>(initialRollWidth);
-  const [searchedReceipt, setSearchedReceipt] = useState<ThermalReceiptData | null>(null);
-  const [lookupQuery, setLookupQuery] = useState('');
-  const [isLoadingLookup, setIsLoadingLookup] = useState(false);
-  const [lookupError, setLookupError] = useState<string | null>(null);
   const titleId = useId();
-
-  const activeReceipt = searchedReceipt ?? initialReceiptData ?? null;
-
-  const handleClose = useCallback(() => {
-    setSearchedReceipt(null);
-    setLookupError(null);
-    setLookupQuery('');
-    onClose();
-  }, [onClose]);
+  const activeReceipt = receiptData ?? null;
 
   // Keyboard shortcut listener for Esc key
   useEffect(() => {
@@ -48,13 +33,13 @@ export function ThermalReceiptModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        handleClose();
+        onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleClose]);
+  }, [isOpen, onClose]);
 
   const handlePrint = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -65,40 +50,16 @@ export function ThermalReceiptModal({
   const handlePrintAndFinish = useCallback(() => {
     handlePrint();
     if (onFinish) {
-      setSearchedReceipt(null);
-      setLookupError(null);
-      setLookupQuery('');
       onFinish();
     } else {
-      handleClose();
+      onClose();
     }
-  }, [handlePrint, onFinish, handleClose]);
-
-  const handleLookup = useCallback(async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = lookupQuery.trim();
-    if (!query) return;
-
-    setIsLoadingLookup(true);
-    setLookupError(null);
-
-    try {
-      const found = await getThermalReceiptByReceiptAction(query);
-      if (found) {
-        setSearchedReceipt(found);
-      } else {
-        setLookupError(`Receipt "${query}" was not found in transaction logs.`);
-      }
-    } catch (err) {
-      setLookupError(err instanceof Error ? err.message : 'Error retrieving receipt.');
-    } finally {
-      setIsLoadingLookup(false);
-    }
-  }, [lookupQuery]);
+  }, [handlePrint, onFinish, onClose]);
 
   if (!isOpen) return null;
 
-  const rollDim = getThermalRollDimensions(rollWidth);
+  // Standardized strictly on 80mm commercial thermal paper
+  const rollDim = getThermalRollDimensions('80mm');
 
   return (
     <dialog
@@ -116,77 +77,19 @@ export function ThermalReceiptModal({
             <h3 id={titleId} className="text-base font-bold text-text-primary">
               Printable Thermal Receipt
             </h3>
+            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-primary-light text-primary uppercase tracking-wider">
+              80mm
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* 58mm / 80mm Roll Width Switcher */}
-            <div className="flex items-center p-0.5 rounded-lg bg-bg-base border border-border text-xs">
-              <button
-                type="button"
-                onClick={() => setRollWidth('58mm')}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
-                  rollWidth === '58mm'
-                    ? 'bg-primary text-text-light shadow-xs'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-                aria-pressed={rollWidth === '58mm'}
-              >
-                58mm
-              </button>
-              <button
-                type="button"
-                onClick={() => setRollWidth('80mm')}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
-                  rollWidth === '80mm'
-                    ? 'bg-primary text-text-light shadow-xs'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-                aria-pressed={rollWidth === '80mm'}
-              >
-                80mm
-              </button>
-            </div>
-
-            {/* Modal Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close receipt modal"
-              className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Receipt Lookup Bar (When modal opened without direct checkout or cashier needs previous receipt) */}
-        <div className="px-4 py-2 bg-bg-muted/10 border-b border-border-subtle print:hidden">
-          <form onSubmit={handleLookup} className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
-              <input
-                type="text"
-                value={lookupQuery}
-                onChange={(e) => setLookupQuery(e.target.value)}
-                placeholder="Search receipt (e.g. TX-1041)..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-border-focus"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoadingLookup || !lookupQuery.trim()}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isLoadingLookup ? 'Loading...' : 'Lookup'}
-            </button>
-          </form>
-
-          {lookupError && (
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-danger">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{lookupError}</span>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close receipt modal"
+            className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Receipt Paper Scrollable Body */}
@@ -331,26 +234,11 @@ export function ThermalReceiptModal({
                 </div>
               </div>
 
-              {/* Receipt Footer & Barcode */}
+              {/* Receipt Footer */}
               <div className="border-t border-dashed border-border pt-3 mt-1 text-center space-y-1 text-[10px] text-text-secondary print:text-black">
                 <div>Thank you for your business!</div>
                 <div>{STORE_RECEIPT_CONFIG.warrantyNotice}</div>
                 <div className="font-bold tracking-wider">{STORE_RECEIPT_CONFIG.customerCopyNotice}</div>
-
-                {/* Simulated Barcode */}
-                <div className="pt-2 flex flex-col items-center justify-center">
-                  <div className="h-7 w-40 flex items-center justify-center gap-0.5 opacity-80 print:opacity-100">
-                    {generateReceiptBarcodePattern(activeReceipt.receiptNumber).map((bar) => (
-                      <div
-                        key={bar.id}
-                        className={`h-full bg-text-primary print:bg-black ${bar.widthClass}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="text-[9px] tracking-widest text-text-muted print:text-black mt-0.5">
-                    *{activeReceipt.receiptNumber}*
-                  </div>
-                </div>
               </div>
             </div>
           ) : (
@@ -358,7 +246,7 @@ export function ThermalReceiptModal({
               <Printer className="w-10 h-10 mb-2 opacity-40" />
               <p className="text-sm font-medium">No receipt loaded</p>
               <p className="text-xs text-text-secondary mt-1">
-                Enter a receipt number above to preview and print.
+                Select a completed sale or transaction to preview and print.
               </p>
             </div>
           )}
