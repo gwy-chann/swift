@@ -106,7 +106,7 @@ function handleCheckoutRpcError(
   const combined = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
 
   if (combined.includes('INSUFFICIENT_STOCK')) {
-    const skuMatch = combined.match(/INSUFFICIENT_STOCK:\s*([^\s,;]+)/);
+    const skuMatch = /INSUFFICIENT_STOCK:\s*([^\s,;]+)/.exec(combined);
     const sku = skuMatch ? skuMatch[1] : undefined;
     return {
       success: false,
@@ -119,7 +119,7 @@ function handleCheckoutRpcError(
   }
 
   if (combined.includes('PRODUCT_NOT_FOUND')) {
-    const skuMatch = combined.match(/PRODUCT_NOT_FOUND:\s*([^\s,;]+)/);
+    const skuMatch = /PRODUCT_NOT_FOUND:\s*([^\s,;]+)/.exec(combined);
     const sku = skuMatch ? skuMatch[1] : undefined;
     return {
       success: false,
@@ -211,6 +211,41 @@ async function recordDiscountSecurityLog(
   }
 }
 
+function isMissingRpcError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { message?: string; details?: string; hint?: string; code?: string };
+  const combined = `${err.message ?? ''} ${err.details ?? ''} ${err.hint ?? ''}`;
+  return (
+    combined.includes('Could not find the function') ||
+    combined.includes('schema cache') ||
+    combined.includes('function public.process_pos_checkout') ||
+    err.code === 'PGRST202'
+  );
+}
+
+async function syncInventoryStoreSale(
+  items: import('../types/transaction.ts').CheckoutItemPayload[],
+  receiptNumber: string,
+  cashierName?: string
+): Promise<void> {
+  try {
+    const { inventoryStore } = await import('../store/inventory-store.ts');
+    for (const item of items) {
+      if (item.itemType === 'part') {
+        inventoryStore.adjustStock({
+          sku: item.itemSkuOrCode,
+          type: 'Sale Outbound',
+          units: -item.quantity,
+          reason: `POS Sale Receipt: ${receiptNumber}`,
+          user: cashierName || 'Cashier',
+        });
+      }
+    }
+  } catch {
+    // Non-blocking in-memory sync
+  }
+}
+
 async function trySupabaseCheckout(
   validPayload: import('../types/transaction.ts').CheckoutPayload
 ): Promise<CheckoutActionResult | null> {
@@ -254,60 +289,43 @@ async function trySupabaseCheckout(
     });
 
     if (error) {
-      const combined = `${error.message ?? ''} ${error.details ?? ''} ${error.hint ?? ''}`;
-      if (
-        combined.includes('Could not find the function') ||
-        combined.includes('schema cache') ||
-        combined.includes('function public.process_pos_checkout') ||
-        (error as { code?: string }).code === 'PGRST202'
-      ) {
+      if (isMissingRpcError(error)) {
         return null;
       }
       return handleCheckoutRpcError(error);
     }
 
-    if (data && typeof data === 'object') {
-      const res = data as {
-        success?: boolean;
-        transaction_id?: string;
-        receipt_number?: string;
-        items_count?: number;
-        parts_decremented?: number;
-        created_at?: string;
-      };
-      const finalReceiptNumber = res.receipt_number || validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
-      try {
-        const { inventoryStore } = await import('../store/inventory-store.ts');
-        for (const item of validPayload.items) {
-          if (item.itemType === 'part') {
-            inventoryStore.adjustStock({
-              sku: item.itemSkuOrCode,
-              type: 'Sale Outbound',
-              units: -item.quantity,
-              reason: `POS Sale Receipt: ${finalReceiptNumber}`,
-              user: validPayload.cashierName || 'Cashier',
-            });
-          }
-        }
-      } catch {
-        // Non-blocking in-memory sync
-      }
-      await triggerCheckoutRevalidation();
-      await recordDiscountSecurityLog(validPayload, finalReceiptNumber);
-
-      return {
-        success: true,
-        transactionId: res.transaction_id || `tx-${Date.now()}`,
-        receiptNumber: finalReceiptNumber,
-        itemsCount: res.items_count ?? validPayload.items.length,
-        partsDecremented: res.parts_decremented ?? validPayload.items.filter((i) => i.itemType === 'part').length,
-        createdAt: res.created_at || new Date().toISOString(),
-      };
+    if (!data || typeof data !== 'object') {
+      return null;
     }
+
+    const res = data as {
+      success?: boolean;
+      transaction_id?: string;
+      receipt_number?: string;
+      items_count?: number;
+      parts_decremented?: number;
+      created_at?: string;
+    };
+    const finalReceiptNumber = res.receipt_number || validPayload.receiptNumber || `TX-${Date.now().toString().slice(-4)}`;
+
+    await syncInventoryStoreSale(validPayload.items, finalReceiptNumber, validPayload.cashierName);
+    await triggerCheckoutRevalidation();
+    await recordDiscountSecurityLog(validPayload, finalReceiptNumber);
+
+    return {
+      success: true,
+      transactionId: res.transaction_id || `tx-${Date.now()}`,
+      receiptNumber: finalReceiptNumber,
+      itemsCount: res.items_count ?? validPayload.items.length,
+      partsDecremented: res.parts_decremented ?? validPayload.items.filter((i) => i.itemType === 'part').length,
+      createdAt: res.created_at || new Date().toISOString(),
+    };
   } catch (rpcErr) {
+    const errorMsg = rpcErr instanceof Error ? rpcErr.message : String(rpcErr);
     console.warn(
       '[processCheckoutAction] Supabase RPC execution encountered issue, evaluating fallback:',
-      rpcErr instanceof Error ? rpcErr.message : String(rpcErr)
+      errorMsg
     );
   }
 

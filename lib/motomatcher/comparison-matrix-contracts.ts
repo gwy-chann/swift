@@ -25,7 +25,7 @@ export const ComparisonPartItemSchema = z.object({
 });
 
 export type ComparisonPartItem = z.infer<typeof ComparisonPartItemSchema> & {
-  rawProduct?: Product | MotoMatcherMatrixPart | unknown;
+  rawProduct?: Product | MotoMatcherMatrixPart;
 };
 
 export type ComparisonMatrixTab = 'oem' | 'aftermarket';

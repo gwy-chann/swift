@@ -40,6 +40,51 @@ export interface CartStoreState {
 // Cart initially starts empty for staff POS operations
 const INITIAL_CART_ITEMS: CartItem[] = [];
 
+function formatServiceDuration(duration: string | number | undefined): string {
+  if (typeof duration === 'string') {
+    return duration;
+  }
+  if (typeof duration === 'number' && duration > 0) {
+    return `${duration} mins`;
+  }
+  return '30 mins';
+}
+
+function convertMatrixPartToProduct(item: MotoMatcherMatrixPart): Product {
+  return {
+    sku: item.sku,
+    name: item.name,
+    brand: item.brand,
+    category: item.category,
+    retail: item.retail_price,
+    wholesale: item.retail_price,
+    cost: item.retail_price,
+    stock: item.stock_level,
+    minThreshold: item.min_threshold,
+    location: item.shelf_location || '',
+    oem: item.fitment_type === 'oem',
+    model: item.is_universal ? 'Universal' : (item.oem_reference_sku || 'Universal'),
+    description: item.fitment_notes || ''
+  };
+}
+
+function convertPartCartItemToProduct(item: PartCartItem): Product {
+  return {
+    sku: item.sku,
+    name: item.name,
+    brand: '',
+    category: '',
+    retail: item.retailPrice ?? item.price,
+    wholesale: item.wholesalePrice ?? item.price,
+    cost: item.wholesalePrice ?? item.price,
+    stock: item.stock ?? 999,
+    minThreshold: item.minThreshold ?? 0,
+    location: item.location || '',
+    oem: false,
+    model: 'Universal',
+  };
+}
+
 class CartStore {
   private state: CartStoreState;
   private readonly listeners = new Set<() => void>();
@@ -109,7 +154,7 @@ class CartStore {
           name: item.name.replace(/^Labor:\s*/, ''),
           rate: item.price,
           bay: item.bay || 'General',
-          duration: typeof item.duration === 'string' ? item.duration : (item.duration ? `${item.duration} mins` : '30 mins')
+          duration: formatServiceDuration(item.duration)
         },
         qty
       );
@@ -120,22 +165,7 @@ class CartStore {
       if (item.stock_level <= 0 && !isOverridden) {
         return { success: false, reason: 'out_of_stock' };
       }
-      const partProduct: Product = {
-        sku: item.sku,
-        name: item.name,
-        brand: item.brand,
-        category: item.category,
-        retail: item.retail_price,
-        wholesale: item.retail_price,
-        cost: item.retail_price,
-        stock: item.stock_level,
-        minThreshold: item.min_threshold,
-        location: item.shelf_location || '',
-        oem: item.fitment_type === 'oem',
-        model: item.is_universal ? 'Universal' : (item.oem_reference_sku || 'Universal'),
-        description: item.fitment_notes || ''
-      };
-      return this.addPart(partProduct, qty, isOverridden);
+      return this.addPart(convertMatrixPartToProduct(item), qty, isOverridden);
     }
 
     // If item is a standard Product
@@ -145,21 +175,7 @@ class CartStore {
 
     // If item is already a PartCartItem
     if ('sku' in item) {
-      const partProduct: Product = {
-        sku: item.sku,
-        name: item.name,
-        brand: '',
-        category: '',
-        retail: item.retailPrice ?? item.price,
-        wholesale: item.wholesalePrice ?? item.price,
-        cost: item.wholesalePrice ?? item.price,
-        stock: item.stock ?? 999,
-        minThreshold: item.minThreshold ?? 0,
-        location: item.location || '',
-        oem: false,
-        model: 'Universal',
-      };
-      return this.addPart(partProduct, qty, isOverridden);
+      return this.addPart(convertPartCartItemToProduct(item as PartCartItem), qty, isOverridden);
     }
 
     return { success: false, reason: 'out_of_stock' };

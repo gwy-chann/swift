@@ -13,11 +13,9 @@ import {
   ToggleUserStatusSchema,
   type StaffUserSummary,
   type UserActionResult,
-  type ProvisionStaffUserPayload,
 } from '../../specs/030-supabase-rbac-extension-granular-permission-flags/contracts/rbac-permissions.contract.ts';
 import {
   UpdateStaffUserSchema,
-  type UpdateStaffUserPayload,
 } from '../../specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract.ts';
 import { logSecurityEventAction } from './audit-actions.ts';
 
