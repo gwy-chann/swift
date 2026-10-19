@@ -4,6 +4,7 @@ export const SWIFT_STORAGE_KEYS = {
   SHIFT_STATE: 'swift_staff_shift_state',
   OFFLINE_QUEUE: 'swift_offline_punch_queue',
   LEGACY_ACTIVE_SHIFT: 'swift_active_shift',
+  TERMINAL_TOKEN: 'swift_terminal_device_token',
 } as const;
 
 export type OfflinePunchActionType = 'clock_in' | 'clock_out' | 'toggle_break';
@@ -15,6 +16,7 @@ export interface QueuedPunchAction {
   profileId: string;
   staffName: string;
   terminalId: string;
+  deviceToken?: string;
   shiftId?: string;
   timestamp: string; // ISO 8601 string
   retryCount: number;
