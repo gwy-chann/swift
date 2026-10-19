@@ -3,6 +3,7 @@ import {
   PackageSearch,
   Wrench,
   Barcode,
+  History,
   Clock,
 } from "lucide-react";
 import { StaffNavItem, StaffUserProfile, StaffShiftState } from "./types";
@@ -39,6 +40,13 @@ export const STAFF_NAV_ITEMS: StaffNavItem[] = [
     href: "/staff/pricecheck",
     category: "Shop Floor Operations",
     icon: Barcode,
+  },
+  {
+    id: "history",
+    label: "Purchase History",
+    href: "/staff/history",
+    category: "Shop Floor Operations",
+    icon: History,
   },
   {
     id: "clock",
