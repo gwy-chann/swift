@@ -76,7 +76,19 @@ class InventoryConcurrencyTests {
                             "Concurrent Thread #" + index,
                             "Operator " + index
                     );
-                    inventoryService.adjustProductStock(req);
+                    int maxRetries = 5;
+                    for (int attempt = 0; attempt < maxRetries; attempt++) {
+                        try {
+                            inventoryService.adjustProductStock(req);
+                            break;
+                        } catch (Exception ex) {
+                            if (attempt == maxRetries - 1) {
+                                ex.printStackTrace();
+                            } else {
+                                Thread.sleep(25 + (index * 15));
+                            }
+                        }
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {

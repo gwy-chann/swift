@@ -116,7 +116,11 @@ class InventoryStockControllerTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/inventory/stock-adjust/export-csv"))
+        org.springframework.test.web.servlet.MvcResult mvcResult = mockMvc.perform(get("/api/v1/inventory/stock-adjust/export-csv"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", startsWith("text/csv")))
                 .andExpect(header().string("Content-Disposition", containsString("stock-adjustment-audit-")))

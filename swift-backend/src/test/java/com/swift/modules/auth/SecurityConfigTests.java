@@ -28,11 +28,13 @@ class SecurityConfigTests {
     private MockMvc mockMvc;
 
     @TestConfiguration
-    static class TestControllerConfig {
+    public static class TestControllerConfig {
+        public TestControllerConfig() {}
+
         @RestController
         @RequestMapping("/api/v1/admin")
         static class TestAdminController {
-            @GetMapping("/users")
+            @GetMapping("/test-users")
             @PreAuthorize("hasRole('ADMIN')")
             public String getAdminUsers() {
                 return "{\"success\":true,\"data\":\"admin-users\"}";
@@ -59,7 +61,7 @@ class SecurityConfigTests {
     @Test
     @DisplayName("Unauthenticated request to protected endpoint returns HTTP 401 with standard ErrorDetails")
     void unauthenticatedRequestReturns401() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/test-users")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
@@ -70,7 +72,7 @@ class SecurityConfigTests {
     @Test
     @DisplayName("Staff session cookie attempting to access admin route returns HTTP 403 Forbidden")
     void staffCookieAccessingAdminReturns403() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/test-users")
                         .cookie(new Cookie("swift-session-role", "staff"),
                                 new Cookie("swift-staff-session", "00000000-0000-0000-0000-000000000002"))
                         .accept(MediaType.APPLICATION_JSON))
@@ -83,7 +85,7 @@ class SecurityConfigTests {
     @Test
     @DisplayName("Admin session cookie accessing admin route returns HTTP 200 OK")
     void adminCookieAccessingAdminReturns200() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/test-users")
                         .cookie(new Cookie("swift-session-role", "admin"),
                                 new Cookie("swift-user-name", "Administrator"))
                         .accept(MediaType.APPLICATION_JSON))
