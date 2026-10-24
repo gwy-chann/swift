@@ -48,3 +48,11 @@ management:
       show-details: always
       probes:
         enabled: true
+
+swift:
+  auth:
+    supabase-url: ${NEXT_PUBLIC_SUPABASE_URL:http://localhost:54321}
+    jwks-url: ${SUPABASE_JWKS_URL:${NEXT_PUBLIC_SUPABASE_URL:http://localhost:54321}/auth/v1/.well-known/jwks.json}
+    admin-elevation-password: ${ADMIN_ELEVATION_PASSWORD:admin123}
+    admin-elevation-pin: ${ADMIN_ELEVATION_PIN:8888}
+
