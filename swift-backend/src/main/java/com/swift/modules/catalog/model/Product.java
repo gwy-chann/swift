@@ -43,6 +43,15 @@ public class Product {
     @Column(name = "min_threshold", nullable = false)
     private Integer minThreshold = 0;
 
+    @Column(name = "rack_id")
+    private String rackId;
+
+    @Column(name = "shelf_id")
+    private String shelfId;
+
+    @Column(name = "bin_locator")
+    private String binLocator;
+
     @Column
     private String location;
 
@@ -168,6 +177,30 @@ public class Product {
 
     public void setMinThreshold(Integer minThreshold) {
         this.minThreshold = minThreshold;
+    }
+
+    public String getRackId() {
+        return rackId;
+    }
+
+    public void setRackId(String rackId) {
+        this.rackId = rackId;
+    }
+
+    public String getShelfId() {
+        return shelfId;
+    }
+
+    public void setShelfId(String shelfId) {
+        this.shelfId = shelfId;
+    }
+
+    public String getBinLocator() {
+        return binLocator;
+    }
+
+    public void setBinLocator(String binLocator) {
+        this.binLocator = binLocator;
     }
 
     public String getLocation() {

@@ -13,6 +13,16 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findBySkuIgnoreCase(String sku);
 
+    boolean existsBySkuIgnoreCase(String sku);
+
+    java.util.List<Product> findAllByOrderByNameAsc();
+
     @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) ORDER BY p.name ASC LIMIT 1")
     Optional<Product> findFirstByNameContainingIgnoreCase(@Param("query") String query);
+
+    @Query("SELECT p FROM Product p WHERE " +
+           "(:query IS NULL OR :query = '' OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+           "(:category IS NULL OR :category = '' OR LOWER(p.category) = LOWER(:category)) " +
+           "ORDER BY p.name ASC")
+    java.util.List<Product> searchProducts(@Param("query") String query, @Param("category") String category);
 }
