@@ -52,7 +52,7 @@ export const CreateProductResponseSchema = z.object({
   product: ProductDtoSchema.optional(),
   error: z.string().optional(),
   code: z.enum(['SKU_ALREADY_EXISTS', 'VALIDATION_ERROR', 'DATABASE_ERROR']).optional(),
-  fieldErrors: z.record(z.string()).optional(),
+  fieldErrors: z.record(z.string(), z.string()).optional(),
 });
 
 export type CreateProductResponse = z.infer<typeof CreateProductResponseSchema>;
