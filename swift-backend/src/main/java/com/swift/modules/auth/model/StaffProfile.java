@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -35,7 +36,7 @@ public class StaffProfile {
     @Column(name = "pin_code", length = 10)
     private String pinCode = "1234";
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @jakarta.persistence.Convert(converter = StaffPermissionsConverter.class)
     @Column(name = "permissions", columnDefinition = "jsonb")
     private StaffPermissions permissions;
 
@@ -55,8 +56,8 @@ public class StaffProfile {
         this.status = status;
         this.pinCode = pinCode;
         this.permissions = permissions;
-        this.createdAt = OffsetDateTime.now();
-        this.updatedAt = OffsetDateTime.now();
+        this.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public UUID getId() { return id; }

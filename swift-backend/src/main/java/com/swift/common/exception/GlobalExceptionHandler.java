@@ -1,7 +1,9 @@
 package com.swift.common.exception;
 
-import com.swift.common.dto.ApiResponse;
 import com.swift.common.dto.ErrorDetails;
+import com.swift.modules.admin.exception.DuplicateEmailException;
+import com.swift.modules.admin.exception.SelfLockoutException;
+import com.swift.modules.admin.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,48 @@ public class GlobalExceptionHandler {
             null
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorDetails> handleUserNotFound(UserNotFoundException ex, HttpServletRequest request) {
+        log.warn("User not found: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.getReasonPhrase(),
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(SelfLockoutException.class)
+    public ResponseEntity<ErrorDetails> handleSelfLockout(SelfLockoutException ex, HttpServletRequest request) {
+        log.warn("Self lockout prevented: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "SELF_LOCKOUT_PREVENTED",
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorDetails> handleDuplicateEmail(DuplicateEmailException ex, HttpServletRequest request) {
+        log.warn("Duplicate email conflict: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.CONFLICT.value(),
+            "DUPLICATE_EMAIL",
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

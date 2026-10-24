@@ -2,6 +2,7 @@ package com.swift.modules.auth.model;
 
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -20,7 +21,7 @@ public class SecurityAuditLog {
     private UUID id;
 
     @Column(name = "timestamp", nullable = false)
-    private OffsetDateTime timestamp = OffsetDateTime.now();
+    private OffsetDateTime timestamp = OffsetDateTime.now(ZoneOffset.UTC);
 
     @Column(name = "user_id")
     private UUID userId;
@@ -37,17 +38,17 @@ public class SecurityAuditLog {
     @Column(name = "terminal_ip")
     private String terminalIp;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonMapConverter.class)
     @Column(name = "metadata", columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
     @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 
     public SecurityAuditLog() {}
 
     public SecurityAuditLog(UUID userId, String userEmail, String action, String severity, String terminalIp, Map<String, Object> metadata) {
-        this.timestamp = OffsetDateTime.now();
+        this.timestamp = OffsetDateTime.now(ZoneOffset.UTC);
         this.userId = userId;
         this.userEmail = userEmail;
         this.action = action;

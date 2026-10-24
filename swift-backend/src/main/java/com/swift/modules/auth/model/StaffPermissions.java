@@ -28,7 +28,25 @@ public class StaffPermissions implements Serializable {
     @JsonProperty("can_view_reports")
     private boolean canViewReports = false;
 
+    @JsonProperty("can_manage_pricing")
+    private boolean canManagePricing = false;
+
     public StaffPermissions() {}
+
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public static StaffPermissions fromString(String json) {
+        if (json == null || json.isBlank()) return new StaffPermissions();
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String clean = json.trim();
+            if (clean.startsWith("\"") && clean.endsWith("\"")) {
+                clean = mapper.readValue(clean, String.class);
+            }
+            return mapper.readValue(clean, StaffPermissions.class);
+        } catch (Exception e) {
+            return new StaffPermissions();
+        }
+    }
 
     public StaffPermissions(boolean canDiscount, boolean canOverrideDiscount, boolean canVoidTransaction,
                             boolean canAdjustStock, boolean canAccessAdmin, boolean canViewReports) {
@@ -38,14 +56,42 @@ public class StaffPermissions implements Serializable {
         this.canAdjustStock = canAdjustStock;
         this.canAccessAdmin = canAccessAdmin;
         this.canViewReports = canViewReports;
+        this.canManagePricing = canAccessAdmin;
+    }
+
+    public StaffPermissions(boolean canDiscount, boolean canOverrideDiscount, boolean canVoidTransaction,
+                            boolean canAdjustStock, boolean canAccessAdmin, boolean canViewReports, boolean canManagePricing) {
+        this.canDiscount = canDiscount;
+        this.canOverrideDiscount = canOverrideDiscount;
+        this.canVoidTransaction = canVoidTransaction;
+        this.canAdjustStock = canAdjustStock;
+        this.canAccessAdmin = canAccessAdmin;
+        this.canViewReports = canViewReports;
+        this.canManagePricing = canManagePricing;
     }
 
     public static StaffPermissions adminDefaults() {
-        return new StaffPermissions(true, true, true, true, true, true);
+        return new StaffPermissions(true, true, true, true, true, true, true);
     }
 
     public static StaffPermissions cashierDefaults() {
-        return new StaffPermissions(true, false, false, false, false, false);
+        return new StaffPermissions(true, false, false, false, false, false, false);
+    }
+
+    public static StaffPermissions inventoryClerkDefaults() {
+        StaffPermissions p = new StaffPermissions();
+        p.setCanAdjustStock(true);
+        return p;
+    }
+
+    public static StaffPermissions forRole(String role) {
+        if (role == null) return new StaffPermissions();
+        return switch (role.toLowerCase()) {
+            case "admin" -> adminDefaults();
+            case "inventory_clerk" -> inventoryClerkDefaults();
+            case "cashier" -> cashierDefaults();
+            default -> new StaffPermissions();
+        };
     }
 
     public boolean isCanDiscount() { return canDiscount; }
@@ -65,4 +111,7 @@ public class StaffPermissions implements Serializable {
 
     public boolean isCanViewReports() { return canViewReports; }
     public void setCanViewReports(boolean canViewReports) { this.canViewReports = canViewReports; }
+
+    public boolean isCanManagePricing() { return canManagePricing; }
+    public void setCanManagePricing(boolean canManagePricing) { this.canManagePricing = canManagePricing; }
 }
