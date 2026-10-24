@@ -1,0 +1,13 @@
+package com.swift.modules.auth.repository;
+
+import com.swift.modules.auth.model.StaffProfile;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface StaffProfileRepository extends JpaRepository<StaffProfile, UUID> {
+    Optional<StaffProfile> findByEmailIgnoreCase(String email);
+}
