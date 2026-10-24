@@ -46,3 +46,9 @@ next-env.d.ts
 # graphify
 graphify-out/
 
+# Java & Spring Boot / Maven
+swift-backend/target/
+swift-backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+
