@@ -87,7 +87,7 @@ export const SecurityAuditLogResponseSchema = z.object({
   action: z.string().min(1),
   severity: AuditSeveritySchema,
   terminalIp: z.string().nullable().optional(),
-  metadata: z.record(z.any()).default({}),
+  metadata: z.record(z.string(), z.any()).default({}),
   createdAt: z.string(),
 });
 
@@ -97,7 +97,7 @@ export const LogSecurityEventRequestSchema = z.object({
   action: z.string().trim().min(1, 'Action description is required.'),
   severity: AuditSeveritySchema.default('info'),
   terminalIp: z.string().trim().optional().nullable(),
-  metadata: z.record(z.any()).default({}),
+  metadata: z.record(z.string(), z.any()).default({}),
   userEmail: z.string().email().optional(),
 });
 
