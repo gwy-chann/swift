@@ -13,6 +13,10 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findBySkuIgnoreCase(String sku);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE LOWER(p.sku) = LOWER(:sku)")
+    Optional<Product> findWithPessimisticLockBySku(@Param("sku") String sku);
+
     boolean existsBySkuIgnoreCase(String sku);
 
     java.util.List<Product> findAllByOrderByNameAsc();
