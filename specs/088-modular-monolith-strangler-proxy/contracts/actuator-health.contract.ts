@@ -8,7 +8,7 @@ export const HealthStatusSchema = z.enum(["UP", "DOWN", "OUT_OF_SERVICE", "UNKNO
 
 export const ComponentHealthSchema = z.object({
   status: HealthStatusSchema,
-  details: z.record(z.unknown()).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ActuatorHealthResponseSchema = z.object({
