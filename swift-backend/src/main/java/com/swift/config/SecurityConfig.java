@@ -89,6 +89,7 @@ public class SecurityConfig {
                 // Read-heavy Catalog, MotoMatcher & Pricecheck public terminal endpoints
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/motomatcher/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/inventory/pricecheck").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/services/labor/**").permitAll()
                 // Admin protected endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // All other API endpoints require authenticated principal (JWT or Session Cookie)
