@@ -53,6 +53,9 @@ model Product {
   stock        Int      @default(0)
   minThreshold Int      @default(0) @map("min_threshold")
   location     String?
+  rackId       String?  @map("rack_id")
+  shelfId      String?  @map("shelf_id")
+  binLocator   String?  @map("bin_locator")
   oem          Boolean  @default(false)
   imageUrl     String?  @map("image_url")
   description  String?
