@@ -7,6 +7,7 @@ import {
   Users,
   Tags,
   ShieldCheck,
+  Wrench,
 } from "lucide-react";
 import { AdminNavItem, AdminUserMeta } from "./types";
 
@@ -22,6 +23,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin",
     category: "Store Intelligence",
     icon: LayoutDashboard,
+  },
+  {
+    id: "repairs",
+    label: "Workshop Repairs",
+    href: "/admin/repairs",
+    category: "Store Intelligence",
+    icon: Wrench,
   },
   {
     id: "inventory",

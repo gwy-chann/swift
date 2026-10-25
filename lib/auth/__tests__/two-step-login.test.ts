@@ -4,7 +4,6 @@ import {
   authenticateUserAction,
   completeStaffTwoStepLoginAction,
   cancelStaffPinChallengeAction,
-  __setTestCookie,
   __getTestCookie,
   __clearTestCookies,
   PIN_ERROR_INVALID,
