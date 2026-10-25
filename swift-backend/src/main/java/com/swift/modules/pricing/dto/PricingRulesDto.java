@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record PricingRulesDto(
-    Long id,
+    Integer id,
     @JsonProperty("retailMarkup") BigDecimal retailMarkup,
     @JsonProperty("wholesaleMarkup") BigDecimal wholesaleMarkup,
     @JsonProperty("aftermarketMarkup") BigDecimal aftermarketMarkup,

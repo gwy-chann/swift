@@ -69,23 +69,101 @@ public class Transaction {
 
     public Transaction() {}
 
-    public Transaction(String receiptNumber, UUID cashierId, String cashierName, String pricingMode,
-                       BigDecimal subtotal, String discountType, BigDecimal discountRate,
-                       BigDecimal discountAmount, BigDecimal totalDue, BigDecimal cashTendered,
-                       BigDecimal changeDue, String paymentMethod) {
-        this.receiptNumber = receiptNumber;
-        this.cashierId = cashierId;
-        this.cashierName = cashierName != null && !cashierName.isBlank() ? cashierName : "Cashier";
-        this.pricingMode = pricingMode != null ? pricingMode : "retail";
-        this.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
-        this.discountType = discountType;
-        this.discountRate = discountRate != null ? discountRate : BigDecimal.ZERO;
-        this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
-        this.totalDue = totalDue != null ? totalDue : BigDecimal.ZERO;
-        this.cashTendered = cashTendered != null ? cashTendered : this.totalDue;
-        this.changeDue = changeDue != null ? changeDue : BigDecimal.ZERO;
-        this.paymentMethod = paymentMethod != null ? paymentMethod : "Cash";
-        this.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String receiptNumber;
+        private UUID cashierId;
+        private String cashierName = "Cashier";
+        private String pricingMode = "retail";
+        private BigDecimal subtotal = BigDecimal.ZERO;
+        private String discountType;
+        private BigDecimal discountRate = BigDecimal.ZERO;
+        private BigDecimal discountAmount = BigDecimal.ZERO;
+        private BigDecimal totalDue = BigDecimal.ZERO;
+        private BigDecimal cashTendered;
+        private BigDecimal changeDue = BigDecimal.ZERO;
+        private String paymentMethod = "Cash";
+
+        public Builder receiptNumber(String receiptNumber) {
+            this.receiptNumber = receiptNumber;
+            return this;
+        }
+
+        public Builder cashierId(UUID cashierId) {
+            this.cashierId = cashierId;
+            return this;
+        }
+
+        public Builder cashierName(String cashierName) {
+            this.cashierName = cashierName != null && !cashierName.isBlank() ? cashierName : "Cashier";
+            return this;
+        }
+
+        public Builder pricingMode(String pricingMode) {
+            this.pricingMode = pricingMode != null ? pricingMode : "retail";
+            return this;
+        }
+
+        public Builder subtotal(BigDecimal subtotal) {
+            this.subtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
+            return this;
+        }
+
+        public Builder discountType(String discountType) {
+            this.discountType = discountType;
+            return this;
+        }
+
+        public Builder discountRate(BigDecimal discountRate) {
+            this.discountRate = discountRate != null ? discountRate : BigDecimal.ZERO;
+            return this;
+        }
+
+        public Builder discountAmount(BigDecimal discountAmount) {
+            this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+            return this;
+        }
+
+        public Builder totalDue(BigDecimal totalDue) {
+            this.totalDue = totalDue != null ? totalDue : BigDecimal.ZERO;
+            return this;
+        }
+
+        public Builder cashTendered(BigDecimal cashTendered) {
+            this.cashTendered = cashTendered;
+            return this;
+        }
+
+        public Builder changeDue(BigDecimal changeDue) {
+            this.changeDue = changeDue != null ? changeDue : BigDecimal.ZERO;
+            return this;
+        }
+
+        public Builder paymentMethod(String paymentMethod) {
+            this.paymentMethod = paymentMethod != null ? paymentMethod : "Cash";
+            return this;
+        }
+
+        public Transaction build() {
+            Transaction tx = new Transaction();
+            tx.setReceiptNumber(this.receiptNumber);
+            tx.setCashierId(this.cashierId);
+            tx.setCashierName(this.cashierName);
+            tx.setPricingMode(this.pricingMode);
+            tx.setSubtotal(this.subtotal);
+            tx.setDiscountType(this.discountType);
+            tx.setDiscountRate(this.discountRate);
+            tx.setDiscountAmount(this.discountAmount);
+            tx.setTotalDue(this.totalDue);
+            tx.setCashTendered(this.cashTendered != null ? this.cashTendered : this.totalDue);
+            tx.setChangeDue(this.changeDue);
+            tx.setPaymentMethod(this.paymentMethod);
+            tx.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+            return tx;
+        }
     }
 
     public UUID getId() {
