@@ -16,6 +16,7 @@ interface LoginFormProps {
   setPassword: (password: string) => void;
   rememberTerminal: boolean;
   setRememberTerminal: (remember: boolean) => void;
+  initialNotice?: string | null;
 }
 
 export function LoginForm({
@@ -26,10 +27,15 @@ export function LoginForm({
   setPassword,
   rememberTerminal,
   setRememberTerminal,
+  initialNotice,
 }: Readonly<LoginFormProps>) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    initialNotice === "inactive"
+      ? "Account is inactive. Please contact your workshop administrator."
+      : null
+  );
 
   const portalConfig = PORTAL_CONFIG[selectedRole];
 

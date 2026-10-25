@@ -11,7 +11,12 @@ export const metadata: Metadata = {
   description: "Role-Based Authentication Hub & Portal Login Switcher for SWIFT Workshop Management System",
 };
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<{ notice?: string; error?: string }>;
+} = {}) {
+  const params = await searchParams;
   const session = await getServerSession();
   const decision = evaluateRouteAccess("/", session);
   if (decision.action === "REDIRECT" && decision.destination) {
@@ -38,7 +43,7 @@ export default async function Home() {
       </header>
 
       {/* Authentication Card */}
-      <AuthCard />
+      <AuthCard initialNotice={params?.notice} />
 
       {/* Footer Info */}
       <footer className="mt-8 text-center text-xs text-text-muted">
