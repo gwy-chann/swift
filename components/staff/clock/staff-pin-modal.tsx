@@ -10,7 +10,7 @@ interface StaffPinModalProps {
   onClose: () => void;
   targetProfile: { id: string; name: string; role?: string; avatarInitials?: string };
   onSuccess: (profile: StaffKioskProfile) => void;
-  actionContext?: "clock_in" | "switch_staff" | "clock_out";
+  actionContext?: "clock_in" | "switch_staff" | "clock_out" | "login";
 }
 
 export function StaffPinModal({
@@ -118,6 +118,8 @@ export function StaffPinModal({
     actionTitle = "Authenticate Staff Switch";
   } else if (actionContext === "clock_out") {
     actionTitle = "Confirm Clock-Out Identity";
+  } else if (actionContext === "login") {
+    actionTitle = "Step 2: Enter Staff PIN";
   }
 
   return (
