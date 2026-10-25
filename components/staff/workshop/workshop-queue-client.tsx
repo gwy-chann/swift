@@ -51,25 +51,83 @@ export function WorkshopQueueClient({
     }
   }, []);
 
+  // Listen for local POS checkout events to immediately sync queue
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePosCheckout = () => {
+      handleRefresh();
+    };
+
+    window.addEventListener("swift:pos:checkout", handlePosCheckout);
+    window.addEventListener("swift:pos:workorder-created", handlePosCheckout);
+
+    return () => {
+      window.removeEventListener("swift:pos:checkout", handlePosCheckout);
+      window.removeEventListener("swift:pos:workorder-created", handlePosCheckout);
+    };
+  }, [handleRefresh]);
+
   // Real-time synchronization subscription on Supabase
   useExecutiveRealtime({
     enabled: true,
     onWorkOrderChange: (payload) => {
-      setOrders((prev) =>
-        prev.map((ord) => {
-          if (ord.id === payload.id || ord.orderNumber === payload.order_number) {
-            return {
-              ...ord,
-              status: payload.status,
-              startedAt: payload.started_at ?? ord.startedAt,
-              completedAt: payload.completed_at ?? ord.completedAt,
-              notes: payload.notes ?? ord.notes,
-              updatedAt: payload.updated_at || ord.updatedAt || new Date().toISOString(),
-            };
-          }
-          return ord;
-        })
-      );
+      setOrders((prev) => {
+        const exists = prev.some(
+          (ord) => ord.id === payload.id || ord.orderNumber === payload.order_number
+        );
+
+        if (exists) {
+          return prev.map((ord) => {
+            if (ord.id === payload.id || ord.orderNumber === payload.order_number) {
+              return {
+                ...ord,
+                status: payload.status,
+                startedAt: payload.started_at ?? ord.startedAt,
+                completedAt: payload.completed_at ?? ord.completedAt,
+                notes: payload.notes ?? ord.notes,
+                updatedAt: payload.updated_at || ord.updatedAt || new Date().toISOString(),
+              };
+            }
+            return ord;
+          });
+        }
+
+        // Auto-provisioned work order inserted via POS bridge (SIAA-100)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawPayload = payload as any;
+        const newOrder: DetailedWorkOrder = {
+          id: payload.id,
+          orderNumber: payload.order_number,
+          bayId: payload.bay_id ?? null,
+          bayName: rawPayload.service_bays?.name || rawPayload.bay_name || "Workshop Bay",
+          customerName: payload.customer_name || "Walk-in Customer",
+          customerPhone: "0917-000-0000",
+          vehicleModel: payload.vehicle_model || "Motorcycle (General)",
+          plateNumber: payload.plate_number || "FOR-REG",
+          serviceCode: payload.service_code || "SRV-GEN-01",
+          serviceName: payload.service_name || "Workshop Labor Service",
+          mechanicId: payload.mechanic_id ?? null,
+          mechanicName: undefined,
+          status: payload.status,
+          estimatedDurationMinutes: payload.estimated_duration_minutes ?? 30,
+          startedAt: payload.started_at ?? null,
+          completedAt: payload.completed_at ?? null,
+          notes: payload.notes ?? null,
+          laborTasks: [
+            {
+              id: "1",
+              description: `Execute ${payload.service_name || "scheduled repair service"}`,
+              completed: false,
+            },
+          ],
+          requiredParts: [],
+          createdAt: payload.created_at || new Date().toISOString(),
+          updatedAt: payload.updated_at || new Date().toISOString(),
+        };
+
+        return [newOrder, ...prev];
+      });
     },
   });
 
