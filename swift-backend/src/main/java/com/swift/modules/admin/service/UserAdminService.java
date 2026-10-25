@@ -18,4 +18,6 @@ public interface UserAdminService {
     StaffUserResponse updatePermissions(UUID id, UpdateUserPermissionsRequest request);
 
     StaffUserResponse updateStatus(UUID id, UpdateUserStatusRequest request, UUID callerUserId);
+
+    StaffUserResponse resetCredentials(UUID id, ResetCredentialsRequest request, UUID callerUserId, String callerEmail);
 }
