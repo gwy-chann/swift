@@ -65,6 +65,10 @@ try {
 }
 
 /**
+ * @deprecated [SIAA-98 Phase 6 Cutover] Legacy Next.js Server Action.
+ * Migrated to Spring Boot REST endpoint `GET /api/v1/motomatcher/models`.
+ * Next.js frontend transitions permanently to lean client via `apiClient`.
+ *
  * Server action to retrieve all motorcycle models from Supabase PostgreSQL,
  * cached via Next.js unstable_cache with tag ['motomatcher-models'].
  */
