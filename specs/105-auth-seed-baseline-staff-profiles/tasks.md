@@ -24,13 +24,13 @@ graph TD
 
 ## Phase 1: Setup & Contracts
 
-- [ ] **T001**: Establish TypeScript interfaces and Zod validation contracts in `specs/105-auth-seed-baseline-staff-profiles/contracts/auth-seed-baseline.contract.ts`.
+- [x] **T001**: Establish TypeScript interfaces and Zod validation contracts in `specs/105-auth-seed-baseline-staff-profiles/contracts/auth-seed-baseline.contract.ts`.
 
 ---
 
 ## Phase 2: Database Seed Script
 
-- [ ] **T002**: [US1, US2] Update `supabase/seed.sql` to seed exactly three baseline staff accounts:
+- [x] **T002**: [US1, US2] Update `supabase/seed.sql` to seed exactly three baseline staff accounts:
   - Cashier (`cashier@swift.local` / Mike Morales / `c0000000-0000-0000-0000-000000000002` / PIN: `1234`)
   - Mechanic (`mechanic1@swift.local` / Dante Reyes / `d0000000-0000-0000-0000-000000000003` / PIN: `2222`)
   - Inventory Clerk (`warehouse@swift.local` / Rico Santos / `d0000000-0000-0000-0000-000000000004` / PIN: `3333`)
@@ -40,27 +40,27 @@ graph TD
 
 ## Phase 3: Core Domain Models & Server Actions
 
-- [ ] **T003**: [US2] Update `lib/auth/types.ts` to extend `DemoAccount` with optional `id`, `name`, `staffRole`, and `pin`.
-- [ ] **T004**: [US2] Update `lib/auth/constants.ts` to export `DEMO_ADMIN_ACCOUNT`, `DEMO_STAFF_ACCOUNTS`, `ALL_DEMO_ACCOUNTS`, and preserve backwards-compatible `DEMO_ACCOUNTS`.
-- [ ] **T005**: [US3] Update `lib/auth/actions.ts` to resolve `ALL_DEMO_ACCOUNTS` and redirect to staff role-specific target URLs.
+- [x] **T003**: [US2] Update `lib/auth/types.ts` to extend `DemoAccount` with optional `id`, `name`, `staffRole`, and `pin`.
+- [x] **T004**: [US2] Update `lib/auth/constants.ts` to export `DEMO_ADMIN_ACCOUNT`, `DEMO_STAFF_ACCOUNTS`, `ALL_DEMO_ACCOUNTS`, and preserve backwards-compatible `DEMO_ACCOUNTS`.
+- [x] **T005**: [US3] Update `lib/auth/actions.ts` to resolve `ALL_DEMO_ACCOUNTS` and redirect to staff role-specific target URLs.
 
 ---
 
 ## Phase 4: Automated Test Suite
 
-- [ ] **T006**: [US1, US2, US3] Create comprehensive unit test suite in `lib/auth/__tests__/demo-staff-credentials.test.ts` verifying all baseline staff credentials, PIN code constraints, and PIN verification actions.
+- [x] **T006**: [US1, US2, US3] Create comprehensive unit test suite in `lib/auth/__tests__/demo-staff-credentials.test.ts` verifying all baseline staff credentials, PIN code constraints, and PIN verification actions.
 
 ---
 
 ## Phase 5: UI Components & Two-Step Login Wiring
 
-- [ ] **T007**: [US3] Update `components/auth/demo-credentials-box.tsx` to display all baseline accounts with PIN indicators and trigger `StaffPinModal` on click.
-- [ ] **T008**: [US3] Update `components/auth/login-form.tsx` to synchronize selected staff with `punchStore` and navigate to target route.
+- [x] **T007**: [US3] Update `components/auth/demo-credentials-box.tsx` to display all baseline accounts with PIN indicators and trigger `StaffPinModal` on click.
+- [x] **T008**: [US3] Update `components/auth/login-form.tsx` to synchronize selected staff with `punchStore` and navigate to target route.
 
 ---
 
 ## Phase 6: Verification & Convergence
 
-- [ ] **T009**: Run test suite `npm test lib/auth/__tests__/demo-staff-credentials.test.ts` and confirm 100% pass rate.
-- [ ] **T010**: Run static typecheck `npx tsc --noEmit` and lint checks.
+- [x] **T009**: Run test suite `npm test lib/auth/__tests__/demo-staff-credentials.test.ts` and confirm 100% pass rate.
+- [x] **T010**: Run static typecheck `npx tsc --noEmit` and lint checks.
 - [ ] **T011**: Execute `atomic-commit` series and prepare Pull Request.
