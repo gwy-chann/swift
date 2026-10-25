@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PortalRole } from "@/lib/auth/types";
-import { PORTAL_CONFIG } from "@/lib/auth/constants";
+import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG } from "@/lib/auth/constants";
 import { authenticateUserAction } from "@/lib/auth/actions";
 import { saveTerminalRole } from "@/lib/auth/storage";
+import { punchStore } from "@/lib/store/punch-store";
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 
 interface LoginFormProps {
@@ -69,6 +70,18 @@ export function LoginForm({
         setErrorMessage(result.error);
         setIsLoading(false);
         return;
+      }
+
+      // Sync active staff in punchStore if demo account
+      const matchedDemo = ALL_DEMO_ACCOUNTS.find(
+        (a) => a.email.toLowerCase() === email.trim().toLowerCase()
+      );
+      if (matchedDemo?.id) {
+        punchStore.switchStaff({
+          id: matchedDemo.id,
+          name: matchedDemo.name || matchedDemo.label,
+          role: matchedDemo.staffRole || matchedDemo.role,
+        });
       }
 
       // Route to destination

@@ -43,10 +43,14 @@ export type AuthResult =
     };
 
 export interface DemoAccount {
+  id?: string;
+  name?: string;
   label: string;
   email: string;
   role: PortalRole;
+  staffRole?: string;
   targetUrl: string;
   buttonLabel: string;
   defaultPassword?: string;
+  pin?: string;
 }

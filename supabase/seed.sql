@@ -1,10 +1,12 @@
 -- ====================================================================
 -- SWIFT Automated Demo User Seeding Script
 -- Target: supabase/seed.sql
--- Jira Issue: SIAA-43 (STORY-1.6)
+-- Jira Issue: SIAA-43 (STORY-1.6) / SIAA-105
 -- Accounts:
---   1. Admin: admin@swift.local (Password: swift123, Role: admin)
---   2. Cashier: cashier@swift.local (Password: swift123, Role: cashier)
+--   1. Admin: admin@swift.local (Password: swift123, Role: admin, PIN: 8888)
+--   2. Cashier: cashier@swift.local (Password: swift123, Role: cashier, PIN: 1234)
+--   3. Mechanic: mechanic1@swift.local (Password: swift123, Role: mechanic, PIN: 2222)
+--   4. Inventory Clerk: warehouse@swift.local (Password: swift123, Role: inventory_clerk, PIN: 3333)
 -- ====================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -35,7 +37,7 @@ VALUES
         crypt('swift123', gen_salt('bf')),
         timezone('utc'::text, now()),
         '{"provider": "email", "providers": ["email"]}'::jsonb,
-        '{"full_name": "SWIFT Shop Admin", "role": "admin"}'::jsonb,
+        '{"full_name": "Carlos Rodriguez", "role": "admin"}'::jsonb,
         timezone('utc'::text, now()),
         timezone('utc'::text, now()),
         '',
@@ -50,7 +52,7 @@ VALUES
         crypt('swift123', gen_salt('bf')),
         timezone('utc'::text, now()),
         '{"provider": "email", "providers": ["email"]}'::jsonb,
-        '{"full_name": "SWIFT Fast-Lane Cashier", "role": "cashier"}'::jsonb,
+        '{"full_name": "Mike Morales", "role": "cashier"}'::jsonb,
         timezone('utc'::text, now()),
         timezone('utc'::text, now()),
         '',
@@ -76,11 +78,11 @@ VALUES
         'd0000000-0000-0000-0000-000000000004',
         'authenticated',
         'authenticated',
-        'mechanic2@swift.local',
+        'warehouse@swift.local',
         crypt('swift123', gen_salt('bf')),
         timezone('utc'::text, now()),
         '{"provider": "email", "providers": ["email"]}'::jsonb,
-        '{"full_name": "Alex Lim", "role": "mechanic"}'::jsonb,
+        '{"full_name": "Rico Santos", "role": "inventory_clerk"}'::jsonb,
         timezone('utc'::text, now()),
         timezone('utc'::text, now()),
         '',
@@ -138,9 +140,9 @@ VALUES
     (
         'd0000000-0000-0000-0000-000000000004',
         'd0000000-0000-0000-0000-000000000004',
-        jsonb_build_object('sub', 'd0000000-0000-0000-0000-000000000004', 'email', 'mechanic2@swift.local'),
+        jsonb_build_object('sub', 'd0000000-0000-0000-0000-000000000004', 'email', 'warehouse@swift.local'),
         'email',
-        'mechanic2@swift.local',
+        'warehouse@swift.local',
         timezone('utc'::text, now()),
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
@@ -149,13 +151,14 @@ ON CONFLICT (id) DO UPDATE
 SET identity_data = EXCLUDED.identity_data,
     updated_at = timezone('utc'::text, now());
 
--- 3. Ensure corresponding public.profiles records with explicit roles
+-- 3. Ensure corresponding public.profiles records with explicit roles and dedicated PIN codes
 INSERT INTO public.profiles (
     id,
     email,
     full_name,
     role,
     status,
+    pin_code,
     created_at,
     updated_at
 )
@@ -163,18 +166,20 @@ VALUES
     (
         'a0000000-0000-0000-0000-000000000001',
         'admin@swift.local',
-        'SWIFT Shop Admin',
+        'Carlos Rodriguez',
         'admin'::public.user_role,
         'Active',
+        '8888',
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
     ),
     (
         'c0000000-0000-0000-0000-000000000002',
         'cashier@swift.local',
-        'SWIFT Fast-Lane Cashier',
+        'Mike Morales',
         'cashier'::public.user_role,
         'Active',
+        '1234',
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
     ),
@@ -184,15 +189,17 @@ VALUES
         'Dante Reyes',
         'mechanic'::public.user_role,
         'Active',
+        '2222',
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
     ),
     (
         'd0000000-0000-0000-0000-000000000004',
-        'mechanic2@swift.local',
-        'Alex Lim',
-        'mechanic'::public.user_role,
+        'warehouse@swift.local',
+        'Rico Santos',
+        'inventory_clerk'::public.user_role,
         'Active',
+        '3333',
         timezone('utc'::text, now()),
         timezone('utc'::text, now())
     )
@@ -201,6 +208,7 @@ SET email = EXCLUDED.email,
     full_name = EXCLUDED.full_name,
     role = EXCLUDED.role,
     status = EXCLUDED.status,
+    pin_code = EXCLUDED.pin_code,
     updated_at = timezone('utc'::text, now());
 
 -- 4. Seed Canonical Motorcycle Parts Catalog (12 Baseline Items)
@@ -341,7 +349,7 @@ VALUES
     (
         '30000000-0000-0000-0000-000000000001',
         'c0000000-0000-0000-0000-000000000002',
-        'Maria Santos',
+        'Mike Morales',
         'Terminal #01',
         timezone('utc'::text, now() - INTERVAL '3 days' + INTERVAL '8 hours'),
         timezone('utc'::text, now() - INTERVAL '3 days' + INTERVAL '17 hours'),
@@ -352,7 +360,7 @@ VALUES
     (
         '30000000-0000-0000-0000-000000000002',
         'c0000000-0000-0000-0000-000000000002',
-        'Maria Santos',
+        'Mike Morales',
         'Terminal #01',
         timezone('utc'::text, now() - INTERVAL '2 days' + INTERVAL '8 hours'),
         timezone('utc'::text, now() - INTERVAL '2 days' + INTERVAL '17 hours'),
@@ -363,13 +371,24 @@ VALUES
     (
         '30000000-0000-0000-0000-000000000003',
         'c0000000-0000-0000-0000-000000000002',
-        'Maria Santos',
+        'Mike Morales',
         'Terminal #02',
         timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '8 hours'),
         NULL,
         0,
         'on_shift',
         'Baseline demo shift'
+    ),
+    (
+        '30000000-0000-0000-0000-000000000004',
+        'd0000000-0000-0000-0000-000000000003',
+        'Dante Reyes',
+        'Terminal #01',
+        timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '7 hours'),
+        timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '16 hours'),
+        32400,
+        'completed',
+        'Service bay morning shift'
     )
 ON CONFLICT (id) DO NOTHING;
 
