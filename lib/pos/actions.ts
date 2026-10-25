@@ -313,12 +313,18 @@ async function trySupabaseCheckout(
     await triggerCheckoutRevalidation();
     await recordDiscountSecurityLog(validPayload, finalReceiptNumber);
 
+    // Auto-provision work orders from labor items (SIAA-100)
+    const { autoProvisionWorkOrdersFromCheckout } = await import('./work-order-bridge.ts');
+    const bridgeResult = await autoProvisionWorkOrdersFromCheckout(validPayload, finalReceiptNumber);
+
     return {
       success: true,
       transactionId: res.transaction_id || `tx-${Date.now()}`,
       receiptNumber: finalReceiptNumber,
       itemsCount: res.items_count ?? validPayload.items.length,
       partsDecremented: res.parts_decremented ?? validPayload.items.filter((i) => i.itemType === 'part').length,
+      workOrdersCreated: bridgeResult.created,
+      workOrderNumbers: bridgeResult.workOrderNumbers,
       createdAt: res.created_at || new Date().toISOString(),
     };
   } catch (rpcErr) {
@@ -385,12 +391,18 @@ async function executeMockCheckout(
   await triggerCheckoutRevalidation();
   await recordDiscountSecurityLog(validPayload, receiptNumber);
 
+  // Auto-provision work orders from labor items (SIAA-100)
+  const { autoProvisionWorkOrdersFromCheckout } = await import('./work-order-bridge.ts');
+  const bridgeResult = await autoProvisionWorkOrdersFromCheckout(validPayload, receiptNumber);
+
   return {
     success: true,
     transactionId: `mock-tx-${Date.now()}`,
     receiptNumber,
     itemsCount: validPayload.items.length,
     partsDecremented,
+    workOrdersCreated: bridgeResult.created,
+    workOrderNumbers: bridgeResult.workOrderNumbers,
     createdAt: new Date().toISOString(),
   };
 }

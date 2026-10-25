@@ -22,6 +22,21 @@ async function safeRevalidatePaths() {
 // In-memory cache for demo and offline test resilient mode
 let inMemoryOrders: DetailedWorkOrder[] = [...INITIAL_MOCK_WORK_ORDERS];
 
+export function appendInMemoryWorkOrder(order: DetailedWorkOrder): void {
+  inMemoryOrders = [
+    order,
+    ...inMemoryOrders.filter((o) => o.id !== order.id && o.orderNumber !== order.orderNumber),
+  ];
+}
+
+export function getInMemoryWorkOrders(): DetailedWorkOrder[] {
+  return [...inMemoryOrders];
+}
+
+export function resetInMemoryWorkOrders(): void {
+  inMemoryOrders = [...INITIAL_MOCK_WORK_ORDERS];
+}
+
 export interface WorkshopActionResult<T = unknown> {
   success: boolean;
   data?: T;
