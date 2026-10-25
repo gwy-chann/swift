@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { WorkOrderStatus } from '@/lib/types/service';
 
 export const WORK_ORDER_STATUSES = [
   'QUEUED',

@@ -4,7 +4,6 @@ import {
   INITIAL_MOCK_WORK_ORDERS,
   MOCK_SERVICE_BAYS,
 } from '../workshop-mock-data.ts';
-import type { WorkOrderRequiredPart } from '../../types/workshop.ts';
 
 describe('Workshop Parts Stock Availability & Shelf Locators (SIAA-99)', () => {
   describe('Mock Data Integrity', () => {

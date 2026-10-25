@@ -22,6 +22,21 @@ async function safeRevalidatePaths() {
 // In-memory cache for demo and offline test resilient mode
 let inMemoryOrders: DetailedWorkOrder[] = [...INITIAL_MOCK_WORK_ORDERS];
 
+export function appendInMemoryWorkOrder(order: DetailedWorkOrder): void {
+  inMemoryOrders = [
+    order,
+    ...inMemoryOrders.filter((o) => o.id !== order.id && o.orderNumber !== order.orderNumber),
+  ];
+}
+
+export function getInMemoryWorkOrders(): DetailedWorkOrder[] {
+  return [...inMemoryOrders];
+}
+
+export function resetInMemoryWorkOrders(): void {
+  inMemoryOrders = [...INITIAL_MOCK_WORK_ORDERS];
+}
+
 export interface WorkshopActionResult<T = unknown> {
   success: boolean;
   data?: T;
@@ -165,11 +180,12 @@ export async function updateWorkshopOrderStatusAction(
 
         // Synchronize service bay status if linked
         if (existingOrder?.bayId) {
-          const bayStatus = newStatus === 'COMPLETED' || newStatus === 'CANCELLED'
-            ? 'AVAILABLE'
-            : newStatus === 'IN PROGRESS' || newStatus === 'PENDING_PARTS'
-            ? 'OCCUPIED'
-            : 'QUEUED';
+          let bayStatus = 'QUEUED';
+          if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
+            bayStatus = 'AVAILABLE';
+          } else if (newStatus === 'IN PROGRESS' || newStatus === 'PENDING_PARTS') {
+            bayStatus = 'OCCUPIED';
+          }
 
           await supabase.from('service_bays').update({ status: bayStatus, updated_at: now }).eq('id', existingOrder.bayId);
         }

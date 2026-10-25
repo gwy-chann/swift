@@ -17,6 +17,15 @@ import { WorkOrderDetailDrawer } from "./work-order-detail-drawer";
 import { WorkshopEmptyState } from "./workshop-empty-state";
 import { useExecutiveRealtime } from "@/lib/analytics/use-executive-realtime";
 
+const STATUS_FILTER_LABELS: Record<string, string> = {
+  ALL: "All States",
+  "IN PROGRESS": "In Progress",
+  PENDING_PARTS: "Waiting Parts",
+  COMPLETED: "Completed",
+  QUEUED: "Queued",
+  CANCELLED: "Cancelled",
+};
+
 interface WorkshopQueueClientProps {
   initialOrders: DetailedWorkOrder[];
 }
@@ -28,13 +37,18 @@ export function WorkshopQueueClient({
   const [activeTab, setActiveTab] = useState<"my-jobs" | "all-bays">("my-jobs");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | WorkOrderStatus>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<DetailedWorkOrder | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { currentStaff, currentStaffRole } = usePunchStore();
+  const { currentStaff } = usePunchStore();
   const mechanicName = currentStaff || "Dante Reyes";
   const currentMechanicId = DANTE_REYES_PROFILE_ID;
+
+  const selectedOrder = useMemo(() => {
+    if (!selectedOrderId) return null;
+    return orders.find((o) => o.id === selectedOrderId || o.orderNumber === selectedOrderId) || null;
+  }, [orders, selectedOrderId]);
 
   // Refresh Queue from Server
   const handleRefresh = useCallback(async () => {
@@ -51,25 +65,83 @@ export function WorkshopQueueClient({
     }
   }, []);
 
+  // Listen for local POS checkout events to immediately sync queue
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePosCheckout = () => {
+      handleRefresh();
+    };
+
+    window.addEventListener("swift:pos:checkout", handlePosCheckout);
+    window.addEventListener("swift:pos:workorder-created", handlePosCheckout);
+
+    return () => {
+      window.removeEventListener("swift:pos:checkout", handlePosCheckout);
+      window.removeEventListener("swift:pos:workorder-created", handlePosCheckout);
+    };
+  }, [handleRefresh]);
+
   // Real-time synchronization subscription on Supabase
   useExecutiveRealtime({
     enabled: true,
     onWorkOrderChange: (payload) => {
-      setOrders((prev) =>
-        prev.map((ord) => {
-          if (ord.id === payload.id || ord.orderNumber === payload.order_number) {
-            return {
-              ...ord,
-              status: payload.status,
-              startedAt: payload.started_at ?? ord.startedAt,
-              completedAt: payload.completed_at ?? ord.completedAt,
-              notes: payload.notes ?? ord.notes,
-              updatedAt: payload.updated_at || ord.updatedAt || new Date().toISOString(),
-            };
-          }
-          return ord;
-        })
-      );
+      setOrders((prev) => {
+        const exists = prev.some(
+          (ord) => ord.id === payload.id || ord.orderNumber === payload.order_number
+        );
+
+        if (exists) {
+          return prev.map((ord) => {
+            if (ord.id === payload.id || ord.orderNumber === payload.order_number) {
+              return {
+                ...ord,
+                status: payload.status,
+                startedAt: payload.started_at ?? ord.startedAt,
+                completedAt: payload.completed_at ?? ord.completedAt,
+                notes: payload.notes ?? ord.notes,
+                updatedAt: payload.updated_at || ord.updatedAt || new Date().toISOString(),
+              };
+            }
+            return ord;
+          });
+        }
+
+        // Auto-provisioned work order inserted via POS bridge (SIAA-100)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawPayload = payload as any;
+        const newOrder: DetailedWorkOrder = {
+          id: payload.id,
+          orderNumber: payload.order_number,
+          bayId: payload.bay_id ?? null,
+          bayName: rawPayload.service_bays?.name || rawPayload.bay_name || "Workshop Bay",
+          customerName: payload.customer_name || "Walk-in Customer",
+          customerPhone: "0917-000-0000",
+          vehicleModel: payload.vehicle_model || "Motorcycle (General)",
+          plateNumber: payload.plate_number || "FOR-REG",
+          serviceCode: payload.service_code || "SRV-GEN-01",
+          serviceName: payload.service_name || "Workshop Labor Service",
+          mechanicId: payload.mechanic_id ?? null,
+          mechanicName: undefined,
+          status: payload.status,
+          estimatedDurationMinutes: payload.estimated_duration_minutes ?? 30,
+          startedAt: payload.started_at ?? null,
+          completedAt: payload.completed_at ?? null,
+          notes: payload.notes ?? null,
+          laborTasks: [
+            {
+              id: "1",
+              description: `Execute ${payload.service_name || "scheduled repair service"}`,
+              completed: false,
+            },
+          ],
+          requiredParts: [],
+          createdAt: payload.created_at || new Date().toISOString(),
+          updatedAt: payload.updated_at || new Date().toISOString(),
+        };
+
+        return [newOrder, ...prev];
+      });
     },
   });
 
@@ -177,14 +249,6 @@ export function WorkshopQueueClient({
     }
   }
 
-  // Keep drawer sync with updated order state
-  useEffect(() => {
-    if (selectedOrder) {
-      const updated = orders.find((o) => o.id === selectedOrder.id);
-      if (updated) setSelectedOrder(updated);
-    }
-  }, [orders, selectedOrder]);
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Top Header & Metric Bar */}
@@ -268,15 +332,7 @@ export function WorkshopQueueClient({
                 : "bg-bg-surface border border-border text-text-secondary hover:bg-bg-hover hover:text-text-primary"
             }`}
           >
-            {st === "ALL"
-              ? "All States"
-              : st === "IN PROGRESS"
-              ? "In Progress"
-              : st === "PENDING_PARTS"
-              ? "Waiting Parts"
-              : st === "COMPLETED"
-              ? "Completed"
-              : "Queued"}
+            {STATUS_FILTER_LABELS[st] || st}
           </button>
         ))}
       </div>
@@ -289,7 +345,7 @@ export function WorkshopQueueClient({
               key={order.id}
               order={order}
               currentMechanicId={currentMechanicId}
-              onInspect={(ord) => setSelectedOrder(ord)}
+              onInspect={(ord) => setSelectedOrderId(ord.id)}
               onStatusChange={handleStatusChange}
               onClaimJob={handleClaimJob}
               isUpdating={isUpdating}
@@ -315,7 +371,7 @@ export function WorkshopQueueClient({
       <WorkOrderDetailDrawer
         order={selectedOrder}
         isOpen={Boolean(selectedOrder)}
-        onClose={() => setSelectedOrder(null)}
+        onClose={() => setSelectedOrderId(null)}
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
       />
