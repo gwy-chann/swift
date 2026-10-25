@@ -13,6 +13,7 @@ import { PosManagerOverrideModal } from "@/components/pos/manager-override-modal
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { CashTenderModal } from "@/components/pos/cash-tender-modal";
 import { ActiveShiftGuardModal } from "@/components/pos/active-shift-guard-modal";
+import { CustomerIntakeModal } from "@/components/pos/customer-intake-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
@@ -23,6 +24,7 @@ import { evaluatePosCheckoutAuthorization } from "@/lib/contracts/checkout-guard
 import { logSecurityEventAction } from "@/lib/admin/audit-actions";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
+import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contracts";
 
 export default function StaffPosPage() {
   const router = useRouter();
@@ -49,6 +51,8 @@ export default function StaffPosPage() {
   const [isShiftGuardModalOpen, setIsShiftGuardModalOpen] = useState(false);
   const [isUnauthorizedRoleModalOpen, setIsUnauthorizedRoleModalOpen] = useState(false);
   const [isManagerElevationModalOpen, setIsManagerElevationModalOpen] = useState(false);
+  const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
+  const [intakeData, setIntakeData] = useState<CustomerIntakeInput | null>(null);
   const [hasOneTimeManagerOverride, setHasOneTimeManagerOverride] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
@@ -225,21 +229,37 @@ export default function StaffPosPage() {
       return;
     }
 
+    const hasServiceItems = items.some((item) => item.type === "service");
+    if (hasServiceItems && !intakeData) {
+      setIsIntakeModalOpen(true);
+      return;
+    }
+
     if (hasOneTimeManagerOverride) {
       setHasOneTimeManagerOverride(false);
     }
     openPaymentModal();
   }, [
-    items.length,
+    items,
     isProcessing,
     isShiftActive,
     shiftStatus,
     currentStaffRole,
     hasOneTimeManagerOverride,
+    intakeData,
     logUnauthorizedCheckoutAttempt,
     openPaymentModal,
     showToast,
   ]);
+
+  const handleIntakeSubmit = useCallback(
+    (intake: CustomerIntakeInput) => {
+      setIntakeData(intake);
+      setIsIntakeModalOpen(false);
+      openPaymentModal();
+    },
+    [openPaymentModal]
+  );
 
   const handleRequestManagerOverride = useCallback(() => {
     setIsUnauthorizedRoleModalOpen(false);
@@ -250,8 +270,13 @@ export default function StaffPosPage() {
     setIsManagerElevationModalOpen(false);
     setHasOneTimeManagerOverride(true);
     showToast("success", "Manager override approved: One-time checkout authorized.");
-    openPaymentModal();
-  }, [openPaymentModal, showToast]);
+    const hasServiceItems = items.some((item) => item.type === "service");
+    if (hasServiceItems && !intakeData) {
+      setIsIntakeModalOpen(true);
+    } else {
+      openPaymentModal();
+    }
+  }, [items, intakeData, openPaymentModal, showToast]);
 
   const handleConfirmPayment = useCallback(async (cashTendered: number) => {
     if (items.length === 0 || isProcessing) return;
@@ -262,7 +287,12 @@ export default function StaffPosPage() {
       const result = await checkout({
         cashier: cashierName,
         cashTendered,
-        paymentMethod: "Cash"
+        paymentMethod: "Cash",
+        customerName: intakeData?.customerName,
+        customerPhone: intakeData?.customerPhone,
+        vehicleModel: intakeData?.vehicleModel,
+        plateNumber: intakeData?.plateNumber,
+        notes: intakeData?.complaints,
       });
 
       if (!result.success) {
@@ -271,6 +301,7 @@ export default function StaffPosPage() {
         return;
       }
 
+      setIntakeData(null);
       showToast("success", `Sale completed successfully! Receipt #${result.receiptNumber}`);
 
       // Refresh catalog stock counts
@@ -284,7 +315,7 @@ export default function StaffPosPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [items, isProcessing, currentStaff, checkout, showToast, hydrateProducts]);
+  }, [items, isProcessing, currentStaff, checkout, intakeData, showToast, hydrateProducts]);
 
   const handleScanNotFound = useCallback(() => {
     showToast("error", "Item code or barcode not found");
@@ -293,6 +324,7 @@ export default function StaffPosPage() {
   const handleCloseModals = useCallback(() => {
     if (isPaymentModalOpen) closePaymentModal();
     if (isReceiptModalOpen) closeReceiptModal();
+    if (isIntakeModalOpen) setIsIntakeModalOpen(false);
     if (isShiftGuardModalOpen) setIsShiftGuardModalOpen(false);
     if (isUnauthorizedRoleModalOpen) setIsUnauthorizedRoleModalOpen(false);
     if (isManagerElevationModalOpen) setIsManagerElevationModalOpen(false);
@@ -303,6 +335,7 @@ export default function StaffPosPage() {
   }, [
     isPaymentModalOpen,
     isReceiptModalOpen,
+    isIntakeModalOpen,
     isShiftGuardModalOpen,
     isUnauthorizedRoleModalOpen,
     isManagerElevationModalOpen,
@@ -317,6 +350,7 @@ export default function StaffPosPage() {
       const isAnyModalOpen =
         isPaymentModalOpen ||
         isReceiptModalOpen ||
+        isIntakeModalOpen ||
         isOverrideModalOpen ||
         isShiftGuardModalOpen ||
         isUnauthorizedRoleModalOpen ||
@@ -364,6 +398,7 @@ export default function StaffPosPage() {
     isShiftGuardModalOpen,
     isUnauthorizedRoleModalOpen,
     isManagerElevationModalOpen,
+    isIntakeModalOpen,
     isShiftActive,
     shiftStatus,
     currentStaffRole,
@@ -483,6 +518,14 @@ export default function StaffPosPage() {
           setPendingOverrideProduct(null);
         }}
         onAuthorize={handleAuthorizedOverride}
+      />
+
+      {/* Customer & Vehicle Intake Modal for Labor Services (SIAA-101) */}
+      <CustomerIntakeModal
+        isOpen={isIntakeModalOpen}
+        onClose={() => setIsIntakeModalOpen(false)}
+        onSubmit={handleIntakeSubmit}
+        initialValues={intakeData || undefined}
       />
 
       {/* Cash Tender & Change Calculation Modal (SIAA-21) */}

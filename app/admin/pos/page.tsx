@@ -7,6 +7,7 @@ import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { CashTenderModal } from "@/components/pos/cash-tender-modal";
+import { CustomerIntakeModal } from "@/components/pos/customer-intake-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
@@ -14,6 +15,7 @@ import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
+import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contracts";
 
 export default function AdminPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
@@ -32,6 +34,8 @@ export default function AdminPosPage() {
   } = useCartStore();
   const [laborServices, setLaborServices] = useState<LaborService[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
+  const [intakeData, setIntakeData] = useState<CustomerIntakeInput | null>(null);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -141,8 +145,22 @@ export default function AdminPosPage() {
 
   const handleOpenPayment = useCallback(() => {
     if (items.length === 0 || isProcessing) return;
+    const hasServiceItems = items.some((item) => item.type === "service");
+    if (hasServiceItems && !intakeData) {
+      setIsIntakeModalOpen(true);
+      return;
+    }
     openPaymentModal();
-  }, [items.length, isProcessing, openPaymentModal]);
+  }, [items, isProcessing, intakeData, openPaymentModal]);
+
+  const handleIntakeSubmit = useCallback(
+    (intake: CustomerIntakeInput) => {
+      setIntakeData(intake);
+      setIsIntakeModalOpen(false);
+      openPaymentModal();
+    },
+    [openPaymentModal]
+  );
 
   const handleConfirmPayment = useCallback(async (cashTendered: number) => {
     if (items.length === 0 || isProcessing) return;
@@ -152,7 +170,12 @@ export default function AdminPosPage() {
       const result = await checkout({
         cashier: "Admin Cashier",
         cashTendered,
-        paymentMethod: "Cash"
+        paymentMethod: "Cash",
+        customerName: intakeData?.customerName,
+        customerPhone: intakeData?.customerPhone,
+        vehicleModel: intakeData?.vehicleModel,
+        plateNumber: intakeData?.plateNumber,
+        notes: intakeData?.complaints,
       });
 
       if (!result.success) {
@@ -161,6 +184,7 @@ export default function AdminPosPage() {
         return;
       }
 
+      setIntakeData(null);
       showToast("success", `Sale completed successfully! Receipt #${result.receiptNumber}`);
 
       const updated = await getProductsAction();
@@ -173,19 +197,25 @@ export default function AdminPosPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [items, isProcessing, checkout, showToast, hydrateProducts]);
+  }, [items, isProcessing, checkout, intakeData, showToast, hydrateProducts]);
 
   // Keyboard shortcut F12 checkout: if modal is not open, open payment modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F12" && !isPaymentModalOpen) {
+      if (
+        e.key === "F12" &&
+        !isPaymentModalOpen &&
+        !isIntakeModalOpen &&
+        !isReceiptModalOpen &&
+        !isOverrideModalOpen
+      ) {
         e.preventDefault();
         handleOpenPayment();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPaymentModalOpen, handleOpenPayment]);
+  }, [isPaymentModalOpen, isIntakeModalOpen, isReceiptModalOpen, isOverrideModalOpen, handleOpenPayment]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -260,6 +290,14 @@ export default function AdminPosPage() {
           setPendingOverrideProduct(null);
         }}
         onAuthorize={handleAuthorizedOverride}
+      />
+
+      {/* Customer & Vehicle Intake Modal for Labor Services (SIAA-101) */}
+      <CustomerIntakeModal
+        isOpen={isIntakeModalOpen}
+        onClose={() => setIsIntakeModalOpen(false)}
+        onSubmit={handleIntakeSubmit}
+        initialValues={intakeData || undefined}
       />
 
       {/* Cash Tender & Change Calculation Modal (SIAA-21) */}

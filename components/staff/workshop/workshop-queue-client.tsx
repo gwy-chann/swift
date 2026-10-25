@@ -9,6 +9,7 @@ import {
   fetchWorkshopOrdersAction,
   updateWorkshopOrderStatusAction,
   claimWorkOrderAction,
+  assignMechanicAction,
 } from "@/lib/workshop/workshop-actions";
 import { DANTE_REYES_PROFILE_ID } from "@/lib/workshop/workshop-mock-data";
 import { WorkshopQueueHeader } from "./workshop-queue-header";
@@ -28,10 +29,12 @@ const STATUS_FILTER_LABELS: Record<string, string> = {
 
 interface WorkshopQueueClientProps {
   initialOrders: DetailedWorkOrder[];
+  isAdmin?: boolean;
 }
 
 export function WorkshopQueueClient({
   initialOrders,
+  isAdmin: propIsAdmin,
 }: Readonly<WorkshopQueueClientProps>) {
   const [orders, setOrders] = useState<DetailedWorkOrder[]>(initialOrders);
   const [activeTab, setActiveTab] = useState<"my-jobs" | "all-bays">("my-jobs");
@@ -41,7 +44,8 @@ export function WorkshopQueueClient({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { currentStaff } = usePunchStore();
+  const { currentStaff, currentStaffRole } = usePunchStore();
+  const isAdmin = propIsAdmin !== undefined ? propIsAdmin : currentStaffRole === "admin";
   const mechanicName = currentStaff || "Dante Reyes";
   const currentMechanicId = DANTE_REYES_PROFILE_ID;
 
@@ -91,15 +95,21 @@ export function WorkshopQueueClient({
           (ord) => ord.id === payload.id || ord.orderNumber === payload.order_number
         );
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawPayload = payload as any;
+
         if (exists) {
           return prev.map((ord) => {
             if (ord.id === payload.id || ord.orderNumber === payload.order_number) {
               return {
                 ...ord,
-                status: payload.status,
+                mechanicId: payload.mechanic_id !== undefined ? payload.mechanic_id : ord.mechanicId,
+                mechanicName: rawPayload.mechanic_name ?? ord.mechanicName,
+                status: payload.status ?? ord.status,
                 startedAt: payload.started_at ?? ord.startedAt,
                 completedAt: payload.completed_at ?? ord.completedAt,
                 notes: payload.notes ?? ord.notes,
+                customerPhone: rawPayload.customer_phone ?? rawPayload.customerPhone ?? ord.customerPhone,
                 updatedAt: payload.updated_at || ord.updatedAt || new Date().toISOString(),
               };
             }
@@ -107,22 +117,20 @@ export function WorkshopQueueClient({
           });
         }
 
-        // Auto-provisioned work order inserted via POS bridge (SIAA-100)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rawPayload = payload as any;
+        // Auto-provisioned work order inserted via POS bridge (SIAA-100 / SIAA-101)
         const newOrder: DetailedWorkOrder = {
           id: payload.id,
           orderNumber: payload.order_number,
           bayId: payload.bay_id ?? null,
           bayName: rawPayload.service_bays?.name || rawPayload.bay_name || "Workshop Bay",
           customerName: payload.customer_name || "Walk-in Customer",
-          customerPhone: "0917-000-0000",
+          customerPhone: rawPayload.customer_phone || rawPayload.customerPhone || "0917-000-0000",
           vehicleModel: payload.vehicle_model || "Motorcycle (General)",
           plateNumber: payload.plate_number || "FOR-REG",
           serviceCode: payload.service_code || "SRV-GEN-01",
           serviceName: payload.service_name || "Workshop Labor Service",
           mechanicId: payload.mechanic_id ?? null,
-          mechanicName: undefined,
+          mechanicName: rawPayload.mechanic_name || undefined,
           status: payload.status,
           estimatedDurationMinutes: payload.estimated_duration_minutes ?? 30,
           startedAt: payload.started_at ?? null,
@@ -231,6 +239,26 @@ export function WorkshopQueueClient({
       setIsUpdating(false);
     }
   }
+
+  // Admin Assign Mechanic Handler (SIAA-101 Scenario 3)
+  const handleAssignMechanic = useCallback(
+    async (orderId: string, mechId: string, mechName: string) => {
+      setIsUpdating(true);
+      try {
+        const res = await assignMechanicAction(orderId, mechId, mechName);
+        if (res.success && res.data) {
+          setOrders((prev) =>
+            prev.map((ord) => (ord.id === orderId || ord.orderNumber === orderId ? res.data! : ord))
+          );
+        }
+      } catch (err) {
+        console.error("[Workshop Queue] Failed to assign mechanic:", err);
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    []
+  );
 
   // Claim Job Handler
   async function handleClaimJob(orderId: string) {
@@ -374,6 +402,8 @@ export function WorkshopQueueClient({
         onClose={() => setSelectedOrderId(null)}
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
+        isAdmin={isAdmin}
+        onAssignMechanic={handleAssignMechanic}
       />
     </div>
   );
