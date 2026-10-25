@@ -22,7 +22,7 @@ flowchart TD
 
 ## Phase 1: Specifications & Contracts (Unit 1)
 
-- [ ] **TASK-01**: Author canonical 8 SpecKit artifacts in `specs/100-pos-labor-checkout-work-order-bridge/`
+- [x] **TASK-01**: Author canonical 8 SpecKit artifacts in `specs/100-pos-labor-checkout-work-order-bridge/`
   - **Files**: `spec.md`, `research.md`, `data-model.md`, `contracts/work-order-bridge-contracts.ts`, `checklists/requirements.md`, `plan.md`, `quickstart.md`, `tasks.md`
   - **Verification**: All 8 artifacts present, self-consistent, zero unfilled placeholders.
 
@@ -30,7 +30,7 @@ flowchart TD
 
 ## Phase 2: Types, Contracts & Intake Payload (Unit 2)
 
-- [ ] **TASK-02**: Extend Checkout Types and Contracts with Customer Intake Metadata & Work Order Creation Results
+- [x] **TASK-02**: Extend Checkout Types and Contracts with Customer Intake Metadata & Work Order Creation Results
   - **Files**:
     - `lib/types/transaction.ts`: Add optional intake fields (`customerName`, `vehicleModel`, `plateNumber`, `technicianNotes`) to `CheckoutPayload` and add `workOrdersCreated` & `workOrderNumbers` to `CheckoutActionResult`.
     - `lib/pos/contracts.ts`: Update `checkoutPayloadSchema` and validation functions with intake fields and non-empty defaults.
@@ -40,7 +40,7 @@ flowchart TD
 
 ## Phase 3: Work Order Auto-Provisioning Bridge Engine (Unit 3)
 
-- [ ] **TASK-03**: Implement Work Order Auto-Provisioning Engine
+- [x] **TASK-03**: Implement Work Order Auto-Provisioning Engine
   - **Files**: `lib/pos/work-order-bridge.ts`
   - **Changes**:
     - Build `autoProvisionWorkOrdersFromCheckout(payload, receiptNumber)`:
@@ -58,7 +58,7 @@ flowchart TD
 
 ## Phase 4: POS Checkout Action & Realtime Integration (Unit 4)
 
-- [ ] **TASK-04**: Wire Work Order Auto-Provisioning into POS Checkout Orchestration
+- [x] **TASK-04**: Wire Work Order Auto-Provisioning into POS Checkout Orchestration
   - **Files**:
     - `lib/pos/actions.ts`:
       - Call `autoProvisionWorkOrdersFromCheckout` inside `trySupabaseCheckout` and `executeMockCheckout`.
@@ -71,7 +71,7 @@ flowchart TD
 
 ## Phase 5: Workshop Queue UI Insertion Wireup (Unit 5)
 
-- [ ] **TASK-05**: Enhance Workshop Queue Client to Prepend Newly Inserted Orders Reactively
+- [x] **TASK-05**: Enhance Workshop Queue Client to Prepend Newly Inserted Orders Reactively
   - **Files**: `components/staff/workshop/workshop-queue-client.tsx`
   - **Changes**:
     - In `useExecutiveRealtime` callback `onWorkOrderChange`:
@@ -84,7 +84,7 @@ flowchart TD
 
 ## Phase 6: Automated Test Suite (Unit 6)
 
-- [ ] **TASK-06**: Author Automated Unit and Integration Tests
+- [x] **TASK-06**: Author Automated Unit and Integration Tests
   - **Files**: `lib/pos/__tests__/pos-labor-bridge.test.ts`
   - **Tests**:
     - Scenario 1: Cart with labor service auto-provisions work order with format `WO-YYYY-XXXX`, `status = 'QUEUED'`, `mechanic_id = null`.
@@ -98,7 +98,7 @@ flowchart TD
 
 ## Phase 7: Convergence, Atomic Commits & Pull Request (Unit 7)
 
-- [ ] **TASK-07**: Run Complete Verification Gates, Commit Atomically & Create PR
+- [x] **TASK-07**: Run Complete Verification Gates, Commit Atomically & Create PR
   - **Commands**:
     - `npx tsc --noEmit`
     - `npm run lint`
