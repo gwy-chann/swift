@@ -30,7 +30,7 @@ flowchart TD
 
 ## Phase 2: Domain Types & Inactive Code Contracts (Unit 2)
 
-- [ ] **TASK-02**: Extend Auth & Session Types with `ACCOUNT_INACTIVE` Code and Inactive Session Flags
+- [x] **TASK-02**: Extend Auth & Session Types with `ACCOUNT_INACTIVE` Code and Inactive Session Flags
   - **Files**:
     - `lib/auth/types.ts`: Add `'ACCOUNT_INACTIVE'` to `AuthResult['code']` and add optional `status?: string` & `isInactive?: boolean` to `UserSession` and `ResolvedSession`.
     - `lib/staff/types.ts`: Add `'ACCOUNT_INACTIVE'` to `VerifyStaffPinResult['code']`.
@@ -40,7 +40,7 @@ flowchart TD
 
 ## Phase 3: Login Authentication Guard & Inactive Account Blocking (Unit 3)
 
-- [ ] **TASK-03**: Update `authenticateUserAction` in `lib/auth/actions.ts` to Check Account Status
+- [x] **TASK-03**: Update `authenticateUserAction` in `lib/auth/actions.ts` to Check Account Status
   - **Files**: `lib/auth/actions.ts`
   - **Changes**:
     - Check user profile status against `public.profiles` (or `memoryStaffUsers` / mock data if demo/offline).
@@ -50,7 +50,7 @@ flowchart TD
       - Log security audit event for rejected login.
   - **Verification**: Test with inactive email credentials returns exact prescribed error.
 
-- [ ] **TASK-04**: Update `verifyStaffPinAction` in `lib/staff/actions.ts` to Block Inactive Staff PINs
+- [x] **TASK-04**: Update `verifyStaffPinAction` in `lib/staff/actions.ts` to Block Inactive Staff PINs
   - **Files**: `lib/staff/actions.ts`
   - **Changes**:
     - In `verifyStaffPinFromSupabase` and `verifyStaffPinOfflineFallback`:
@@ -62,15 +62,15 @@ flowchart TD
 
 ## Phase 4: Session Invalidation & Route Guard Eviction (Unit 4)
 
-- [ ] **TASK-05**: Implement Administrative Session Revocation in `toggleUserStatusAction`
+- [x] **TASK-05**: Implement Administrative Session Revocation in `toggleUserStatusAction`
   - **Files**: `lib/admin/user-actions.ts`
   - **Changes**:
-    - When `status === 'Inactive'`, invoke Supabase Admin Auth `signOut(userId, 'all')` to revoke tokens.
+    - When `status === 'Inactive'`, invoke Supabase Admin Auth `signOut(userId, 'global')` to revoke tokens.
     - Record deactivation timestamp in user record and revocation registry.
     - Log high-severity security audit event: `ACCOUNT_DEACTIVATED_SESSION_TERMINATED`.
   - **Verification**: Status toggle executes cleanly and triggers session termination hook.
 
-- [ ] **TASK-06**: Update `getServerSession()` & `evaluateRouteAccess()` in `lib/auth/session-guards.ts`
+- [x] **TASK-06**: Update `getServerSession()` & `evaluateRouteAccess()` in `lib/auth/session-guards.ts`
   - **Files**: `lib/auth/session-guards.ts`
   - **Changes**:
     - Retrieve active account status for the resolved user ID.
@@ -85,7 +85,7 @@ flowchart TD
 
 ## Phase 5: UI Login Notice Banner & Accessibility (Unit 5)
 
-- [ ] **TASK-07**: Update Login Views to Display Accessible Inactive Notice Banner
+- [x] **TASK-07**: Update Login Views to Display Accessible Inactive Notice Banner
   - **Files**:
     - `components/auth/login-form.tsx`: Add check for `notice === 'inactive'` or `error === 'ACCOUNT_INACTIVE'`. Render warning card with `AlertTriangle` icon and text *"Account is inactive. Please contact your workshop administrator."* using semantic design tokens (`var(--destructive)`).
     - `app/(auth)/login/page.tsx`: Pass URL search parameters (`notice`, `error`) to `LoginForm`.
@@ -95,7 +95,7 @@ flowchart TD
 
 ## Phase 6: Automated Test Suites & Regression Verification (Unit 6)
 
-- [ ] **TASK-08**: Author Unit and Integration Tests for Inactive Account Security
+- [x] **TASK-08**: Author Unit and Integration Tests for Inactive Account Security
   - **Files**:
     - `lib/auth/__tests__/inactive-account-guard.test.ts`
     - `lib/staff/__tests__/inactive-staff-pin.test.ts`
@@ -103,8 +103,8 @@ flowchart TD
     - `lib/admin/__tests__/user-deactivation-revocation.test.ts`
   - **Verification**: All new test suites pass with 100% assertions satisfied.
 
-- [ ] **TASK-09**: Full Regression Verification & Graphify AST Update
+- [x] **TASK-09**: Full Regression Verification & Graphify AST Update
   - **Verification**:
-    - `npm test` passes 100% (704+ tests).
+    - `npm test` passes 100% (715/715 tests).
     - `npx tsc --noEmit` passes with 0 errors.
     - `npm run lint` passes cleanly.
