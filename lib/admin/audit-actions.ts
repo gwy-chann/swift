@@ -84,6 +84,7 @@ export async function resetMemoryAuditLogs(): Promise<void> {
     ...item,
     metadata: { ...item.metadata },
   }));
+  await Promise.resolve();
 }
 
 async function safeRevalidatePaths(): Promise<void> {
@@ -116,7 +117,7 @@ function filterInMemoryAuditLogs(
       (log) =>
         log.action.toLowerCase().includes(q) ||
         log.userEmail.toLowerCase().includes(q) ||
-        (log.terminalIp && log.terminalIp.toLowerCase().includes(q))
+        log.terminalIp?.toLowerCase().includes(q)
     );
   }
 
@@ -274,7 +275,14 @@ export async function logSecurityEventAction(
 
 function escapeCsvCell(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  let str: string;
+  if (typeof value === 'object') {
+    str = JSON.stringify(value);
+  } else if (typeof value === 'string') {
+    str = value;
+  } else {
+    str = String(value as number | boolean | bigint);
+  }
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

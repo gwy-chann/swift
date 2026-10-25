@@ -2,11 +2,13 @@ import {
   LayoutDashboard,
   Boxes,
   ShoppingCart,
+  History,
   Search,
   BarChart3,
   Users,
   Tags,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { AdminNavItem, AdminUserMeta } from "./types";
 
@@ -42,6 +44,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: ShoppingCart,
   },
   {
+    id: "history",
+    label: "Purchase History",
+    href: "/admin/history",
+    category: "Store Intelligence",
+    icon: History,
+  },
+  {
     id: "motomatcher",
     label: "MotoMatcher Search",
     href: "/admin/motomatcher",
@@ -63,6 +72,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/users",
     category: "Administration",
     icon: Users,
+  },
+  {
+    id: "attendance",
+    label: "Staff Attendance",
+    href: "/admin/attendance",
+    category: "Administration",
+    icon: Clock,
   },
   {
     id: "pricing",

@@ -1,12 +1,9 @@
 "use server";
 
 import type { AuthResult, LoginCredentials, UserSession } from "./types.ts";
-import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
+import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG, INACTIVE_ACCOUNT_ERROR } from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
 import { getStaffUserStatus } from "../admin/user-actions.ts";
-
-export const INACTIVE_ACCOUNT_ERROR =
-  "Account is inactive. Please contact your workshop administrator.";
 
 interface CookieWriter {
   set(name: string, value: string, options?: Record<string, unknown>): void;

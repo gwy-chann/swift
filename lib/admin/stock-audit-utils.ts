@@ -12,9 +12,9 @@ export function mapStockAdjustmentLogToEntry(
   log: StockAdjustmentLog
 ): StockAdjustmentLogEntry {
   let quantityDelta = 0;
-  const match = (log.change || '').match(/([+-]?\d+)/);
+  const match = /([+-]?\d+)/.exec(log.change || '');
   if (match) {
-    quantityDelta = parseInt(match[1], 10) || 0;
+    quantityDelta = Number.parseInt(match[1], 10) || 0;
   }
 
   return {
@@ -64,7 +64,7 @@ export function calculateSummaryMetrics(
 export function formatAuditTimestamp(isoDate: string): string {
   try {
     const d = new Date(isoDate);
-    if (isNaN(d.getTime())) return isoDate;
+    if (Number.isNaN(d.getTime())) return isoDate;
     const pad = (n: number) => String(n).padStart(2, '0');
     const year = d.getUTCFullYear();
     const month = pad(d.getUTCMonth() + 1);

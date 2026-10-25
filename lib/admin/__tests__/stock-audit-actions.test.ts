@@ -8,9 +8,9 @@ import {
 } from '../stock-audit-actions.ts';
 
 describe('Supabase Stock Adjustment Audit Trail Ledger & Shrinkage Analytics (SIAA-65)', () => {
-  beforeEach(() => {
-    resetMemoryStockAdjustmentLogs();
-    setForceMemoryStockLogs(true);
+  beforeEach(async () => {
+    await resetMemoryStockAdjustmentLogs();
+    await setForceMemoryStockLogs(true);
   });
 
   describe('Scenario 1: Stock Adjustment Log Querying & Filtering', () => {

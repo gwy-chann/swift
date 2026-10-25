@@ -54,3 +54,4 @@ export interface DemoAccount {
   defaultPassword?: string;
   pin?: string;
 }
+

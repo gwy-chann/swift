@@ -66,6 +66,7 @@ export const DEMO_ACCOUNTS: Record<PortalRole, DemoAccount> = {
   staff: DEMO_STAFF_ACCOUNTS[0],
 };
 
+
 /**
  * Portal configuration metadata
  */
@@ -85,3 +86,6 @@ export const PORTAL_CONFIG = {
 } as const;
 
 export const TERMINAL_ROLE_STORAGE_KEY = "swift_terminal_role";
+
+export const INACTIVE_ACCOUNT_ERROR =
+  "Account is inactive. Please contact your workshop administrator.";

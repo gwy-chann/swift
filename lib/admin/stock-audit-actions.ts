@@ -23,7 +23,7 @@ let forceMemoryStore = false;
  * Toggles whether queries must use the in-memory store.
  * Primarily used during unit tests and offline benchmarking.
  */
-export async function setForceMemoryStockLogs(force: boolean): Promise<void> {
+export function setForceMemoryStockLogs(force: boolean): void {
   forceMemoryStore = force;
 }
 
@@ -31,7 +31,7 @@ export async function setForceMemoryStockLogs(force: boolean): Promise<void> {
  * Resets in-memory fallback logs to initial mock data.
  * Used for testing and state isolation.
  */
-export async function resetMemoryStockAdjustmentLogs(): Promise<void> {
+export function resetMemoryStockAdjustmentLogs(): void {
   memoryStockAdjustmentLogs = MOCK_STOCK_ADJUSTMENT_LOGS.map((item) => ({
     ...item,
   }));
@@ -40,9 +40,9 @@ export async function resetMemoryStockAdjustmentLogs(): Promise<void> {
 /**
  * Appends a new stock adjustment record into memory store (used by RPC fallback/tests).
  */
-export async function appendMemoryStockAdjustmentLog(
+export function appendMemoryStockAdjustmentLog(
   log: StockAdjustmentLogEntry
-): Promise<void> {
+): void {
   memoryStockAdjustmentLogs.unshift(log);
 }
 

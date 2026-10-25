@@ -152,7 +152,7 @@ function generateSecurePin(): string {
   return 'SwiftTemp#5678';
 }
 
-const APPROVED_STAFF_ROLES: readonly string[] = ['cashier', 'mechanic', 'inventory_clerk'];
+const APPROVED_STAFF_ROLES = new Set<string>(['cashier', 'mechanic', 'inventory_clerk']);
 const INVALID_ROLE_ERROR =
   'Staff account role must be strictly one of: Cashier Privilege (cashier), Mechanic (mechanic), or Inventory Clerk (inventory_clerk).';
 
@@ -256,7 +256,7 @@ export async function provisionStaffUserAction(
 
   const rawRole = (rawPayload as { role?: string })?.role;
   const rawEmail = (rawPayload as { email?: string })?.email || 'unknown';
-  if (rawRole && !APPROVED_STAFF_ROLES.includes(rawRole)) {
+  if (rawRole && !APPROVED_STAFF_ROLES.has(rawRole)) {
     await logUnapprovedRoleWarning(rawRole, rawEmail);
     return {
       success: false,
@@ -274,7 +274,7 @@ export async function provisionStaffUserAction(
     };
   }
 
-  if (!APPROVED_STAFF_ROLES.includes(parsed.data.role)) {
+  if (!APPROVED_STAFF_ROLES.has(parsed.data.role)) {
     await logUnapprovedRoleWarning(parsed.data.role, parsed.data.email);
     return {
       success: false,

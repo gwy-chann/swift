@@ -90,3 +90,48 @@ export function mapStaffShiftRow(row: DbStaffShift): PunchLog {
     terminal: row.terminal_id,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Admin Staff Attendance Domain Types (Feature 099)
+// ---------------------------------------------------------------------------
+
+export type ShiftStatus = 'on_shift' | 'break' | 'completed';
+export type DatePreset = 'all' | 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'custom';
+
+export interface AdminStaffShift {
+  id: string;
+  profileId: string;
+  staffName: string;
+  staffRole?: string;
+  terminalId: string;
+  date: string;
+  isToday: boolean;
+  timeIn: string;
+  clockInIso: string;
+  timeOut: string;
+  clockOutIso: string | null;
+  duration: string;
+  durationSeconds: number;
+  status: ShiftStatus;
+  statusLabel: 'On Shift' | 'Break' | 'Completed';
+  isExtendedShift: boolean;
+  notes?: string | null;
+}
+
+export interface AttendanceSummaryMetrics {
+  currentlyOnShift: number;
+  currentlyOnBreak: number;
+  shiftsCompletedToday: number;
+  totalHoursLoggedToday: string;
+  totalRecordsCount: number;
+}
+
+export interface AttendanceFilterState {
+  searchQuery: string;
+  statusFilter: 'all' | ShiftStatus;
+  datePreset: DatePreset;
+  startDate?: string;
+  endDate?: string;
+  selectedStaffId?: string;
+}
+

@@ -84,25 +84,25 @@ export async function getAdminLaborServicesAction(): Promise<LaborService[]> {
 function validateCreateServiceInput(payload: CreateLaborServicePayload): Record<string, string> {
   const errors: Record<string, string> = {};
 
-  if (!payload.code || !payload.code.trim()) {
+  if (!payload.code?.trim()) {
     errors.code = 'Service code is required.';
   } else if (!/^[A-Z0-9_-]+$/i.test(payload.code.trim())) {
     errors.code = 'Service code must contain only alphanumeric characters, dashes, or underscores.';
   }
 
-  if (!payload.name || !payload.name.trim()) {
+  if (!payload.name?.trim()) {
     errors.name = 'Service title is required.';
   }
 
-  if (!payload.bay || !payload.bay.trim()) {
+  if (!payload.bay?.trim()) {
     errors.bay = 'Repair bay allocation is required.';
   }
 
-  if (typeof payload.rate !== 'number' || isNaN(payload.rate) || payload.rate <= 0) {
+  if (typeof payload.rate !== 'number' || Number.isNaN(payload.rate) || payload.rate <= 0) {
     errors.rate = 'Flat labor rate must be greater than ₱0.00.';
   }
 
-  if (!payload.duration || !payload.duration.trim()) {
+  if (!payload.duration?.trim()) {
     errors.duration = 'Estimated duration is required.';
   }
 
@@ -147,7 +147,7 @@ async function executeSupabaseCreateService(
       .select()
       .single();
 
-    if (insertError && insertError.message.toLowerCase().includes('permission denied')) {
+    if (insertError?.message.toLowerCase().includes('permission denied')) {
       const adminClient = createAdminClient();
       const retry = await adminClient
         .from('labor_services')
@@ -239,10 +239,10 @@ export async function createLaborServiceAction(
     return prismaResult;
   }
 
-  const memoryDuplicate = memoryServices.find(
+  const hasMemoryDuplicate = memoryServices.some(
     (s) => s.code.toUpperCase() === normalizedCode
   );
-  if (memoryDuplicate) {
+  if (hasMemoryDuplicate) {
     return {
       success: false,
       error: `Labor service with code "${normalizedCode}" already exists.`,
@@ -327,7 +327,7 @@ async function executeSupabaseUpdateService(
       .select()
       .single();
 
-    if (updateError && updateError.message.toLowerCase().includes('permission denied')) {
+    if (updateError?.message.toLowerCase().includes('permission denied')) {
       const adminClient = createAdminClient();
       const retry = await adminClient
         .from('labor_services')
@@ -400,7 +400,7 @@ export async function updateLaborServiceAction(
   serviceId: string,
   payload: UpdateLaborServicePayload
 ): Promise<ServiceActionResult<LaborService>> {
-  if (payload.rate !== undefined && (isNaN(payload.rate) || payload.rate <= 0)) {
+  if (payload.rate !== undefined && (Number.isNaN(payload.rate) || payload.rate <= 0)) {
     return {
       success: false,
       error: 'Flat labor rate must be greater than ₱0.00.',
@@ -443,7 +443,7 @@ export async function updateLaborServiceAction(
     rate: payload.rate !== undefined ? Number(payload.rate.toFixed(2)) : existing.rate,
     duration: payload.duration !== undefined ? payload.duration.trim() : existing.duration,
     description: payload.description !== undefined ? payload.description.trim() || undefined : existing.description,
-    active: payload.active !== undefined ? payload.active : existing.active,
+    active: payload.active ?? existing.active,
     updatedAt: new Date()
   };
 
@@ -486,7 +486,7 @@ export async function deleteLaborServiceAction(
       ? supabase.from('labor_services').delete().eq('id', serviceId)
       : supabase.from('labor_services').delete().eq('code', serviceId));
 
-    if (deleteError && deleteError.message.toLowerCase().includes('permission denied')) {
+    if (deleteError?.message.toLowerCase().includes('permission denied')) {
       const adminClient = createAdminClient();
       const retry = await (isUuid
         ? adminClient.from('labor_services').delete().eq('id', serviceId)

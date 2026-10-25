@@ -42,6 +42,9 @@ export interface ColorTokens {
   bgCard: string;
   bgSidebar: string;
   bgSidebarHover: string;
+  bgSidebarActive: string;
+  borderSidebarActive: string;
+  textSidebarActive: string;
   bgInput: string;
   bgHover: string;
   bgMuted: string;
@@ -90,6 +93,9 @@ export const lightTokens: ColorTokens = {
   bgCard: "#ffffff",       // Cards & tables
   bgSidebar: "#0f172a",    // Deep slate-navy sidebar for structured contrast
   bgSidebarHover: "#1e293b",
+  bgSidebarActive: "rgba(59, 130, 246, 0.12)",
+  borderSidebarActive: "rgba(59, 130, 246, 0.24)",
+  textSidebarActive: "#93c5fd",
   bgInput: "#ffffff",      // Crisp white input
   bgHover: "#f8fafc",      // Gentle row hover
   bgMuted: "#f8fafc",
@@ -138,6 +144,9 @@ export const darkTokens: ColorTokens = {
   bgCard: "#151f32",       // Elevated card container
   bgSidebar: "#070b14",    // Pitch obsidian sidebar
   bgSidebarHover: "#162035",
+  bgSidebarActive: "rgba(59, 130, 246, 0.12)",
+  borderSidebarActive: "rgba(59, 130, 246, 0.24)",
+  textSidebarActive: "#93c5fd",
   bgInput: "#0f172a",      // Dark input field
   bgHover: "#1e293b",      // Row hover
   bgMuted: "#182234",
