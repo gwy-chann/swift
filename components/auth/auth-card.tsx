@@ -37,9 +37,12 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
   );
 
   const [activeRole, setActiveRole] = useState<PortalRole | null>(null);
-  const selectedRole = activeRole ?? savedRole;
+  const isPinChallengeNotice =
+    initialNotice === "pin_challenge_pending" || initialNotice === "pin_required";
+  const selectedRole = activeRole ?? (isPinChallengeNotice ? "staff" : savedRole);
 
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[selectedRole].email);
+
   const [password, setPassword] = useState<string>("••••••••••••");
   const [rememberTerminal, setRememberTerminal] = useState<boolean>(true);
 
@@ -75,7 +78,8 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
       });
 
       if (result.success) {
-        router.push(account.targetUrl || result.redirectTo);
+        const dest = account.targetUrl || result.redirectTo || (account.role === "admin" ? "/admin" : "/staff/pos");
+        router.push(dest);
       }
     } catch (err) {
       console.error("Auto authentication error:", err);

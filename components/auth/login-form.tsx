@@ -1,13 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PortalRole } from "@/lib/auth/types";
+import { PortalRole, PendingStaffSummary } from "@/lib/auth/types";
 import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG } from "@/lib/auth/constants";
-import { authenticateUserAction } from "@/lib/auth/actions";
+import {
+  authenticateUserAction,
+  cancelStaffPinChallengeAction,
+  getPendingStaffChallengeAction,
+} from "@/lib/auth/actions";
 import { saveTerminalRole } from "@/lib/auth/storage";
 import { punchStore } from "@/lib/store/punch-store";
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { StaffPinKeypad } from "./staff-pin-keypad";
 
 interface LoginFormProps {
   selectedRole: PortalRole;
@@ -18,6 +23,16 @@ interface LoginFormProps {
   rememberTerminal: boolean;
   setRememberTerminal: (remember: boolean) => void;
   initialNotice?: string | null;
+}
+
+function getInitialErrorMessage(notice?: string | null): string | null {
+  if (notice === "inactive") {
+    return "Account is inactive. Please contact your workshop administrator.";
+  }
+  if (notice === "pin_challenge_pending" || notice === "pin_required") {
+    return "PIN verification required. Please enter your employee PIN to continue.";
+  }
+  return null;
 }
 
 export function LoginForm({
@@ -31,14 +46,46 @@ export function LoginForm({
   initialNotice,
 }: Readonly<LoginFormProps>) {
   const router = useRouter();
+  const [step, setStep] = useState<"CREDENTIALS" | "PIN">("CREDENTIALS");
+  const [pendingStaff, setPendingStaff] = useState<PendingStaffSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    initialNotice === "inactive"
-      ? "Account is inactive. Please contact your workshop administrator."
-      : null
+  const [errorMessage, setErrorMessage] = useState<string | null>(() =>
+    getInitialErrorMessage(initialNotice)
   );
 
   const portalConfig = PORTAL_CONFIG[selectedRole];
+
+  // Rehydrate pending PIN challenge on initial mount if redirected with pending state
+  useEffect(() => {
+    async function checkExistingChallenge() {
+      if (initialNotice === "pin_challenge_pending" || initialNotice === "pin_required") {
+        try {
+          const existing = await getPendingStaffChallengeAction();
+          if (existing) {
+            setPendingStaff(existing);
+            setStep("PIN");
+          }
+        } catch {
+          // Fallback to credentials form
+        }
+      }
+    }
+    checkExistingChallenge();
+  }, [initialNotice]);
+
+  async function handleBackToCredentials() {
+    setIsLoading(true);
+    try {
+      await cancelStaffPinChallengeAction();
+    } catch {
+      // Suppress
+    } finally {
+
+      setStep("CREDENTIALS");
+      setPendingStaff(null);
+      setIsLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,6 +119,14 @@ export function LoginForm({
         return;
       }
 
+      // If staff role requires Step 2 PIN verification
+      if (result.requiresPin) {
+        setPendingStaff(result.staffSummary);
+        setStep("PIN");
+        setIsLoading(false);
+        return;
+      }
+
       // Sync active staff in punchStore if demo account
       const matchedDemo = ALL_DEMO_ACCOUNTS.find(
         (a) => a.email.toLowerCase() === email.trim().toLowerCase()
@@ -91,6 +146,18 @@ export function LoginForm({
       setErrorMessage("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
+  }
+
+  // Render Step 2 Keypad View when active
+  if (step === "PIN" && pendingStaff && selectedRole === "staff") {
+    return (
+
+      <StaffPinKeypad
+        staffSummary={pendingStaff}
+        rememberTerminal={rememberTerminal}
+        onBack={handleBackToCredentials}
+      />
+    );
   }
 
   return (
@@ -190,7 +257,11 @@ export function LoginForm({
           </>
         ) : (
           <>
-            <span>{portalConfig.submitLabel}</span>
+            <span>
+              {selectedRole === "staff"
+                ? "Continue to Step 2 (PIN)"
+                : portalConfig.submitLabel}
+            </span>
             <ArrowRight className="w-4 h-4" />
           </>
         )}

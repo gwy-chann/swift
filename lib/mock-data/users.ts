@@ -44,6 +44,7 @@ export interface MockStaffUserProfile {
   roleDisplay: UserRole;
   status: 'Active' | 'Inactive' | 'Suspended';
   permissions: StaffPermissions;
+  pinCode?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +58,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     roleDisplay: 'Admin',
     status: 'Active',
     permissions: { ...DEFAULT_ROLE_PERMISSIONS.admin },
+    pinCode: '8888',
     createdAt: '2026-10-01T08:00:00.000Z',
     updatedAt: '2026-10-01T08:00:00.000Z',
   },
@@ -68,6 +70,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     roleDisplay: 'Cashier',
     status: 'Active',
     permissions: { ...DEFAULT_ROLE_PERMISSIONS.cashier },
+    pinCode: '1234',
     createdAt: '2026-10-02T08:00:00.000Z',
     updatedAt: '2026-10-02T08:00:00.000Z',
   },
@@ -79,6 +82,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     roleDisplay: 'Mechanic',
     status: 'Active',
     permissions: { ...DEFAULT_ROLE_PERMISSIONS.mechanic },
+    pinCode: '2222',
     createdAt: '2026-10-03T08:00:00.000Z',
     updatedAt: '2026-10-03T08:00:00.000Z',
   },
@@ -90,6 +94,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     roleDisplay: 'Inventory Clerk',
     status: 'Active',
     permissions: { ...DEFAULT_ROLE_PERMISSIONS.inventory_clerk },
+    pinCode: '3333',
     createdAt: '2026-10-04T08:00:00.000Z',
     updatedAt: '2026-10-04T08:00:00.000Z',
   },
