@@ -38,7 +38,7 @@ export type CustomerIntakeInput = z.infer<typeof customerIntakeSchema>;
 
 export const assignMechanicSchema = z.object({
   orderId: z.string().min(1, 'Work order ID is required'),
-  mechanicId: z.string().uuid('Invalid mechanic profile UUID'),
+  mechanicId: z.string().min(1, 'Mechanic ID is required'),
   mechanicName: z.string().min(1, 'Mechanic name is required'),
 });
 
