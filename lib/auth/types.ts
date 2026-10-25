@@ -28,13 +28,43 @@ export type AuthErrorCode =
   | "USER_NOT_FOUND"
   | "ACCOUNT_LOCKED"
   | "ACCOUNT_INACTIVE"
+  | "INVALID_PIN"
+  | "CHALLENGE_EXPIRED"
   | "UNKNOWN_ERROR";
+
+export interface PendingStaffAuthChallenge {
+  userId: string;
+  email: string;
+  name: string;
+  role: string;
+  portalRole: "staff";
+  targetUrl: string;
+  rememberTerminal: boolean;
+  challengeIssuedAt: number;
+}
+
+export interface PendingStaffSummary {
+  userId: string;
+  email: string;
+  name: string;
+  role: string;
+  roleDisplay?: string;
+  targetUrl?: string;
+}
 
 export type AuthResult =
   | {
       success: true;
       redirectTo: string;
       session: UserSession;
+      requiresPin?: false;
+    }
+  | {
+      success: true;
+      requiresPin: true;
+      step: "ENTER_PIN";
+      staffSummary: PendingStaffSummary;
+      redirectTo?: string;
     }
   | {
       success: false;
@@ -54,3 +84,4 @@ export interface DemoAccount {
   defaultPassword?: string;
   pin?: string;
 }
+

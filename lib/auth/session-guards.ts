@@ -13,6 +13,10 @@ export interface ResolvedSession {
   userId?: string;
   source: "supabase" | "demo" | "none";
   isInactive?: boolean;
+  hasPendingPinChallenge?: boolean;
+  pendingStaffEmail?: string;
+  pendingStaffName?: string;
+  pendingStaffRole?: string;
 }
 
 export interface GuardDecision {
@@ -90,6 +94,26 @@ export function resolveSession(
   const validCookieRole: PortalRole | null =
     roleCookie === "admin" || roleCookie === "staff" ? roleCookie : null;
 
+  const pendingChallengeCookie = cookies?.get("swift-pending-staff-auth")?.value;
+  let hasPendingPinChallenge = false;
+  let pendingStaffEmail: string | undefined;
+  let pendingStaffName: string | undefined;
+  let pendingStaffRole: string | undefined;
+
+  if (pendingChallengeCookie) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(pendingChallengeCookie));
+      if (parsed?.userId && parsed?.portalRole === "staff") {
+        hasPendingPinChallenge = true;
+        pendingStaffEmail = parsed.email;
+        pendingStaffName = parsed.name;
+        pendingStaffRole = parsed.role;
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+  }
+
   if (supabaseUser) {
     const metaRole =
       (supabaseUser.user_metadata?.role as string)?.toLowerCase() ||
@@ -107,6 +131,10 @@ export function resolveSession(
       role,
       userId: supabaseUser.id,
       source: "supabase",
+      hasPendingPinChallenge,
+      pendingStaffEmail,
+      pendingStaffName,
+      pendingStaffRole,
     };
   }
 
@@ -116,6 +144,10 @@ export function resolveSession(
       role: "admin",
       userId: userIdCookie,
       source: "demo",
+      hasPendingPinChallenge,
+      pendingStaffEmail,
+      pendingStaffName,
+      pendingStaffRole,
     };
   }
 
@@ -125,6 +157,10 @@ export function resolveSession(
       role: validCookieRole,
       userId: userIdCookie,
       source: "demo",
+      hasPendingPinChallenge,
+      pendingStaffEmail,
+      pendingStaffName,
+      pendingStaffRole,
     };
   }
 
@@ -132,6 +168,10 @@ export function resolveSession(
     isAuthenticated: false,
     role: null,
     source: "none",
+    hasPendingPinChallenge,
+    pendingStaffEmail,
+    pendingStaffName,
+    pendingStaffRole,
   };
 }
 
@@ -141,12 +181,20 @@ function evaluatePortalAccess(
   session: ResolvedSession
 ): GuardDecision {
   if (!session.isAuthenticated) {
+    if (session.hasPendingPinChallenge) {
+      return {
+        action: "REDIRECT",
+        destination: "/login?notice=pin_challenge_pending",
+        statusCode: 307,
+      };
+    }
     return {
       action: "REDIRECT",
       destination: "/",
       statusCode: 307,
     };
   }
+
 
   if (classification === "ADMIN_PORTAL" && session.role === "staff") {
     return {
