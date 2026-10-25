@@ -11,12 +11,13 @@ export const StaffPasswordSchema = z
   .string()
   .min(6, 'Password must be at least 6 characters in length');
 
-export const ApprovedStaffRoleSchema = z.enum(['cashier', 'mechanic', 'inventory_clerk'], {
-  errorMap: () => ({
+export const ApprovedStaffRoleSchema = z.enum(
+  ['cashier', 'mechanic', 'inventory_clerk'] as const,
+  {
     message:
       'Staff account role must be strictly one of: Cashier Privilege (cashier), Mechanic (mechanic), or Inventory Clerk (inventory_clerk).',
-  }),
-});
+  }
+);
 
 export const ProvisionStaffCredentialsSchema = z.object({
   fullName: z.string().trim().min(2, 'Full name must be at least 2 characters'),
