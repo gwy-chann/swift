@@ -123,6 +123,51 @@ export async function fetchWorkshopOrdersAction(): Promise<WorkshopActionResult<
   }
 }
 
+async function syncOrderStatusToDatabase(
+  orderId: string,
+  newStatus: WorkOrderStatus,
+  now: string,
+  existingOrder?: DetailedWorkOrder,
+  notes?: string
+): Promise<void> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return;
+  }
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: Record<string, any> = {
+      status: newStatus,
+      updated_at: now,
+    };
+    if (notes) updates.notes = notes;
+    if (newStatus === 'IN PROGRESS' && (!existingOrder || !existingOrder.startedAt)) {
+      updates.started_at = now;
+    }
+    if (newStatus === 'COMPLETED') {
+      updates.completed_at = now;
+    }
+
+    await supabase.from('work_orders').update(updates).eq('id', orderId);
+
+    // Synchronize service bay status if linked
+    if (existingOrder?.bayId) {
+      let bayStatus = 'QUEUED';
+      if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
+        bayStatus = 'AVAILABLE';
+      } else if (newStatus === 'IN PROGRESS' || newStatus === 'PENDING_PARTS') {
+        bayStatus = 'OCCUPIED';
+      }
+
+      await supabase.from('service_bays').update({ status: bayStatus, updated_at: now }).eq('id', existingOrder.bayId);
+    }
+  } catch (dbErr) {
+    console.warn('[Workshop Action] Supabase update warning:', dbErr);
+  }
+}
+
 /**
  * Updates a work order status with state machine validation and bay synchronization.
  */
@@ -158,42 +203,7 @@ export async function updateWorkshopOrderStatusAction(
   });
 
   try {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      try {
-        const { createClient } = await import('../supabase/server.ts');
-        const supabase = await createClient();
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updates: Record<string, any> = {
-          status: newStatus,
-          updated_at: now,
-        };
-        if (notes) updates.notes = notes;
-        if (newStatus === 'IN PROGRESS' && (!existingOrder || !existingOrder.startedAt)) {
-          updates.started_at = now;
-        }
-        if (newStatus === 'COMPLETED') {
-          updates.completed_at = now;
-        }
-
-        await supabase.from('work_orders').update(updates).eq('id', orderId);
-
-        // Synchronize service bay status if linked
-        if (existingOrder?.bayId) {
-          let bayStatus = 'QUEUED';
-          if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
-            bayStatus = 'AVAILABLE';
-          } else if (newStatus === 'IN PROGRESS' || newStatus === 'PENDING_PARTS') {
-            bayStatus = 'OCCUPIED';
-          }
-
-          await supabase.from('service_bays').update({ status: bayStatus, updated_at: now }).eq('id', existingOrder.bayId);
-        }
-      } catch (dbErr) {
-        console.warn('[Workshop Action] Supabase update warning:', dbErr);
-      }
-    }
-
+    await syncOrderStatusToDatabase(orderId, newStatus, now, existingOrder, notes);
     await safeRevalidatePaths();
 
     return {
@@ -274,6 +284,157 @@ export async function claimWorkOrderAction(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown exception',
+    };
+  }
+}
+
+export const DEFAULT_ON_SHIFT_MECHANICS: import('./intake-dispatch-contracts.ts').OnShiftMechanic[] = [
+  {
+    id: DANTE_REYES_PROFILE_ID,
+    name: 'Dante Reyes',
+    email: 'mechanic1@swift.local',
+    role: 'mechanic',
+    status: 'on_shift',
+    clockInTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: 'd0000000-0000-0000-0000-000000000005',
+    name: 'Alex Lim',
+    email: 'alex.lim@swift.local',
+    role: 'mechanic',
+    status: 'on_shift',
+    clockInTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+  },
+];
+
+/**
+ * Fetches all workshop technicians who are currently clocked in (status = 'on_shift').
+ * Queries public.staff_shifts and public.profiles, with mock fallback for offline resilience.
+ */
+export async function fetchOnShiftMechanicsAction(): Promise<
+  WorkshopActionResult<import('./intake-dispatch-contracts.ts').OnShiftMechanic[]>
+> {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      try {
+        const { createClient } = await import('../supabase/server.ts');
+        const supabase = await createClient();
+
+        const { data, error } = await supabase
+          .from('staff_shifts')
+          .select('id, profile_id, status, clock_in, profiles:profile_id ( id, full_name, email, role )')
+          .eq('status', 'on_shift');
+
+        if (!error && data && data.length > 0) {
+          const mechanics = data
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((row: any) => {
+              const prof = row.profiles;
+              return prof && (prof.role === 'mechanic' || prof.role === 'technician');
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((row: any) => ({
+              id: row.profiles.id,
+              name: row.profiles.full_name || 'Mechanic',
+              email: row.profiles.email,
+              role: 'mechanic' as const,
+              status: 'on_shift' as const,
+              clockInTime: row.clock_in,
+            }));
+
+          if (mechanics.length > 0) {
+            return { success: true, data: mechanics };
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[Workshop Action] Supabase on-shift mechanics query warning:', dbErr);
+      }
+    }
+
+    return { success: true, data: DEFAULT_ON_SHIFT_MECHANICS };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown exception fetching on-shift mechanics',
+      data: DEFAULT_ON_SHIFT_MECHANICS,
+    };
+  }
+}
+
+/**
+ * Admin On-Shift Mechanic Work Order Dispatch (SIAA-101 Scenario 3).
+ * Directly assigns an unassigned or queued work order to a selected on-shift mechanic.
+ * Updates public.work_orders, syncs in-memory state, and broadcasts over 'operational-intelligence'.
+ */
+export async function assignMechanicAction(
+  orderId: string,
+  mechanicId: string,
+  mechanicName: string
+): Promise<WorkshopActionResult<DetailedWorkOrder>> {
+  const now = new Date().toISOString();
+  let updatedTarget: DetailedWorkOrder | undefined;
+
+  inMemoryOrders = inMemoryOrders.map((order) => {
+    if (order.id === orderId || order.orderNumber === orderId) {
+      updatedTarget = {
+        ...order,
+        mechanicId,
+        mechanicName,
+        updatedAt: now,
+      };
+      return updatedTarget;
+    }
+    return order;
+  });
+
+  if (!updatedTarget) {
+    return { success: false, error: `Work order not found: ${orderId}` };
+  }
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      try {
+        const { createClient } = await import('../supabase/server.ts');
+        const supabase = await createClient();
+
+        await supabase
+          .from('work_orders')
+          .update({
+            mechanic_id: mechanicId,
+            updated_at: now,
+          })
+          .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+        // Broadcast assignment over Supabase Realtime 'operational-intelligence' channel
+        try {
+          const channel = supabase.channel('operational-intelligence');
+          await channel.send({
+            type: 'broadcast',
+            event: 'WORK_ORDER_ASSIGNED',
+            payload: {
+              id: updatedTarget.id,
+              order_number: updatedTarget.orderNumber,
+              mechanic_id: mechanicId,
+              mechanic_name: mechanicName,
+              status: updatedTarget.status,
+              updated_at: now,
+            },
+          });
+        } catch (broadcastErr) {
+          console.warn('[Workshop Action] Supabase Realtime broadcast warning:', broadcastErr);
+        }
+      } catch (dbErr) {
+        console.warn('[Workshop Action] Supabase assign update warning:', dbErr);
+      }
+    }
+
+    await safeRevalidatePaths();
+
+    return { success: true, data: updatedTarget };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown exception during mechanic assignment',
     };
   }
 }

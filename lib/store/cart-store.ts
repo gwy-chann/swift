@@ -422,6 +422,11 @@ class CartStore {
     cashTendered?: number;
     paymentMethod?: TransactionPaymentMethod;
     discountType?: string;
+    customerName?: string;
+    customerPhone?: string;
+    vehicleModel?: string;
+    plateNumber?: string;
+    notes?: string | null;
   }): Promise<{
     success: boolean;
     receiptNumber?: string;
@@ -438,7 +443,17 @@ class CartStore {
     cashTendered?: number;
     change?: number;
   }> => {
-    const { cashier, cashTendered, paymentMethod = 'Cash', discountType } = params;
+    const {
+      cashier,
+      cashTendered,
+      paymentMethod = 'Cash',
+      discountType,
+      customerName,
+      customerPhone,
+      vehicleModel,
+      plateNumber,
+      notes,
+    } = params;
     const totals = this.state.totals;
     const tendered = cashTendered ?? totals.total;
     const change = Math.max(0, Math.round((tendered - totals.total) * 100) / 100);
@@ -452,6 +467,11 @@ class CartStore {
     try {
       const payload: CheckoutPayload = {
         cashierName: cashier,
+        customerName,
+        customerPhone,
+        vehicleModel,
+        plateNumber,
+        notes,
         pricingMode: this.state.pricingMode,
         subtotal: totals.subtotal,
         discountType: discountType || this.state.discountType || (this.state.discountRate > 0 ? 'discount' : 'none'),
