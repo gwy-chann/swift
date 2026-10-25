@@ -86,6 +86,7 @@ public class SecurityConfig {
                 // Auth & Kiosk public authentication endpoints
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/staff/kiosk-auth", "/api/v1/staff/admin-elevation").permitAll()
+                .requestMatchers("/api/v1/shifts/**", "/api/v1/staff/attendance-history").permitAll()
                 // Read-heavy Catalog, MotoMatcher & Pricecheck public terminal endpoints
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/motomatcher/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/inventory/pricecheck").permitAll()
