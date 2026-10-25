@@ -1,7 +1,7 @@
 "use server";
 
 import type { AuthResult, LoginCredentials, UserSession } from "./types.ts";
-import { DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
+import { ALL_DEMO_ACCOUNTS, DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
 import { getStaffUserStatus } from "../admin/user-actions.ts";
 
@@ -56,21 +56,15 @@ function setSessionCookies(
 }
 
 function resolveDemoAccount(normalizedEmail: string) {
-  const adminDemo = DEMO_ACCOUNTS.admin.email.toLowerCase();
-  const staffDemo = DEMO_ACCOUNTS.staff.email.toLowerCase();
-
-  if (normalizedEmail === adminDemo) {
+  const match = ALL_DEMO_ACCOUNTS.find(
+    (acc) => acc.email.toLowerCase() === normalizedEmail
+  );
+  if (match) {
     return {
-      id: "00000000-0000-0000-0000-000000000001",
-      role: "admin" as const,
-      name: "Shop Administrator",
-    };
-  }
-  if (normalizedEmail === staffDemo) {
-    return {
-      id: "00000000-0000-0000-0000-000000000002",
-      role: "staff" as const,
-      name: "Shop Floor Cashier",
+      id: match.id || "00000000-0000-0000-0000-000000000002",
+      role: match.role,
+      name: match.name || match.label,
+      targetUrl: match.targetUrl,
     };
   }
   return null;
@@ -126,7 +120,7 @@ export async function authenticateUserAction(
 
     return {
       success: true,
-      redirectTo: targetRedirect,
+      redirectTo: demoAccount.targetUrl || targetRedirect,
       session,
     };
   }
