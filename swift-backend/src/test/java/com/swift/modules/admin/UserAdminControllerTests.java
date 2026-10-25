@@ -101,6 +101,31 @@ class UserAdminControllerTests {
     }
 
     @Test
+    @DisplayName("Scenario 1b: Reject provisioning with unapproved role and log security audit warning")
+    @WithMockUser(username = "admin@swift.ph", roles = {"ADMIN"})
+    void testRejectProvisioningWithUnapprovedRole() throws Exception {
+        ProvisionStaffUserRequest unapprovedReq = new ProvisionStaffUserRequest(
+                "unapproved@swift.ph",
+                "Unapproved Person",
+                "admin",
+                "Password#123",
+                null
+        );
+
+        mockMvc.perform(post("/api/v1/admin/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(unapprovedReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Staff account role must be strictly one of")));
+
+        // Verify security audit warning logged
+        List<SecurityAuditLog> logs = auditLogRepository.findAll();
+        assertEquals(1, logs.size());
+        assertTrue(logs.get(0).getAction().contains("unapproved role: admin"));
+        assertEquals("warning", logs.get(0).getSeverity());
+    }
+
+    @Test
     @DisplayName("Scenario 2: Prevent administrative self-lockout on status deactivation")
     void testPreventAdministrativeSelfLockout() throws Exception {
         UUID adminId = UUID.randomUUID();
