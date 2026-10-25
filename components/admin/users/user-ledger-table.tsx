@@ -6,6 +6,7 @@ import {
   UserPlus,
   Power,
   Pencil,
+  KeyRound,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -19,6 +20,7 @@ import type { StaffUserSummary } from "@/specs/030-supabase-rbac-extension-granu
 import { toggleUserStatusAction } from "@/lib/admin/user-actions";
 import { AddStaffModal } from "./add-staff-modal";
 import { EditStaffModal } from "./edit-staff-modal";
+import { ResetCredentialsModal } from "./reset-credentials-modal";
 
 interface UserLedgerTableProps {
   initialUsers: StaffUserSummary[];
@@ -30,7 +32,9 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<StaffUserSummary | null>(null);
+  const [resettingUser, setResettingUser] = useState<StaffUserSummary | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
@@ -105,6 +109,27 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
             type="button"
             onClick={() => setActionError(null)}
             className="text-danger hover:underline text-xs font-semibold"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Success Notification Alert */}
+      {feedbackMsg && (
+        <div
+          id="user-ledger-success-banner"
+          data-testid="user-ledger-success"
+          className="p-3 bg-success-light border border-success/30 text-success rounded-xl text-xs flex items-center justify-between animate-fadeIn"
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{feedbackMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFeedbackMsg(null)}
+            className="text-success hover:underline text-xs font-semibold"
           >
             Dismiss
           </button>
@@ -263,6 +288,17 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
+                            id={`btnResetCredentials-${user.id}`}
+                            data-testid={`btn-reset-credentials-${user.id}`}
+                            onClick={() => setResettingUser(user)}
+                            aria-label={`Reset credentials for ${user.fullName}`}
+                            title="Reset Credentials"
+                            className="p-1.5 rounded-lg border border-border text-text-secondary hover:text-amber-600 hover:border-amber-500/40 hover:bg-amber-500/10 transition-colors"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
                             id={`btnEditUser-${user.id}`}
                             data-testid={`btn-edit-user-${user.id}`}
                             onClick={() => setEditingUser(user)}
@@ -311,6 +347,17 @@ export function UserLedgerTable({ initialUsers }: UserLedgerTableProps) {
         user={editingUser}
         onClose={() => setEditingUser(null)}
         onStaffUpdated={handleStaffUpdated}
+      />
+
+      {/* Reset Credentials Modal */}
+      <ResetCredentialsModal
+        isOpen={!!resettingUser}
+        user={resettingUser}
+        onClose={() => setResettingUser(null)}
+        onSuccess={(msg) => {
+          setFeedbackMsg(msg);
+          setTimeout(() => setFeedbackMsg(null), 5000);
+        }}
       />
     </div>
   );
