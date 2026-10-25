@@ -124,7 +124,7 @@ export interface StaffKioskProfile {
 export interface VerifyStaffPinResult {
   success: boolean;
   profile?: StaffKioskProfile;
-  code?: 'INVALID_PIN' | 'PROFILE_NOT_FOUND' | 'DATABASE_ERROR' | 'UNAUTHORIZED';
+  code?: 'ACCOUNT_INACTIVE' | 'INVALID_PIN' | 'PROFILE_NOT_FOUND' | 'DATABASE_ERROR' | 'UNAUTHORIZED';
   error?: string;
 }
 

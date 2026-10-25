@@ -547,9 +547,9 @@ export async function toggleUserStatusAction(
   targetUser.status = status;
   targetUser.updatedAt = new Date().toISOString();
 
-  // Try updating Supabase database
+  // Try updating Supabase database and revoking active sessions
   try {
-    const { createClient } = await import('../supabase/server.ts');
+    const { createClient, createAdminClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
     await supabase
       .from('profiles')
@@ -558,6 +558,15 @@ export async function toggleUserStatusAction(
         updated_at: targetUser.updatedAt,
       })
       .eq('id', userId);
+
+    if (status === 'Inactive') {
+      try {
+        const supabaseAdmin = createAdminClient();
+        await supabaseAdmin.auth.admin.signOut(userId, 'global');
+      } catch {
+        // Suppress admin signout failure in offline/mock environment
+      }
+    }
   } catch (error) {
     console.warn(
       '[toggleUserStatusAction] Supabase update issue, retained in memory:',
@@ -568,7 +577,9 @@ export async function toggleUserStatusAction(
   // Security audit log event
   try {
     await logSecurityEventAction({
-      action: `Toggled status of employee ${targetUser.email} to ${status}`,
+      action: status === 'Inactive'
+        ? `Account deactivation and immediate session revocation for ${targetUser.email}`
+        : `Toggled status of employee ${targetUser.email} to ${status}`,
       severity: status === 'Inactive' ? 'warning' : 'info',
       terminalIp: '192.168.1.100 (Admin PC)',
       userEmail: 'admin@swift.ph',
@@ -576,6 +587,7 @@ export async function toggleUserStatusAction(
         userId,
         email: targetUser.email,
         status,
+        event: status === 'Inactive' ? 'ACCOUNT_DEACTIVATED_SESSION_TERMINATED' : 'ACCOUNT_STATUS_UPDATED',
       },
     });
   } catch {
@@ -589,3 +601,49 @@ export async function toggleUserStatusAction(
     data: mapProfileToSummary(targetUser),
   };
 }
+
+/**
+ * Resolves the active status ('Active' | 'Inactive' | 'Suspended') of a staff member
+ * by ID or email address, checking in-memory store first (authoritative in tests and local state)
+ * with fallback to live Supabase profiles.
+ */
+export async function getStaffUserStatus(
+  userIdOrEmail: string
+): Promise<'Active' | 'Inactive' | 'Suspended' | null> {
+  const normalized = userIdOrEmail.trim().toLowerCase();
+
+  // 1. Check in-memory store first
+  const memoryUser = memoryStaffUsers.find(
+    (u) => u.id === userIdOrEmail || u.email.toLowerCase() === normalized
+  );
+  if (memoryUser) {
+    return memoryUser.status;
+  }
+
+  // 2. Check live Supabase profiles
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+    const query = supabase
+      .from('profiles')
+      .select('status')
+      .limit(1);
+
+    const { data, error } = userIdOrEmail.includes('@')
+      ? await query.eq('email', normalized).maybeSingle()
+      : await query.eq('id', userIdOrEmail).maybeSingle();
+
+    if (!error && data?.status) {
+      return data.status as 'Active' | 'Inactive' | 'Suspended';
+    }
+  } catch {
+    // Offline or unit testing mode
+  }
+
+  // 3. Fallback to default mock profiles
+  const fallback = MOCK_STAFF_PROFILES.find(
+    (p) => p.id === userIdOrEmail || p.email.toLowerCase() === normalized
+  );
+  return fallback ? fallback.status : null;
+}
+

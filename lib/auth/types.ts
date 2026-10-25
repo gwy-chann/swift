@@ -27,6 +27,7 @@ export type AuthErrorCode =
   | "NETWORK_ERROR"
   | "USER_NOT_FOUND"
   | "ACCOUNT_LOCKED"
+  | "ACCOUNT_INACTIVE"
   | "UNKNOWN_ERROR";
 
 export type AuthResult =

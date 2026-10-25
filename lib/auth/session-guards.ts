@@ -12,6 +12,7 @@ export interface ResolvedSession {
   role: PortalRole | null;
   userId?: string;
   source: "supabase" | "demo" | "none";
+  isInactive?: boolean;
 }
 
 export interface GuardDecision {
@@ -85,6 +86,7 @@ export function resolveSession(
 ): ResolvedSession {
   const roleCookie = cookies?.get("swift-session-role")?.value?.toLowerCase();
   const isElevated = cookies?.get("swift_admin_elevated")?.value === "true";
+  const userIdCookie = cookies?.get("swift-session-user-id")?.value;
   const validCookieRole: PortalRole | null =
     roleCookie === "admin" || roleCookie === "staff" ? roleCookie : null;
 
@@ -112,6 +114,7 @@ export function resolveSession(
     return {
       isAuthenticated: true,
       role: "admin",
+      userId: userIdCookie,
       source: "demo",
     };
   }
@@ -120,6 +123,7 @@ export function resolveSession(
     return {
       isAuthenticated: true,
       role: validCookieRole,
+      userId: userIdCookie,
       source: "demo",
     };
   }
@@ -131,6 +135,38 @@ export function resolveSession(
   };
 }
 
+function evaluatePortalAccess(
+  classification: RouteClassification,
+  normalized: string,
+  session: ResolvedSession
+): GuardDecision {
+  if (!session.isAuthenticated) {
+    return {
+      action: "REDIRECT",
+      destination: "/",
+      statusCode: 307,
+    };
+  }
+
+  if (classification === "ADMIN_PORTAL" && session.role === "staff") {
+    return {
+      action: "REDIRECT",
+      destination: "/staff/pos",
+      statusCode: 307,
+    };
+  }
+
+  if (classification === "STAFF_PORTAL" && normalized === "/staff") {
+    return {
+      action: "REDIRECT",
+      destination: "/staff/pos",
+      statusCode: 307,
+    };
+  }
+
+  return { action: "ALLOW" };
+}
+
 /**
  * Pure route guard evaluator determining if an incoming request is allowed or redirected.
  */
@@ -138,68 +174,34 @@ export function evaluateRouteAccess(
   pathname: string,
   session: ResolvedSession
 ): GuardDecision {
+  if (session.isInactive) {
+    return {
+      action: "REDIRECT",
+      destination: "/login?notice=inactive",
+      statusCode: 307,
+    };
+  }
+
   const classification = classifyRoute(pathname);
   const normalized = normalizePathname(pathname);
 
-  switch (classification) {
-    case "AUTH_HUB": {
-      if (session.isAuthenticated && session.role) {
-        const destination = session.role === "admin" ? "/admin" : "/staff/pos";
-        return {
-          action: "REDIRECT",
-          destination,
-          statusCode: 307,
-        };
-      }
-      return { action: "ALLOW" };
+  if (classification === "AUTH_HUB") {
+    if (session.isAuthenticated && session.role) {
+      const destination = session.role === "admin" ? "/admin" : "/staff/pos";
+      return {
+        action: "REDIRECT",
+        destination,
+        statusCode: 307,
+      };
     }
-
-    case "ADMIN_PORTAL": {
-      if (!session.isAuthenticated) {
-        return {
-          action: "REDIRECT",
-          destination: "/",
-          statusCode: 307,
-        };
-      }
-
-      if (session.role === "staff") {
-        return {
-          action: "REDIRECT",
-          destination: "/staff/pos",
-          statusCode: 307,
-        };
-      }
-
-      return { action: "ALLOW" };
-    }
-
-    case "STAFF_PORTAL": {
-      if (!session.isAuthenticated) {
-        return {
-          action: "REDIRECT",
-          destination: "/",
-          statusCode: 307,
-        };
-      }
-
-      // Root of staff portal redirects to the default Fast-Lane POS view
-      if (normalized === "/staff") {
-        return {
-          action: "REDIRECT",
-          destination: "/staff/pos",
-          statusCode: 307,
-        };
-      }
-
-      return { action: "ALLOW" };
-    }
-
-    case "PUBLIC_ASSET":
-    case "OTHER":
-    default:
-      return { action: "ALLOW" };
+    return { action: "ALLOW" };
   }
+
+  if (classification === "ADMIN_PORTAL" || classification === "STAFF_PORTAL") {
+    return evaluatePortalAccess(classification, normalized, session);
+  }
+
+  return { action: "ALLOW" };
 }
 
 /**
@@ -223,7 +225,38 @@ export async function getServerSession(): Promise<ResolvedSession> {
       }
     }
 
-    return resolveSession(cookieStore, user);
+    const session = resolveSession(cookieStore, user);
+    if (!session.isAuthenticated) {
+      return session;
+    }
+
+    // Verify if user account was deactivated while session was active
+    const targetUserId = session.userId || cookieStore.get("swift-session-user-id")?.value;
+    if (targetUserId) {
+      try {
+        const { getStaffUserStatus } = await import("../admin/user-actions.ts");
+        const status = await getStaffUserStatus(targetUserId);
+        if (status === "Inactive" || status === "Suspended") {
+          cookieStore.delete("swift-session-role");
+          cookieStore.delete("swift-user-name");
+          cookieStore.delete("swift-session-user-id");
+          cookieStore.delete("swift_admin_elevated");
+          cookieStore.delete("swift_active_shift_id");
+
+          return {
+            isAuthenticated: false,
+            role: null,
+            userId: targetUserId,
+            source: "none",
+            isInactive: true,
+          };
+        }
+      } catch {
+        // Suppress lookup errors
+      }
+    }
+
+    return session;
   } catch {
     return {
       isAuthenticated: false,
