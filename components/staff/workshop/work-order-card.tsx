@@ -44,15 +44,25 @@ export function WorkOrderCard({
   const missingParts = order.requiredParts?.filter((p) => !p.isAvailable).length ?? 0;
   const allPartsInStock = totalParts > 0 && missingParts === 0;
 
+  let cardBorderClass = "border-border";
+  if (order.status === "IN PROGRESS") {
+    cardBorderClass = "border-primary/30 ring-1 ring-primary/20";
+  } else if (order.status === "PENDING_PARTS") {
+    cardBorderClass = "border-accent/40 bg-accent-light/10";
+  }
+
+  let durationText: React.ReactNode = `${order.estimatedDurationMinutes} mins est.`;
+  if (order.status === "QUEUED") {
+    durationText = "Waiting for bay";
+  } else if (order.status === "COMPLETED") {
+    durationText = <span className="text-success font-bold">Finished</span>;
+  } else if (typeof order.remainingMinutes === "number") {
+    durationText = `~${order.remainingMinutes} mins left`;
+  }
+
   return (
     <div
-      className={`bg-bg-card border rounded-lg p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 flex flex-col justify-between ${
-        order.status === "IN PROGRESS"
-          ? "border-primary/30 ring-1 ring-primary/20"
-          : order.status === "PENDING_PARTS"
-          ? "border-accent/40 bg-accent-light/10"
-          : "border-border"
-      }`}
+      className={`bg-bg-card border rounded-lg p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 flex flex-col justify-between ${cardBorderClass}`}
     >
       <div>
         {/* Top Header Row: Bay Tag & Status Badge */}
@@ -122,17 +132,7 @@ export function WorkOrderCard({
 
           <div className="flex items-center gap-1.5 truncate justify-end">
             <Clock className="w-3 h-3 text-text-muted shrink-0" />
-            <span>
-              {order.status === "QUEUED" ? (
-                "Waiting for bay"
-              ) : order.status === "COMPLETED" ? (
-                <span className="text-success font-bold">Finished</span>
-              ) : typeof order.remainingMinutes === "number" ? (
-                `~${order.remainingMinutes} mins left`
-              ) : (
-                `${order.estimatedDurationMinutes} mins est.`
-              )}
-            </span>
+            <span>{durationText}</span>
           </div>
         </div>
 

@@ -10,7 +10,14 @@ export interface AutoProvisionResult {
 
 function generateWorkOrderNumber(seedOffset = 0): string {
   const year = new Date().getFullYear();
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000) + seedOffset;
+  let randomSuffix = 1000 + seedOffset;
+  try {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    randomSuffix = 1000 + (array[0] % 9000) + seedOffset;
+  } catch {
+    randomSuffix = 1000 + (Date.now() % 9000) + seedOffset;
+  }
   return `WO-${year}-${randomSuffix}`;
 }
 

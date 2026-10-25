@@ -1,4 +1,4 @@
-import type { WorkOrder, WorkOrderStatus, ServiceBay } from './service.ts';
+import type { WorkOrder, WorkOrderStatus } from './service.ts';
 
 export interface WorkOrderLaborTask {
   id: string;
