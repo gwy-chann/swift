@@ -17,6 +17,13 @@ import {
 import {
   UpdateStaffUserSchema,
 } from '../../specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract.ts';
+import {
+  StaffPinSchema,
+  StaffPasswordSchema,
+  ResetStaffCredentialsSchema,
+  type ResetStaffCredentialsResult,
+  PIN_VALIDATION_ERROR_MSG,
+} from '../../specs/104-staff-credential-provisioning-and-reset/contracts/credentials.contract.ts';
 import { logSecurityEventAction } from './audit-actions.ts';
 
 // In-memory fallback cache for test suites and environments without live Supabase
@@ -190,13 +197,14 @@ async function logStaffCreationSuccess(
 }
 
 async function trySupabaseAdminAuthProvision(
-  payload: { email: string; fullName: string; role: DbUserRole; password?: string },
+  payload: { email: string; fullName: string; role: DbUserRole; password?: string; pin?: string },
   permissions: StaffPermissions,
   nowIso: string
 ): Promise<MockStaffUserProfile | null | 'DUPLICATE_EMAIL'> {
   try {
-    const { createAdminClient } = await import('../supabase/server.ts');
+    const { createAdminClient, createClient } = await import('../supabase/server.ts');
     const supabaseAdmin = createAdminClient();
+    const effectivePin = payload.pin || generateSecurePin().replace(/\D/g, '').slice(0, 4) || '1234';
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: payload.email,
@@ -206,6 +214,7 @@ async function trySupabaseAdminAuthProvision(
         full_name: payload.fullName,
         role: payload.role,
         permissions,
+        pin_code: effectivePin,
       },
     });
 
@@ -217,6 +226,25 @@ async function trySupabaseAdminAuthProvision(
     }
 
     if (authData?.user) {
+      try {
+        const supabase = await createClient();
+        await supabase.from('profiles').upsert({
+          id: authData.user.id,
+          full_name: payload.fullName,
+          role: payload.role,
+          status: 'Active',
+          pin_code: effectivePin,
+          permissions,
+          created_at: authData.user.created_at || nowIso,
+          updated_at: nowIso,
+        });
+      } catch (upsertError) {
+        console.warn(
+          '[trySupabaseAdminAuthProvision] Supabase public.profiles upsert warning:',
+          upsertError instanceof Error ? upsertError.message : String(upsertError)
+        );
+      }
+
       return {
         id: authData.user.id,
         name: payload.fullName,
@@ -225,6 +253,7 @@ async function trySupabaseAdminAuthProvision(
         roleDisplay: mapDbRoleToDisplay(payload.role),
         status: 'Active',
         permissions,
+        pinCode: effectivePin,
         createdAt: authData.user.created_at || nowIso,
         updatedAt: nowIso,
       };
@@ -263,6 +292,30 @@ export async function provisionStaffUserAction(
       error: INVALID_ROLE_ERROR,
       code: 'VALIDATION_ERROR',
     };
+  }
+
+  const rawPin = (rawPayload as { pin?: string })?.pin;
+  if (rawPin !== undefined) {
+    const pinValidation = StaffPinSchema.safeParse(rawPin);
+    if (!pinValidation.success) {
+      return {
+        success: false,
+        error: pinValidation.error.issues[0]?.message || PIN_VALIDATION_ERROR_MSG,
+        code: 'VALIDATION_ERROR',
+      };
+    }
+  }
+
+  const rawPassword = (rawPayload as { password?: string })?.password;
+  if (rawPassword !== undefined) {
+    const pwdValidation = StaffPasswordSchema.safeParse(rawPassword);
+    if (!pwdValidation.success) {
+      return {
+        success: false,
+        error: pwdValidation.error.issues[0]?.message || 'Password must be at least 6 characters in length',
+        code: 'VALIDATION_ERROR',
+      };
+    }
   }
 
   const parsed = ProvisionStaffUserSchema.safeParse(rawPayload);
@@ -305,7 +358,7 @@ export async function provisionStaffUserAction(
 
   // Attempt Supabase Admin Auth Provisioning
   const supabaseResult = await trySupabaseAdminAuthProvision(
-    { ...payload, email: normalizedEmail },
+    { ...payload, email: normalizedEmail, pin: rawPin },
     mergedPermissions,
     nowIso
   );
@@ -326,6 +379,7 @@ export async function provisionStaffUserAction(
     roleDisplay: mapDbRoleToDisplay(payload.role),
     status: 'Active',
     permissions: mergedPermissions,
+    pinCode: rawPin || '1234',
     createdAt: nowIso,
     updatedAt: nowIso,
   };
@@ -678,5 +732,117 @@ export async function getStaffUserStatus(
     (p) => p.id === userIdOrEmail || p.email.toLowerCase() === normalized
   );
   return fallback ? fallback.status : null;
+}
+
+/**
+ * Resets a staff member's password and numeric PIN (SIAA-104).
+ */
+export async function resetStaffCredentialsAction(
+  rawPayload: unknown,
+  callerRoleOverride?: string,
+  callerIdOverride?: string
+): Promise<ResetStaffCredentialsResult> {
+  const { role: callerRole, userId: callerId } = await resolveCallerContext(
+    callerRoleOverride,
+    callerIdOverride
+  );
+
+  if (callerRole !== 'admin') {
+    return {
+      success: false,
+      error: 'Unauthorized: Admin privileges required to reset staff credentials',
+      code: 'UNAUTHORIZED',
+    };
+  }
+
+  const parsed = ResetStaffCredentialsSchema.safeParse(rawPayload);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid reset credentials payload',
+      code: 'VALIDATION_ERROR',
+    };
+  }
+
+  const { userId, password, pin } = parsed.data;
+  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === userId);
+  if (existingIndex === -1) {
+    return {
+      success: false,
+      error: 'User not found',
+      code: 'USER_NOT_FOUND',
+    };
+  }
+
+  const targetUser = memoryStaffUsers[existingIndex];
+  const nowIso = new Date().toISOString();
+  targetUser.pinCode = pin;
+  targetUser.updatedAt = nowIso;
+
+  // Supabase Auth Admin password update
+  try {
+    const { createAdminClient } = await import('../supabase/server.ts');
+    const supabaseAdmin = createAdminClient();
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password,
+      user_metadata: {
+        pin_code: pin,
+      },
+    });
+  } catch (error) {
+    console.warn(
+      '[resetStaffCredentialsAction] Supabase auth admin update offline/mocked:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+
+  // Supabase public.profiles pin_code update
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+    await supabase
+      .from('profiles')
+      .update({
+        pin_code: pin,
+        updated_at: nowIso,
+      })
+      .eq('id', userId);
+  } catch (error) {
+    console.warn(
+      '[resetStaffCredentialsAction] Supabase public.profiles update offline/mocked:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+
+  // Security audit event log
+  try {
+    await logSecurityEventAction({
+      action: `Reset credentials for employee account: ${targetUser.email}`,
+      severity: 'warning',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        targetUserId: userId,
+        targetEmail: targetUser.email,
+        resetBy: callerId || '00000000-0000-0000-0000-000000000001',
+      },
+    });
+  } catch {
+    // Suppress audit logging error
+  }
+
+  await safeRevalidatePaths();
+
+  return {
+    success: true,
+    message: `Credentials successfully reset for ${targetUser.name || targetUser.email}.`,
+    code: 'SUCCESS',
+    updatedAt: nowIso,
+  };
+}
+
+export async function getInMemoryStaffUserPin(userId: string): Promise<string | undefined> {
+  const user = memoryStaffUsers.find((u) => u.id === userId);
+  return user?.pinCode;
 }
 

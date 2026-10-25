@@ -74,6 +74,17 @@ public class UserAdminController {
         return ResponseEntity.ok(userAdminService.updateStatus(id, request, callerUserId));
     }
 
+    @PostMapping("/{id}/reset-credentials")
+    public ResponseEntity<StaffUserResponse> resetCredentials(
+            @PathVariable UUID id,
+            @Valid @RequestBody ResetCredentialsRequest request,
+            Authentication authentication
+    ) {
+        UUID callerUserId = extractUserId(authentication);
+        String callerEmail = extractUserEmail(authentication);
+        return ResponseEntity.ok(userAdminService.resetCredentials(id, request, callerUserId, callerEmail));
+    }
+
     private UUID extractUserId(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof SwiftUserPrincipal principal) {
             return principal.getId();

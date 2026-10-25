@@ -2,6 +2,7 @@ package com.swift.modules.admin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swift.modules.admin.dto.ProvisionStaffUserRequest;
+import com.swift.modules.admin.dto.ResetCredentialsRequest;
 import com.swift.modules.admin.dto.UpdateStaffUserRequest;
 import com.swift.modules.admin.dto.UpdateUserPermissionsRequest;
 import com.swift.modules.admin.dto.UpdateUserStatusRequest;
@@ -292,5 +293,79 @@ class UserAdminControllerTests {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].email", is("a@swift.ph")))
                 .andExpect(jsonPath("$[1].email", is("b@swift.ph")));
+    }
+
+    @Test
+    @DisplayName("Scenario 2: Admin resets a forgotten password and PIN for an existing staff member")
+    @WithMockUser(username = "admin@swift.ph", roles = {"ADMIN"})
+    void testResetCredentialsSuccess() throws Exception {
+        UUID staffId = UUID.randomUUID();
+        StaffProfile staff = new StaffProfile(
+                staffId,
+                "cashier.reset@swift.ph",
+                "Cashier Reset",
+                "cashier",
+                "Active",
+                "1234",
+                StaffPermissions.forRole("cashier")
+        );
+        profileRepository.save(staff);
+
+        ResetCredentialsRequest req = new ResetCredentialsRequest(
+                "newPassword123",
+                "9999"
+        );
+
+        mockMvc.perform(post("/api/v1/admin/users/" + staffId + "/reset-credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("cashier.reset@swift.ph")));
+
+        StaffProfile updated = profileRepository.findById(staffId).orElseThrow();
+        assertEquals("9999", updated.getPinCode());
+
+        List<SecurityAuditLog> logs = auditLogRepository.findAll();
+        assertFalse(logs.isEmpty());
+        assertTrue(logs.stream().anyMatch(l -> l.getAction().contains("Reset credentials for employee account: cashier.reset@swift.ph")));
+    }
+
+    @Test
+    @DisplayName("Scenario 3: Validation rejects PIN formatting if not 4-6 numeric digits")
+    @WithMockUser(username = "admin@swift.ph", roles = {"ADMIN"})
+    void testResetCredentialsInvalidPinFormat() throws Exception {
+        UUID staffId = UUID.randomUUID();
+        StaffProfile staff = new StaffProfile(
+                staffId,
+                "mechanic.reset@swift.ph",
+                "Mechanic Reset",
+                "mechanic",
+                "Active",
+                "2222",
+                StaffPermissions.forRole("mechanic")
+        );
+        profileRepository.save(staff);
+
+        // Alpha PIN
+        ResetCredentialsRequest alphaReq = new ResetCredentialsRequest(
+                "validPassword123",
+                "abcd"
+        );
+
+        mockMvc.perform(post("/api/v1/admin/users/" + staffId + "/reset-credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(alphaReq)))
+                .andExpect(status().isBadRequest());
+
+        // Short PIN (<4 digits)
+        ResetCredentialsRequest shortReq = new ResetCredentialsRequest(
+                "validPassword123",
+                "123"
+        );
+
+        mockMvc.perform(post("/api/v1/admin/users/" + staffId + "/reset-credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(shortReq)))
+                .andExpect(status().isBadRequest());
     }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, UserPlus, Check, AlertCircle } from "lucide-react";
+import { X, UserPlus, Check, AlertCircle, KeyRound, Hash } from "lucide-react";
 import type { StaffUserSummary } from "@/specs/030-supabase-rbac-extension-granular-permission-flags/contracts/rbac-permissions.contract";
 import { provisionStaffUserAction } from "@/lib/admin/user-actions";
 
@@ -23,6 +23,8 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ProvisionableRole>("cashier");
+  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -32,8 +34,23 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!fullName.trim() || !email.trim()) {
+    const trimmedName = fullName.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    const trimmedPin = pin.trim();
+
+    if (!trimmedName || !trimmedEmail) {
       setErrorMsg("Full name and email address are required.");
+      return;
+    }
+
+    if (trimmedPassword && trimmedPassword.length < 6) {
+      setErrorMsg("Password must be at least 6 characters in length.");
+      return;
+    }
+
+    if (trimmedPin && !/^\d{4,6}$/.test(trimmedPin)) {
+      setErrorMsg("PIN must consist of 4 to 6 numeric digits.");
       return;
     }
 
@@ -41,9 +58,11 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
 
     try {
       const result = await provisionStaffUserAction({
-        fullName: fullName.trim(),
-        email: email.trim(),
+        fullName: trimmedName,
+        email: trimmedEmail,
         role,
+        password: trimmedPassword || undefined,
+        pin: trimmedPin || undefined,
       });
 
       if (!result.success || !result.data) {
@@ -57,6 +76,8 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
       // Reset state
       setFullName("");
       setEmail("");
+      setPassword("");
+      setPin("");
       setRole("cashier");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -84,7 +105,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
                 Provision New Employee
               </h3>
               <p className="text-xs text-text-secondary">
-                Assign roles and database-enforced permissions
+                Configure profile, credentials, and workstation role
               </p>
             </div>
           </div>
@@ -101,7 +122,11 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 bg-danger-light border border-danger/30 text-danger rounded-xl text-xs flex items-center gap-2">
+            <div
+              id="add-staff-error-banner"
+              data-testid="add-staff-error"
+              className="p-3 bg-danger-light border border-danger/30 text-danger rounded-xl text-xs flex items-center gap-2"
+            >
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -114,6 +139,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
             </label>
             <input
               id="staff-full-name"
+              data-testid="input-staff-full-name"
               type="text"
               required
               value={fullName}
@@ -130,6 +156,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
             </label>
             <input
               id="staff-email"
+              data-testid="input-staff-email"
               type="email"
               required
               value={email}
@@ -139,6 +166,43 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
             />
           </div>
 
+          {/* Temporary Password & Numeric PIN Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="staff-password" className="block text-xs font-semibold text-text-primary mb-1 flex items-center gap-1">
+                <KeyRound className="w-3.5 h-3.5 text-text-secondary" />
+                <span>Temporary Password</span>
+              </label>
+              <input
+                id="staff-password"
+                data-testid="input-staff-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 6 characters"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-surface border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="staff-pin" className="block text-xs font-semibold text-text-primary mb-1 flex items-center gap-1">
+                <Hash className="w-3.5 h-3.5 text-text-secondary" />
+                <span>Numeric PIN</span>
+              </label>
+              <input
+                id="staff-pin"
+                data-testid="input-staff-pin"
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="4 to 6 numeric digits"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-surface border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+              />
+            </div>
+          </div>
+
           {/* Role Selection */}
           <div>
             <label htmlFor="staff-role" className="block text-xs font-semibold text-text-primary mb-1">
@@ -146,6 +210,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
             </label>
             <select
               id="staff-role"
+              data-testid="select-staff-role"
               value={role}
               onChange={(e) => setRole(e.target.value as ProvisionableRole)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-bg-surface border border-border text-sm text-text-primary focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
@@ -173,6 +238,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
             </button>
             <button
               type="submit"
+              data-testid="btn-submit-add-staff"
               disabled={loading}
               className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-text-light text-xs font-bold hover:bg-primary-hover shadow-sm transition-colors disabled:opacity-50"
             >

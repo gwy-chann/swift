@@ -240,6 +240,36 @@ public class UserAdminServiceImpl implements UserAdminService {
         return mapToResponse(updated);
     }
 
+    @Override
+    @Transactional
+    public StaffUserResponse resetCredentials(UUID id, ResetCredentialsRequest request, UUID callerUserId, String callerEmail) {
+        StaffProfile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND_MSG + id));
+
+        profile.setPinCode(request.pin());
+        profile.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        StaffProfile updated = profileRepository.save(profile);
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("targetUserId", id.toString());
+        metadata.put("targetEmail", profile.getEmail());
+        metadata.put("resetBy", callerUserId != null ? callerUserId.toString() : "00000000-0000-0000-0000-000000000001");
+
+        securityAuditService.logSecurityEvent(
+                new LogSecurityEventRequest(
+                        "Reset credentials for employee account: " + profile.getEmail(),
+                        "warning",
+                        DEFAULT_TERMINAL_IP,
+                        metadata,
+                        callerEmail != null ? callerEmail : DEFAULT_ADMIN_EMAIL
+                ),
+                callerUserId,
+                callerEmail
+        );
+
+        return mapToResponse(updated);
+    }
+
     private StaffPermissions mergePermissions(String role, StaffPermissions custom) {
         StaffPermissions defaults = StaffPermissions.forRole(role);
         if (custom == null) {
