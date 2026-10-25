@@ -2,6 +2,7 @@ package com.swift.modules.admin.service.impl;
 
 import com.swift.modules.admin.dto.*;
 import com.swift.modules.admin.exception.DuplicateEmailException;
+import com.swift.modules.admin.exception.InvalidRoleException;
 import com.swift.modules.admin.exception.SelfLockoutException;
 import com.swift.modules.admin.exception.UserNotFoundException;
 import com.swift.modules.admin.service.SecurityAuditService;
@@ -17,6 +18,7 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -26,6 +28,7 @@ public class UserAdminServiceImpl implements UserAdminService {
     private static final String DEFAULT_TERMINAL_IP = "192.168.1.100 (Admin PC)";
     private static final String DEFAULT_ADMIN_EMAIL = "admin@swift.ph";
     private static final String ROLE_ADMIN = "admin";
+    private static final Set<String> ALLOWED_PROVISION_ROLES = Set.of("cashier", "mechanic", "inventory_clerk");
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final StaffProfileRepository profileRepository;
@@ -64,7 +67,27 @@ public class UserAdminServiceImpl implements UserAdminService {
             throw new DuplicateEmailException("An account with this email address already exists");
         }
 
-        String rawRole = request.role().trim().toLowerCase();
+        String rawRole = request.role() != null ? request.role().trim().toLowerCase() : "";
+        if (!ALLOWED_PROVISION_ROLES.contains(rawRole)) {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("email", normalizedEmail);
+            metadata.put("attemptedRole", rawRole);
+
+            securityAuditService.logSecurityEvent(
+                    new LogSecurityEventRequest(
+                            "Rejected unauthorized staff provisioning attempt with unapproved role: " + rawRole,
+                            "warning",
+                            DEFAULT_TERMINAL_IP,
+                            metadata,
+                            callerEmail != null ? callerEmail : DEFAULT_ADMIN_EMAIL
+                    ),
+                    callerUserId,
+                    callerEmail
+            );
+
+            throw new InvalidRoleException("Staff account role must be strictly one of: cashier, mechanic, or inventory_clerk");
+        }
+
         StaffPermissions permissions = mergePermissions(rawRole, request.permissions());
 
         String pinCode;

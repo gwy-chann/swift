@@ -152,6 +152,92 @@ function generateSecurePin(): string {
   return 'SwiftTemp#5678';
 }
 
+const APPROVED_STAFF_ROLES: readonly string[] = ['cashier', 'mechanic', 'inventory_clerk'];
+const INVALID_ROLE_ERROR =
+  'Staff account role must be strictly one of: Cashier Privilege (cashier), Mechanic (mechanic), or Inventory Clerk (inventory_clerk).';
+
+async function logUnapprovedRoleWarning(attemptedRole: string, targetEmail: string): Promise<void> {
+  try {
+    await logSecurityEventAction({
+      action: `Rejected staff provisioning attempt with unapproved role: ${attemptedRole}`,
+      severity: 'warning',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: { targetEmail, attemptedRole },
+    });
+  } catch {
+    // Suppress audit logging error
+  }
+}
+
+async function logStaffCreationSuccess(
+  email: string,
+  fullName: string,
+  role: DbUserRole,
+  permissions: StaffPermissions
+): Promise<void> {
+  try {
+    await logSecurityEventAction({
+      action: `Created employee account for ${email} (${mapDbRoleToDisplay(role)})`,
+      severity: 'info',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: { email, fullName, role, permissions },
+    });
+  } catch {
+    // Suppress audit logging error
+  }
+}
+
+async function trySupabaseAdminAuthProvision(
+  payload: { email: string; fullName: string; role: DbUserRole; password?: string },
+  permissions: StaffPermissions,
+  nowIso: string
+): Promise<MockStaffUserProfile | null | 'DUPLICATE_EMAIL'> {
+  try {
+    const { createAdminClient } = await import('../supabase/server.ts');
+    const supabaseAdmin = createAdminClient();
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: payload.email,
+      password: payload.password || generateSecurePin(),
+      email_confirm: true,
+      user_metadata: {
+        full_name: payload.fullName,
+        role: payload.role,
+        permissions,
+      },
+    });
+
+    if (authError) {
+      if (authError.message?.toLowerCase().includes('already registered')) {
+        return 'DUPLICATE_EMAIL';
+      }
+      throw authError;
+    }
+
+    if (authData?.user) {
+      return {
+        id: authData.user.id,
+        name: payload.fullName,
+        email: payload.email,
+        role: payload.role,
+        roleDisplay: mapDbRoleToDisplay(payload.role),
+        status: 'Active',
+        permissions,
+        createdAt: authData.user.created_at || nowIso,
+        updatedAt: nowIso,
+      };
+    }
+  } catch (error) {
+    console.warn(
+      '[provisionStaffUserAction] Supabase admin auth offline, using in-memory mock:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+  return null;
+}
+
 /**
  * Provisions a new employee with Supabase auth and profiles, or in-memory fallback.
  */
@@ -159,6 +245,26 @@ export async function provisionStaffUserAction(
   rawPayload: unknown,
   callerRoleOverride?: string
 ): Promise<UserActionResult<StaffUserSummary>> {
+  const { role: callerRole } = await resolveCallerContext(callerRoleOverride);
+  if (callerRole !== 'admin') {
+    return {
+      success: false,
+      error: 'Unauthorized: Admin privileges required to provision staff users',
+      code: 'UNAUTHORIZED',
+    };
+  }
+
+  const rawRole = (rawPayload as { role?: string })?.role;
+  const rawEmail = (rawPayload as { email?: string })?.email || 'unknown';
+  if (rawRole && !APPROVED_STAFF_ROLES.includes(rawRole)) {
+    await logUnapprovedRoleWarning(rawRole, rawEmail);
+    return {
+      success: false,
+      error: INVALID_ROLE_ERROR,
+      code: 'VALIDATION_ERROR',
+    };
+  }
+
   const parsed = ProvisionStaffUserSchema.safeParse(rawPayload);
   if (!parsed.success) {
     return {
@@ -168,12 +274,12 @@ export async function provisionStaffUserAction(
     };
   }
 
-  const { role: callerRole } = await resolveCallerContext(callerRoleOverride);
-  if (callerRole !== 'admin') {
+  if (!APPROVED_STAFF_ROLES.includes(parsed.data.role)) {
+    await logUnapprovedRoleWarning(parsed.data.role, parsed.data.email);
     return {
       success: false,
-      error: 'Unauthorized: Admin privileges required to provision staff users',
-      code: 'UNAUTHORIZED',
+      error: INVALID_ROLE_ERROR,
+      code: 'VALIDATION_ERROR',
     };
   }
 
@@ -189,88 +295,31 @@ export async function provisionStaffUserAction(
     };
   }
 
-  // Merge default permissions with provided custom flags
+  // Assign deterministic default permissions for the approved staff role
   const roleDefaults = DEFAULT_ROLE_PERMISSIONS[payload.role] || DEFAULT_STAFF_PERMISSIONS;
   const mergedPermissions: StaffPermissions = {
     ...roleDefaults,
-    ...payload.permissions,
   };
 
-  const newId = `00000000-0000-0000-0000-${String(Date.now()).slice(-12).padStart(12, '0')}`;
   const nowIso = new Date().toISOString();
 
   // Attempt Supabase Admin Auth Provisioning
-  try {
-    const { createAdminClient } = await import('../supabase/server.ts');
-    const supabaseAdmin = createAdminClient();
+  const supabaseResult = await trySupabaseAdminAuthProvision(
+    { ...payload, email: normalizedEmail },
+    mergedPermissions,
+    nowIso
+  );
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: normalizedEmail,
-      password: payload.password || generateSecurePin(),
-      email_confirm: true,
-      user_metadata: {
-        full_name: payload.fullName,
-        role: payload.role,
-        permissions: mergedPermissions,
-      },
-    });
-
-    if (authError) {
-      if (authError.message?.toLowerCase().includes('already registered')) {
-        return {
-          success: false,
-          error: 'An account with this email address already exists',
-          code: 'DUPLICATE_EMAIL',
-        };
-      }
-      throw authError;
-    }
-
-    if (authData?.user) {
-      const createdUser: MockStaffUserProfile = {
-        id: authData.user.id,
-        name: payload.fullName,
-        email: normalizedEmail,
-        role: payload.role,
-        roleDisplay: mapDbRoleToDisplay(payload.role),
-        status: 'Active',
-        permissions: mergedPermissions,
-        createdAt: authData.user.created_at || nowIso,
-        updatedAt: nowIso,
-      };
-
-      memoryStaffUsers.push(createdUser);
-      await safeRevalidatePaths();
-
-      try {
-        await logSecurityEventAction({
-          action: `Created employee account for ${normalizedEmail} (${mapDbRoleToDisplay(payload.role)})`,
-          severity: 'info',
-          terminalIp: '192.168.1.100 (Admin PC)',
-          userEmail: 'admin@swift.ph',
-          metadata: {
-            email: normalizedEmail,
-            fullName: payload.fullName,
-            role: payload.role,
-            permissions: mergedPermissions,
-          },
-        });
-      } catch {
-        // Suppress audit logging error
-      }
-
-      return { success: true, data: mapProfileToSummary(createdUser) };
-    }
-  } catch (error) {
-    console.warn(
-      '[provisionStaffUserAction] Supabase admin auth offline, using in-memory mock:',
-      error instanceof Error ? error.message : String(error)
-    );
+  if (supabaseResult === 'DUPLICATE_EMAIL') {
+    return {
+      success: false,
+      error: 'An account with this email address already exists',
+      code: 'DUPLICATE_EMAIL',
+    };
   }
 
-  // In-memory fallback creation
-  const fallbackUser: MockStaffUserProfile = {
-    id: newId,
+  const finalUser: MockStaffUserProfile = supabaseResult || {
+    id: `00000000-0000-0000-0000-${String(Date.now()).slice(-12).padStart(12, '0')}`,
     name: payload.fullName,
     email: normalizedEmail,
     role: payload.role,
@@ -281,29 +330,13 @@ export async function provisionStaffUserAction(
     updatedAt: nowIso,
   };
 
-  memoryStaffUsers.push(fallbackUser);
+  memoryStaffUsers.push(finalUser);
   await safeRevalidatePaths();
-
-  try {
-    await logSecurityEventAction({
-      action: `Created employee account for ${normalizedEmail} (${mapDbRoleToDisplay(payload.role)})`,
-      severity: 'info',
-      terminalIp: '192.168.1.100 (Admin PC)',
-      userEmail: 'admin@swift.ph',
-      metadata: {
-        email: normalizedEmail,
-        fullName: payload.fullName,
-        role: payload.role,
-        permissions: mergedPermissions,
-      },
-    });
-  } catch {
-    // Suppress audit logging error
-  }
+  await logStaffCreationSuccess(normalizedEmail, payload.fullName, payload.role, mergedPermissions);
 
   return {
     success: true,
-    data: mapProfileToSummary(fallbackUser),
+    data: mapProfileToSummary(finalUser),
   };
 }
 
