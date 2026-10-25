@@ -25,6 +25,30 @@ export class ApiClientError extends Error {
   }
 }
 
+async function handleFailedResponse(response: Response, endpoint: string): Promise<never> {
+  let errorData: Record<string, unknown> = {};
+  try {
+    errorData = (await response.json()) as Record<string, unknown>;
+  } catch {
+    errorData = { message: response.statusText };
+  }
+
+  const code = typeof errorData.code === 'string' ? errorData.code : 'API_REQUEST_FAILED';
+  let msg = `HTTP ${response.status} on ${endpoint}`;
+  if (typeof errorData.message === 'string') {
+    msg = errorData.message;
+  } else if (typeof errorData.error === 'string') {
+    msg = errorData.error;
+  }
+
+  throw new ApiClientError(
+    response.status,
+    code,
+    msg,
+    errorData.details
+  );
+}
+
 export class LeanApiClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
@@ -51,9 +75,8 @@ export class LeanApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = endpoint.startsWith('http')
-      ? endpoint
-      : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${path}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -78,19 +101,7 @@ export class LeanApiClient {
 
       // Handle non-2xx responses
       if (!response.ok) {
-        let errorData: any = {};
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { message: response.statusText };
-        }
-
-        throw new ApiClientError(
-          response.status,
-          errorData.code || 'API_REQUEST_FAILED',
-          errorData.message || errorData.error || `HTTP ${response.status} on ${endpoint}`,
-          errorData.details
-        );
+        await handleFailedResponse(response, endpoint);
       }
 
       // Handle empty / 204 response
@@ -105,17 +116,18 @@ export class LeanApiClient {
       }
 
       return (await response.json()) as T;
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
       if (error instanceof ApiClientError) {
         throw error;
       }
 
-      if (error.name === 'AbortError') {
+      const err = error as { name?: string; message?: string };
+      if (err.name === 'AbortError') {
         throw new ApiClientError(408, 'REQUEST_TIMEOUT', `Request to ${endpoint} timed out after ${this.timeoutMs}ms.`);
       }
 
-      throw new ApiClientError(500, 'NETWORK_ERROR', error.message || 'Network communication failure with backend.');
+      throw new ApiClientError(500, 'NETWORK_ERROR', err.message || 'Network communication failure with backend.');
     }
   }
 
