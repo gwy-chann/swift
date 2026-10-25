@@ -1,6 +1,3 @@
-'use server';
-
-import { revalidatePath } from 'next/cache';
 import type { WorkOrderStatus } from '../types/service.ts';
 import type { DetailedWorkOrder } from '../types/workshop.ts';
 import {
@@ -11,6 +8,16 @@ import {
   validateWorkOrderStatusTransition,
   calculateRemainingMinutes,
 } from '../services/service-bay-mapper.ts';
+
+async function safeRevalidatePaths() {
+  try {
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/staff/work-orders');
+    revalidatePath('/admin');
+  } catch {
+    // Revalidation not active in pure Node.js test runner
+  }
+}
 
 // In-memory cache for demo and offline test resilient mode
 let inMemoryOrders: DetailedWorkOrder[] = [...INITIAL_MOCK_WORK_ORDERS];
@@ -171,12 +178,7 @@ export async function updateWorkshopOrderStatusAction(
       }
     }
 
-    try {
-      revalidatePath('/staff/work-orders');
-      revalidatePath('/admin');
-    } catch {
-      // Revalidation not active in test runner
-    }
+    await safeRevalidatePaths();
 
     return {
       success: true,
@@ -249,11 +251,7 @@ export async function claimWorkOrderAction(
       }
     }
 
-    try {
-      revalidatePath('/staff/work-orders');
-    } catch {
-      // Revalidation not active in test runner
-    }
+    await safeRevalidatePaths();
 
     return { success: true, data: updatedTarget };
   } catch (err) {
