@@ -1,7 +1,7 @@
 "use server";
 
 import type { AuthResult, LoginCredentials, UserSession } from "./types.ts";
-import { ALL_DEMO_ACCOUNTS, DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
+import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
 import { getStaffUserStatus } from "../admin/user-actions.ts";
 

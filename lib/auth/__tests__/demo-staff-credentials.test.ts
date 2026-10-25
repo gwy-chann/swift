@@ -15,9 +15,9 @@ describe('Demo Staff Accounts & Punch Clock PIN Authorization Matrix', () => {
 
     const admin = ALL_DEMO_ACCOUNTS.find((a) => a.role === 'admin');
     assert.ok(admin);
-    assert.equal(admin.email, 'admin@swift.local');
+    assert.equal(admin.email, DEMO_ADMIN_ACCOUNT.email);
     assert.equal(admin.name, 'Carlos Rodriguez');
-    assert.equal(admin.pin, '8888');
+    assert.equal(admin.pin, DEMO_ADMIN_ACCOUNT.pin);
     assert.equal(admin.targetUrl, '/admin');
 
     const cashier = ALL_DEMO_ACCOUNTS.find((a) => a.staffRole === 'cashier');
