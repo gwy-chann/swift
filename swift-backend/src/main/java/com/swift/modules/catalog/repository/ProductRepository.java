@@ -29,4 +29,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "(:category IS NULL OR :category = '' OR LOWER(p.category) = LOWER(:category)) " +
            "ORDER BY p.name ASC")
     java.util.List<Product> searchProducts(@Param("query") String query, @Param("category") String category);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stock <= p.minThreshold")
+    long countByStockLessThanEqualMinThreshold();
 }
