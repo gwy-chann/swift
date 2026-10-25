@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { authenticateUserAction } from '../actions.ts';
+import { authenticateUserAction, completeStaffTwoStepLoginAction } from '../actions.ts';
 import { toggleUserStatusAction, resetInMemoryStaffUsers } from '../../admin/user-actions.ts';
 
 describe('Inactive Staff Account Login Blocking (SIAA-103)', () => {
@@ -18,10 +18,21 @@ describe('Inactive Staff Account Login Blocking (SIAA-103)', () => {
 
     assert.equal(result.success, true);
     if (result.success) {
-      assert.equal(result.session.role, 'staff');
-      assert.equal(result.redirectTo, '/staff/pos');
+      if (result.requiresPin) {
+        assert.equal(result.step, 'ENTER_PIN');
+        const finalRes = await completeStaffTwoStepLoginAction({ pin: '1234' });
+        assert.equal(finalRes.success, true);
+        if (finalRes.success && !finalRes.requiresPin) {
+          assert.equal(finalRes.session.role, 'staff');
+          assert.equal(finalRes.redirectTo, '/staff/pos');
+        }
+      } else {
+        assert.equal(result.session.role, 'staff');
+        assert.equal(result.redirectTo, '/staff/pos');
+      }
     }
   });
+
 
   it('blocks login attempt when staff member is set to Inactive in ledger', async () => {
     // 1. Deactivate cashier account (Mike Morales, id: '00000000-0000-0000-0000-000000000002')
