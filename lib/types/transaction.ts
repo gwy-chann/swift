@@ -69,6 +69,7 @@ export interface CheckoutPayload {
   cashierId?: string | null;
   cashierName?: string;
   customerName?: string;
+  customerPhone?: string;
   vehicleModel?: string;
   plateNumber?: string;
   notes?: string | null;

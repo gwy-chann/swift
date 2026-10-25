@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Wrench,
@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import type { DetailedWorkOrder } from "@/lib/types/workshop";
 import type { WorkOrderStatus } from "@/lib/types/service";
+import type { OnShiftMechanic } from "@/lib/workshop/intake-dispatch-contracts";
+import { fetchOnShiftMechanicsAction } from "@/lib/workshop/workshop-actions";
 import {
   formatWorkOrderStatusLabel,
   getWorkOrderStatusBadgeClass,
@@ -29,6 +31,9 @@ interface WorkOrderDetailDrawerProps {
   onClose: () => void;
   onStatusChange: (orderId: string, newStatus: WorkOrderStatus) => void;
   isUpdating?: boolean;
+  isAdmin?: boolean;
+  availableMechanics?: OnShiftMechanic[];
+  onAssignMechanic?: (orderId: string, mechanicId: string, mechanicName: string) => void | Promise<void>;
 }
 
 export function WorkOrderDetailDrawer({
@@ -37,8 +42,36 @@ export function WorkOrderDetailDrawer({
   onClose,
   onStatusChange,
   isUpdating = false,
+  isAdmin = false,
+  availableMechanics: initialMechanics,
+  onAssignMechanic,
 }: Readonly<WorkOrderDetailDrawerProps>) {
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
+  const [onShiftMechanics, setOnShiftMechanics] = useState<OnShiftMechanic[]>(
+    initialMechanics || []
+  );
+  const [prevInitialMechanics, setPrevInitialMechanics] = useState(initialMechanics);
+
+  if (initialMechanics !== prevInitialMechanics) {
+    setPrevInitialMechanics(initialMechanics);
+    if (initialMechanics && initialMechanics.length > 0) {
+      setOnShiftMechanics(initialMechanics);
+    }
+  }
+
+  useEffect(() => {
+    let ignore = false;
+    if (isOpen && isAdmin && onShiftMechanics.length === 0) {
+      void fetchOnShiftMechanicsAction().then((res) => {
+        if (!ignore && res.success && res.data) {
+          setOnShiftMechanics(res.data);
+        }
+      });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, isAdmin, onShiftMechanics.length]);
 
   if (!isOpen || !order) return null;
 
@@ -118,10 +151,37 @@ export function WorkOrderDetailDrawer({
 
               <div>
                 <span className="text-text-muted text-[11px] block">Assigned Mechanic</span>
-                <span className="font-bold text-text-primary flex items-center gap-1 mt-0.5">
-                  <Wrench className="w-3 h-3 text-primary" />
-                  {order.mechanicName || "Unassigned"}
-                </span>
+                {isAdmin ? (
+                  <div className="mt-1">
+                    <select
+                      aria-label="Assign Mechanic"
+                      value={order.mechanicId || ""}
+                      onChange={(e) => {
+                        const targetId = e.target.value;
+                        const targetMech = onShiftMechanics.find((m) => m.id === targetId);
+                        if (targetMech && onAssignMechanic) {
+                          onAssignMechanic(order.id, targetMech.id, targetMech.name);
+                        }
+                      }}
+                      disabled={isUpdating || onShiftMechanics.length === 0}
+                      className="w-full text-xs font-semibold rounded-md bg-bg-surface border border-border px-2 py-1 text-text-primary focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                    >
+                      <option value="" disabled>
+                        {order.mechanicName ? `${order.mechanicName}` : "Assign on-shift mechanic..."}
+                      </option>
+                      {onShiftMechanics.map((mech) => (
+                        <option key={mech.id} value={mech.id}>
+                          {mech.name} (On Shift)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <span className="font-bold text-text-primary flex items-center gap-1 mt-0.5">
+                    <Wrench className="w-3 h-3 text-primary" />
+                    {order.mechanicName || "Unassigned"}
+                  </span>
+                )}
               </div>
 
               <div>

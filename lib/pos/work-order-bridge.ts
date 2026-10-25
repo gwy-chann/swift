@@ -88,6 +88,7 @@ export async function autoProvisionWorkOrdersFromCheckout(
     const { bayId, bayName } = await resolveServiceBay(item.bay);
 
     const customerName = payload.customerName?.trim() || 'Walk-in Customer';
+    const customerPhone = payload.customerPhone?.trim() || '0917-000-0000';
     const vehicleModel = payload.vehicleModel?.trim() || 'Motorcycle (General)';
     const plateNumber = payload.plateNumber?.trim() || 'FOR-REG';
     const notes =
@@ -109,7 +110,7 @@ export async function autoProvisionWorkOrdersFromCheckout(
       bayId,
       bayName,
       customerName,
-      customerPhone: '0917-000-0000',
+      customerPhone,
       vehicleModel,
       plateNumber,
       serviceCode: item.itemSkuOrCode,
@@ -143,6 +144,7 @@ export async function autoProvisionWorkOrdersFromCheckout(
           order_number: newWorkOrder.orderNumber,
           bay_id: newWorkOrder.bayId,
           customer_name: newWorkOrder.customerName,
+          customer_phone: newWorkOrder.customerPhone,
           vehicle_model: newWorkOrder.vehicleModel,
           plate_number: newWorkOrder.plateNumber,
           service_code: newWorkOrder.serviceCode,
@@ -167,6 +169,8 @@ export async function autoProvisionWorkOrdersFromCheckout(
               bay_id: newWorkOrder.bayId,
               bay_name: newWorkOrder.bayName,
               customer_name: newWorkOrder.customerName,
+              customer_phone: newWorkOrder.customerPhone,
+              customerPhone: newWorkOrder.customerPhone,
               vehicle_model: newWorkOrder.vehicleModel,
               plate_number: newWorkOrder.plateNumber,
               service_code: newWorkOrder.serviceCode,

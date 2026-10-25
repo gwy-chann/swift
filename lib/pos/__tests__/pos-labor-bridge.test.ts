@@ -240,4 +240,44 @@ describe('Automatic POS Labor Checkout to Service Bay Work Order Queue Bridge (S
     assert.strictEqual(order1.customerName, 'Elena Rostova');
     assert.strictEqual(order2.customerName, 'Elena Rostova');
   });
+
+  it('SIAA-101 Scenario 2: Persists exact customer intake phone, name, vehicle, and complaints', async () => {
+    const payload: CheckoutPayload = {
+      receiptNumber: `TX-INTAKE-${Date.now()}`,
+      cashierName: 'Mike Morales',
+      customerName: 'Rodrigo Duterte',
+      customerPhone: '0917-888-9999',
+      vehicleModel: 'Yamaha Tracer 900 GT',
+      plateNumber: '123-NCR',
+      notes: 'Front handlebar vibration at high speed',
+      pricingMode: 'retail',
+      subtotal: 500,
+      discountRate: 0,
+      discountAmount: 0,
+      totalDue: 500,
+      cashTendered: 500,
+      changeDue: 0,
+      paymentMethod: 'Cash',
+      items: [
+        {
+          itemType: 'service',
+          itemSkuOrCode: 'SRV-TUNE-02',
+          itemName: 'Front Wheel & Steering Diagnostic',
+          unitPrice: 500,
+          quantity: 1,
+          subtotal: 500,
+          bay: 'Bay 4',
+        },
+      ],
+    };
+
+    const result = await autoProvisionWorkOrdersFromCheckout(payload, payload.receiptNumber!);
+    assert.strictEqual(result.created, 1);
+    const order = result.workOrders[0];
+    assert.strictEqual(order.customerName, 'Rodrigo Duterte');
+    assert.strictEqual(order.customerPhone, '0917-888-9999');
+    assert.strictEqual(order.vehicleModel, 'Yamaha Tracer 900 GT');
+    assert.strictEqual(order.plateNumber, '123-NCR');
+    assert.strictEqual(order.notes, 'Front handlebar vibration at high speed');
+  });
 });

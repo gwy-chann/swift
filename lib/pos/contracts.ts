@@ -21,6 +21,7 @@ export const checkoutPayloadSchema = z.object({
   cashierId: z.string().nullable().optional(),
   cashierName: z.string().min(1).default('Cashier'),
   customerName: z.string().trim().optional(),
+  customerPhone: z.string().trim().optional(),
   vehicleModel: z.string().trim().optional(),
   plateNumber: z.string().trim().optional(),
   notes: z.string().trim().nullable().optional(),
