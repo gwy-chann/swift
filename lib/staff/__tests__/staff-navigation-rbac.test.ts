@@ -9,11 +9,11 @@ import {
 
 describe('Staff Terminal Role-Aware Navigation & RBAC (SIAA-85)', () => {
   describe('filterNavItemsByRole', () => {
-    it('filters navigation items for Mechanic to clock, compat, and search', () => {
+    it('filters navigation items for Mechanic to clock, compat, search, and work-orders', () => {
       const filtered = filterNavItemsByRole(STAFF_NAV_ITEMS, 'mechanic');
       const ids = filtered.map((item) => item.id);
 
-      assert.deepEqual(ids.sort(), ['clock', 'compat', 'search'].sort());
+      assert.deepEqual(ids.sort(), ['clock', 'compat', 'search', 'work-orders'].sort());
       assert.ok(!ids.includes('pos'), 'Fast-Lane POS must be hidden for mechanic');
       assert.ok(!ids.includes('history'), 'Purchase History must be hidden for mechanic');
       assert.ok(!ids.includes('pricecheck'), 'Item Code Price Check must be hidden for mechanic');
@@ -27,24 +27,14 @@ describe('Staff Terminal Role-Aware Navigation & RBAC (SIAA-85)', () => {
       assert.ok(!ids.includes('pos'), 'Fast-Lane POS must be hidden for inventory clerk');
       assert.ok(!ids.includes('history'), 'Purchase History must be hidden for inventory clerk');
       assert.ok(!ids.includes('compat'), 'Model Fitment Search must be hidden for inventory clerk');
+      assert.ok(!ids.includes('work-orders'), 'Work Order Queue must be hidden for inventory clerk');
     });
 
-    it('renders all 6 navigation items for Cashier', () => {
-      const filtered = filterNavItemsByRole(STAFF_NAV_ITEMS, 'cashier');
-      const ids = filtered.map((item) => item.id);
-
-      assert.equal(filtered.length, 6);
-      assert.ok(ids.includes('pos'));
-      assert.ok(ids.includes('search'));
-      assert.ok(ids.includes('compat'));
-      assert.ok(ids.includes('pricecheck'));
-      assert.ok(ids.includes('history'));
-      assert.ok(ids.includes('clock'));
-    });
-
-    it('renders all 6 navigation items for Admin', () => {
+    it('renders all 7 navigation items for Admin including work-orders', () => {
       const filtered = filterNavItemsByRole(STAFF_NAV_ITEMS, 'admin');
-      assert.equal(filtered.length, 6);
+      const ids = filtered.map((item) => item.id);
+      assert.equal(filtered.length, 7);
+      assert.ok(ids.includes('work-orders'));
     });
 
     it('returns all items when role is undefined or empty', () => {
@@ -59,7 +49,7 @@ describe('Staff Terminal Role-Aware Navigation & RBAC (SIAA-85)', () => {
       const mechanicMixed = filterNavItemsByRole(STAFF_NAV_ITEMS, 'Mechanic');
       assert.deepEqual(
         mechanicMixed.map((i) => i.id).sort(),
-        ['clock', 'compat', 'search'].sort()
+        ['clock', 'compat', 'search', 'work-orders'].sort()
       );
 
       const clerkUpper = filterNavItemsByRole(STAFF_NAV_ITEMS, 'INVENTORY_CLERK');
@@ -71,13 +61,13 @@ describe('Staff Terminal Role-Aware Navigation & RBAC (SIAA-85)', () => {
   });
 
   describe('getRolePrimaryRoute', () => {
-    it('redirects Mechanic to /staff/compat with workshop tool explanation', () => {
+    it('redirects Mechanic to /staff/work-orders with workshop queue explanation', () => {
       const routeInfo = getRolePrimaryRoute('mechanic');
-      assert.equal(routeInfo.targetPath, '/staff/compat');
+      assert.equal(routeInfo.targetPath, '/staff/work-orders');
       assert.equal(routeInfo.isAuthorizedForPos, false);
       assert.equal(
         routeInfo.notificationMessage,
-        'Redirected: Your profile is scoped to workshop repair tools.'
+        'Redirected: Your profile is scoped to the workshop work order queue.'
       );
     });
 

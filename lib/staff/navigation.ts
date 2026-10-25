@@ -5,6 +5,7 @@ import {
   Barcode,
   History,
   Clock,
+  ClipboardList,
 } from "lucide-react";
 import type { DbUserRole } from "../types/auth.ts";
 import type { StaffNavItem, StaffUserProfile, StaffShiftState } from "./types.ts";
@@ -23,8 +24,8 @@ export interface RoleRouteRedirection {
  */
 export const ROLE_ROUTE_CONFIG: Record<DbUserRole, RoleRouteRedirection> = {
   mechanic: {
-    targetPath: "/staff/compat",
-    notificationMessage: "Redirected: Your profile is scoped to workshop repair tools.",
+    targetPath: "/staff/work-orders",
+    notificationMessage: "Redirected: Your profile is scoped to the workshop work order queue.",
     isAuthorizedForPos: false,
   },
   inventory_clerk: {
@@ -61,6 +62,14 @@ export const STAFF_NAV_ITEMS: StaffNavItem[] = [
     category: "Shop Floor Operations",
     icon: Zap,
     allowedRoles: ["cashier", "admin"],
+  },
+  {
+    id: "work-orders",
+    label: "Work Order Queue",
+    href: "/staff/work-orders",
+    category: "Shop Floor Operations",
+    icon: ClipboardList,
+    allowedRoles: ["mechanic", "admin"],
   },
   {
     id: "search",
