@@ -81,6 +81,48 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(com.swift.modules.shift.exception.ActiveShiftConflictException.class)
+    public ResponseEntity<ErrorDetails> handleActiveShiftConflict(com.swift.modules.shift.exception.ActiveShiftConflictException ex, HttpServletRequest request) {
+        log.warn("Active shift conflict: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.CONFLICT.value(),
+            "ACTIVE_SHIFT_EXISTS",
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(com.swift.modules.shift.exception.ShiftNotFoundException.class)
+    public ResponseEntity<ErrorDetails> handleShiftNotFound(com.swift.modules.shift.exception.ShiftNotFoundException ex, HttpServletRequest request) {
+        log.warn("Shift not found: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.NOT_FOUND.value(),
+            "SHIFT_NOT_FOUND",
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(com.swift.modules.shift.exception.ShiftNotActiveException.class)
+    public ResponseEntity<ErrorDetails> handleShiftNotActive(com.swift.modules.shift.exception.ShiftNotActiveException ex, HttpServletRequest request) {
+        log.warn("Shift not active: {}", ex.getMessage());
+        ErrorDetails error = new ErrorDetails(
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "SHIFT_NOT_ACTIVE",
+            ex.getMessage(),
+            request.getRequestURI(),
+            null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorDetails> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
