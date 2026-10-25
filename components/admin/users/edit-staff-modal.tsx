@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, UserCheck, Shield, Check, AlertCircle } from "lucide-react";
+import { X, UserCheck, AlertCircle } from "lucide-react";
 import type { DbUserRole, StaffPermissions } from "@/lib/types/auth";
 import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/types/auth";
 import type { StaffUserSummary } from "@/specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract";
@@ -27,7 +27,7 @@ export function EditStaffModal({
   user,
   onClose,
   onStaffUpdated,
-}: EditStaffModalProps) {
+}: Readonly<EditStaffModalProps>) {
   if (!isOpen || !user) return null;
 
   return (
@@ -40,15 +40,17 @@ export function EditStaffModal({
   );
 }
 
+interface EditStaffModalDialogProps {
+  user: StaffUserSummary;
+  onClose: () => void;
+  onStaffUpdated: (updatedUser: StaffUserSummary) => void;
+}
+
 function EditStaffModalDialog({
   user,
   onClose,
   onStaffUpdated,
-}: {
-  user: StaffUserSummary;
-  onClose: () => void;
-  onStaffUpdated: (updatedUser: StaffUserSummary) => void;
-}) {
+}: Readonly<EditStaffModalDialogProps>) {
   const [fullName, setFullName] = useState(user.fullName);
   const [role, setRole] = useState<DbUserRole>(user.role);
   const [permissions, setPermissions] = useState<StaffPermissions>({
@@ -59,21 +61,10 @@ function EditStaffModalDialog({
 
   const handleRoleChange = (selectedRole: DbUserRole) => {
     setRole(selectedRole);
-    // Suggest default permissions for new role while keeping user customization optional
     const defaults = DEFAULT_ROLE_PERMISSIONS[selectedRole];
     if (defaults) {
-      setPermissions((prev) => ({
-        ...prev,
-        ...defaults,
-      }));
+      setPermissions(defaults);
     }
-  };
-
-  const handlePermissionToggle = (key: keyof StaffPermissions) => {
-    setPermissions((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,11 +102,15 @@ function EditStaffModalDialog({
   };
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="edit-staff-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-fadeIn"
     >
       <div className="bg-bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
@@ -198,46 +193,9 @@ function EditStaffModalDialog({
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Granular Permissions Section */}
-          <div className="pt-2 border-t border-border space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-bold text-text-primary">
-                Granular Operational Permissions
-              </span>
-            </div>
-            <p className="text-[11px] text-text-muted">
-              Enable specific override capabilities for this employee.
+            <p className="text-[11px] text-text-muted mt-1.5">
+              Role automatically determines system access and default workstation permissions.
             </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <PermissionCheckbox
-                label="Stock In & Adjustments"
-                description="Warehouse inventory and receiving"
-                checked={permissions.can_adjust_stock}
-                onChange={() => handlePermissionToggle("can_adjust_stock")}
-              />
-              <PermissionCheckbox
-                label="Discount Override"
-                description="Higher custom or senior discounts"
-                checked={permissions.can_override_discount}
-                onChange={() => handlePermissionToggle("can_override_discount")}
-              />
-              <PermissionCheckbox
-                label="Manage Pricing"
-                description="Base rate and markup rules editing"
-                checked={permissions.can_manage_pricing}
-                onChange={() => handlePermissionToggle("can_manage_pricing")}
-              />
-              <PermissionCheckbox
-                label="Audit Reports Access"
-                description="Forensic activity logs & KPI view"
-                checked={permissions.can_view_reports}
-                onChange={() => handlePermissionToggle("can_view_reports")}
-              />
-            </div>
           </div>
 
           {/* Modal Actions */}
@@ -260,44 +218,6 @@ function EditStaffModalDialog({
           </div>
         </form>
       </div>
-    </div>
-  );
-}
-
-function PermissionCheckbox({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      onClick={onChange}
-      className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
-        checked
-          ? "bg-primary-light/40 border-primary/40 text-text-primary"
-          : "bg-bg-surface border-border text-text-muted hover:border-border-focus"
-      }`}
-    >
-      <div
-        className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-          checked ? "bg-primary border-primary text-text-light" : "border-border bg-bg-card"
-        }`}
-      >
-        {checked && <Check className="w-3 h-3 stroke-3" />}
-      </div>
-      <div>
-        <div className="text-xs font-semibold text-text-primary leading-tight">{label}</div>
-        <div className="text-[10px] text-text-secondary leading-normal">{description}</div>
-      </div>
-    </button>
+    </dialog>
   );
 }
