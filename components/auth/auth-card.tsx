@@ -21,7 +21,11 @@ function getServerSavedRole(): PortalRole {
   return "admin";
 }
 
-export function AuthCard() {
+interface AuthCardProps {
+  initialNotice?: string | null;
+}
+
+export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
   const savedRole = useSyncExternalStore(
     subscribe,
     getClientSavedRole,
@@ -68,6 +72,7 @@ export function AuthCard() {
         setPassword={setPassword}
         rememberTerminal={rememberTerminal}
         setRememberTerminal={setRememberTerminal}
+        initialNotice={initialNotice}
       />
 
       {/* Demo Credentials Quick-Fill Box */}

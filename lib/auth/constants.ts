@@ -1,4 +1,4 @@
-import { DemoAccount, PortalRole } from "./types";
+import type { DemoAccount, PortalRole } from "./types.ts";
 
 /**
  * Pre-configured demo accounts for fast evaluation, testing, and role switching

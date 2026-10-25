@@ -1,16 +1,36 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { AuthResult, LoginCredentials, UserSession } from "./types";
-import { DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants";
+import type { AuthResult, LoginCredentials, UserSession } from "./types.ts";
+import { DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
+import { getStaffUserStatus } from "../admin/user-actions.ts";
 
+export const INACTIVE_ACCOUNT_ERROR =
+  "Account is inactive. Please contact your workshop administrator.";
+
+interface CookieWriter {
+  set(name: string, value: string, options?: Record<string, unknown>): void;
+  delete(name: string): void;
+}
+
+async function getSafeCookieStore(): Promise<CookieWriter> {
+  try {
+    const { cookies } = await import("next/headers");
+    return await cookies();
+  } catch {
+    return {
+      set: () => {},
+      delete: () => {},
+    };
+  }
+}
 
 function setSessionCookies(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  cookieStore: CookieWriter,
   role: string,
   name: string,
-  rememberTerminal: boolean
+  rememberTerminal: boolean,
+  userId?: string
 ) {
   const maxAge = rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
   cookieStore.set("swift-session-role", role, {
@@ -25,6 +45,14 @@ function setSessionCookies(
     sameSite: "lax",
     maxAge,
   });
+  if (userId) {
+    cookieStore.set("swift-session-user-id", userId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge,
+    });
+  }
 }
 
 function resolveDemoAccount(normalizedEmail: string) {
@@ -68,11 +96,24 @@ export async function authenticateUserAction(
 
   const normalizedEmail = email.trim().toLowerCase();
   const targetRedirect = PORTAL_CONFIG[selectedRole].defaultRoute;
-  const cookieStore = await cookies();
+  const cookieStore = await getSafeCookieStore();
 
   // 2. Demo account bypass check
   const demoAccount = resolveDemoAccount(normalizedEmail);
   if (demoAccount) {
+    // Check account status in ledger
+    const status =
+      (await getStaffUserStatus(normalizedEmail)) ||
+      (await getStaffUserStatus(demoAccount.id));
+
+    if (status === "Inactive" || status === "Suspended") {
+      return {
+        success: false,
+        error: INACTIVE_ACCOUNT_ERROR,
+        code: "ACCOUNT_INACTIVE",
+      };
+    }
+
     const session: UserSession = {
       id: demoAccount.id,
       email: normalizedEmail,
@@ -81,7 +122,7 @@ export async function authenticateUserAction(
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    setSessionCookies(cookieStore, demoAccount.role, demoAccount.name, rememberTerminal);
+    setSessionCookies(cookieStore, demoAccount.role, demoAccount.name, rememberTerminal, demoAccount.id);
 
     return {
       success: true,
@@ -106,6 +147,20 @@ export async function authenticateUserAction(
       };
     }
 
+    // Verify account status in profile ledger
+    const status =
+      (await getStaffUserStatus(data.user.id)) ||
+      (await getStaffUserStatus(normalizedEmail));
+
+    if (status === "Inactive" || status === "Suspended") {
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: INACTIVE_ACCOUNT_ERROR,
+        code: "ACCOUNT_INACTIVE",
+      };
+    }
+
     const role = selectedRole;
     const name = data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User";
 
@@ -117,7 +172,7 @@ export async function authenticateUserAction(
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    setSessionCookies(cookieStore, role, name, rememberTerminal);
+    setSessionCookies(cookieStore, role, name, rememberTerminal, data.user.id);
 
     return {
       success: true,
@@ -145,9 +200,12 @@ export async function logoutAction(): Promise<{ success: boolean; redirectTo: st
     // Graceful fallback if Supabase is offline
   }
 
-  const cookieStore = await cookies();
+  const cookieStore = await getSafeCookieStore();
   cookieStore.delete("swift-session-role");
   cookieStore.delete("swift-user-name");
+  cookieStore.delete("swift-session-user-id");
+  cookieStore.delete("swift_admin_elevated");
+  cookieStore.delete("swift_active_shift_id");
 
   return {
     success: true,

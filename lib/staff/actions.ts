@@ -173,11 +173,19 @@ async function verifyStaffPinFromSupabase(
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, role, pin_code, permissions')
+      .select('id, full_name, email, role, pin_code, permissions, status')
       .eq('id', profileId)
       .maybeSingle();
 
     if (!error && data) {
+      if (data.status === 'Inactive' || data.status === 'Suspended') {
+        return {
+          success: false,
+          code: 'ACCOUNT_INACTIVE',
+          error: 'Account is inactive. Please contact your workshop administrator.',
+        };
+      }
+
       const expectedPin = data.pin_code || DEFAULT_DEMO_PINS[profileId] || '1234';
       if (expectedPin === trimmedPin) {
         const roleKey = (data.role || 'cashier') as keyof typeof DEFAULT_ROLE_PERMISSIONS;
@@ -224,6 +232,14 @@ function verifyStaffPinOfflineFallback(
     };
   }
 
+  if (mockProfile.status === 'Inactive' || mockProfile.status === 'Suspended') {
+    return {
+      success: false,
+      code: 'ACCOUNT_INACTIVE',
+      error: 'Account is inactive. Please contact your workshop administrator.',
+    };
+  }
+
   const expectedPin = DEFAULT_DEMO_PINS[profileId] || '1234';
   if (trimmedPin !== expectedPin) {
     return {
@@ -257,6 +273,16 @@ export async function verifyStaffPinAction(
       success: false,
       code: 'INVALID_PIN',
       error: 'PIN must be exactly 4 numeric digits.',
+    };
+  }
+
+  const { getStaffUserStatus } = await import('../admin/user-actions.ts');
+  const userStatus = await getStaffUserStatus(profileId);
+  if (userStatus === 'Inactive' || userStatus === 'Suspended') {
+    return {
+      success: false,
+      code: 'ACCOUNT_INACTIVE',
+      error: 'Account is inactive. Please contact your workshop administrator.',
     };
   }
 
