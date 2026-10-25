@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { WorkOrderStatus } from '@/lib/types/service';
-import type { DetailedWorkOrder, WorkOrderLaborTask, WorkOrderRequiredPart } from '@/lib/types/workshop';
+import type { DetailedWorkOrder } from '@/lib/types/workshop';
 
 export type RepairStageBadge =
   | 'Pending'
