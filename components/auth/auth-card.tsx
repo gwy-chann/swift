@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { PortalRole, DemoAccount } from "@/lib/auth/types";
 import { DEMO_ACCOUNTS } from "@/lib/auth/constants";
 import { getSavedTerminalRole } from "@/lib/auth/storage";
+import { authenticateUserAction } from "@/lib/auth/actions";
+import { punchStore } from "@/lib/store/punch-store";
 import { RoleTabSwitcher } from "./role-tab-switcher";
 import { LoginForm } from "./login-form";
 import { DemoCredentialsBox } from "./demo-credentials-box";
@@ -26,6 +29,7 @@ interface AuthCardProps {
 }
 
 export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
+  const router = useRouter();
   const savedRole = useSyncExternalStore(
     subscribe,
     getClientSavedRole,
@@ -47,11 +51,34 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
     }
   }
 
-  function handleSelectDemo(account: DemoAccount) {
+  async function handleSelectDemo(account: DemoAccount) {
     setActiveRole(account.role);
     setEmail(account.email);
     if (account.defaultPassword) {
       setPassword(account.defaultPassword);
+    }
+
+    if (account.id) {
+      punchStore.switchStaff({
+        id: account.id,
+        name: account.name || account.label,
+        role: account.staffRole || account.role,
+      });
+    }
+
+    try {
+      const result = await authenticateUserAction({
+        email: account.email,
+        password: account.defaultPassword || "staff123••••••••",
+        selectedRole: account.role,
+        rememberTerminal,
+      });
+
+      if (result.success) {
+        router.push(account.targetUrl || result.redirectTo);
+      }
+    } catch (err) {
+      console.error("Auto authentication error:", err);
     }
   }
 

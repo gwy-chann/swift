@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, UserCheck, Layers } from "lucide-react";
+import Link from "next/link";
+import { Search, UserCheck, Layers, AlertTriangle, Clock, X } from "lucide-react";
 import type { DetailedWorkOrder, WorkshopQueueSummary } from "@/lib/types/workshop";
 import type { WorkOrderStatus } from "@/lib/types/service";
 import { usePunchStore } from "@/lib/store/punch-store";
@@ -43,9 +44,11 @@ export function WorkshopQueueClient({
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const { currentStaff, currentStaffRole } = usePunchStore();
+  const { currentStaff, currentStaffRole, isShiftActive, shiftStatus } = usePunchStore();
   const isAdmin = propIsAdmin !== undefined ? propIsAdmin : currentStaffRole === "admin";
+  const isTimedIn = Boolean(isAdmin || (isShiftActive && shiftStatus === "on_shift"));
   const mechanicName = currentStaff || "Dante Reyes";
   const currentMechanicId = DANTE_REYES_PROFILE_ID;
 
@@ -206,6 +209,11 @@ export function WorkshopQueueClient({
 
   // Atomic Status Transition Handler
   async function handleStatusChange(orderId: string, newStatus: WorkOrderStatus) {
+    if (newStatus === "COMPLETED" && !isTimedIn) {
+      setToastMessage("You must be timed in (on shift) to complete a job. Please clock in on the punch clock.");
+      return;
+    }
+
     setIsUpdating(true);
     const prevOrders = [...orders];
     const now = new Date().toISOString();
@@ -262,6 +270,11 @@ export function WorkshopQueueClient({
 
   // Claim Job Handler
   async function handleClaimJob(orderId: string) {
+    if (!isTimedIn) {
+      setToastMessage("You must be timed in (on shift) to claim a job. Please clock in on the punch clock.");
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const res = await claimWorkOrderAction(orderId, currentMechanicId, mechanicName, true);
@@ -279,18 +292,58 @@ export function WorkshopQueueClient({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      {/* Top Header & Metric Bar */}
-      <WorkshopQueueHeader
-        summary={summary}
-        mechanicName={mechanicName}
-        isRefreshing={isRefreshing}
-        onRefresh={handleRefresh}
-      />
+      {/* Off-Shift Attendance Guard Banner */}
+      {!isTimedIn && (
+        <div className="mb-4 p-3 sm:px-4 bg-danger-light border border-danger/30 text-danger rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            <span>
+              <strong>Shift Inactive:</strong> You are currently timed out. You must <strong>time in</strong> on the Punch Clock before claiming or completing work orders.
+            </span>
+          </div>
+          <Link
+            href="/staff/clock"
+            className="px-3 py-1.5 rounded-lg bg-bg-surface hover:bg-danger hover:text-white text-danger border border-danger/30 font-semibold text-xs shadow-xs transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            Go to Punch Clock
+          </Link>
+        </div>
+      )}
 
-      {/* Segmented View Tabs & Quick Filters Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
-        {/* Segment Tabs: My Active Jobs vs Workshop Bay Queue */}
-        <div className="flex items-center gap-1.5 p-1 bg-bg-surface border border-border rounded-lg shadow-xs self-start">
+      {/* Action Toast Alert Notification */}
+      {toastMessage && (
+        <div className="mb-4 p-3 bg-danger-light border border-danger/30 text-danger rounded-xl shadow-xs flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity cursor-pointer ml-2"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Controls Bar: Search (Left, Flex-1) & View Tabs (Right) Inside Card - Matches Pic 1 */}
+      <div className="p-3 sm:p-4 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 mb-5">
+        {/* Search Bar - Stretches across available space */}
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search plate, vehicle, or job #..."
+            className="w-full pl-9 pr-3 py-2 text-xs bg-bg-input border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-text-primary placeholder:text-text-muted outline-hidden transition-colors"
+          />
+        </div>
+
+        {/* Segment Tabs: My Active Jobs vs Workshop Bay Queue - Right Side */}
+        <div className="flex items-center gap-1.5 p-1 bg-bg-surface border border-border rounded-lg shadow-xs shrink-0 self-stretch sm:self-auto justify-center">
           <button
             type="button"
             onClick={() => setActiveTab("my-jobs")}
@@ -331,19 +384,10 @@ export function WorkshopQueueClient({
             </span>
           </button>
         </div>
-
-        {/* Search Bar */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search plate, vehicle, or job #..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-border-focus transition-colors shadow-xs"
-          />
-        </div>
       </div>
+
+      {/* KPI Cards Bar */}
+      <WorkshopQueueHeader summary={summary} />
 
       {/* Status Filter Pills Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-5 text-xs">
@@ -377,6 +421,7 @@ export function WorkshopQueueClient({
               onStatusChange={handleStatusChange}
               onClaimJob={handleClaimJob}
               isUpdating={isUpdating}
+              isTimedIn={isTimedIn}
             />
           ))}
         </div>
@@ -403,6 +448,7 @@ export function WorkshopQueueClient({
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
         isAdmin={isAdmin}
+        isTimedIn={isTimedIn}
         onAssignMechanic={handleAssignMechanic}
       />
     </div>

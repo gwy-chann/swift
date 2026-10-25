@@ -11,7 +11,7 @@ import {
 } from "@/lib/staff/navigation";
 import { StaffNavItemComponent } from "./staff-nav-item";
 import { logoutAction } from "@/lib/auth/actions";
-import { Wrench, LogOut, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { mapDbRoleToDisplay, type DbUserRole } from "@/lib/types/auth";
@@ -82,10 +82,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
       {/* Brand Header */}
       <div>
         <div className="p-5 flex items-center justify-between border-b border-white/10">
-          <Link href={homeHref} className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center text-white shadow-xs">
-              <Wrench className="w-4 h-4" />
-            </div>
+          <Link href={homeHref} className="flex items-center">
             <span className="text-lg font-black tracking-wider text-white">SWIFT</span>
           </Link>
           <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-secondary text-white uppercase tracking-widest shadow-xs">

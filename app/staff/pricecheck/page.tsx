@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition, useCallback } from 'react';
-import { Barcode, SearchX, Search, RotateCcw } from 'lucide-react';
+import { SearchX, Search, RotateCcw } from 'lucide-react';
 import { lookupProductPriceAction } from '@/lib/staff/actions';
 import type { ProductPriceCheckResult } from '@/lib/staff/types';
 import { PriceScanCard } from '@/components/staff/pricecheck/price-scan-card';
@@ -67,35 +67,21 @@ export default function StaffPriceCheckPage() {
     >
       {/* 1. Barcode & SKU Lookup Scanner Box (mockup/staff.html lines 226-238) */}
       <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Barcode className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-text-primary">
-                Instant Barcode &amp; Price Lookup Scanner
-              </h3>
-              <p className="text-xs text-text-muted">
-                Type SKU or scan barcode to view wholesale vs. retail breakdown, margin, and shelf location.
-              </p>
-            </div>
-          </div>
-
-          {hasQuery && (
+        {hasQuery && (
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => {
                 setQuery('');
                 setLookupResult(null);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors self-start sm:self-auto cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Clear</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Input Bar with Instant Button */}
         <div className="flex gap-2.5">

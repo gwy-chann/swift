@@ -26,6 +26,7 @@ interface WorkOrderCardProps {
   onStatusChange: (orderId: string, newStatus: WorkOrderStatus) => void;
   onClaimJob: (orderId: string) => void;
   isUpdating?: boolean;
+  isTimedIn?: boolean;
 }
 
 export function WorkOrderCard({
@@ -35,6 +36,7 @@ export function WorkOrderCard({
   onStatusChange,
   onClaimJob,
   isUpdating = false,
+  isTimedIn = true,
 }: Readonly<WorkOrderCardProps>) {
   const isAssignedToMe = Boolean(currentMechanicId && order.mechanicId === currentMechanicId);
   const isUnassigned = !order.mechanicId;
@@ -174,9 +176,14 @@ export function WorkOrderCard({
           {isUnassigned && order.status === "QUEUED" && (
             <button
               type="button"
-              disabled={isUpdating}
+              disabled={isUpdating || !isTimedIn}
               onClick={() => onClaimJob(order.id)}
-              className="px-3 py-1.5 rounded text-xs font-bold bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title={!isTimedIn ? "You must be timed in (on shift) to claim a job" : "Claim this job"}
+              className={`px-3 py-1.5 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1 ${
+                !isTimedIn
+                  ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+                  : "bg-primary hover:bg-primary-hover text-white cursor-pointer disabled:opacity-50"
+              }`}
             >
               <HandMetal className="w-3.5 h-3.5" />
               <span>Claim Job</span>
@@ -211,9 +218,14 @@ export function WorkOrderCard({
 
               <button
                 type="button"
-                disabled={isUpdating}
+                disabled={isUpdating || !isTimedIn}
                 onClick={() => onStatusChange(order.id, "COMPLETED")}
-                className="px-3 py-1.5 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Mark as Completed"}
+                className={`px-3 py-1.5 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1 ${
+                  !isTimedIn
+                    ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+                    : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+                }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Complete</span>
@@ -235,9 +247,14 @@ export function WorkOrderCard({
 
               <button
                 type="button"
-                disabled={isUpdating}
+                disabled={isUpdating || !isTimedIn}
                 onClick={() => onStatusChange(order.id, "COMPLETED")}
-                className="px-3 py-1.5 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Mark as Completed"}
+                className={`px-3 py-1.5 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1 ${
+                  !isTimedIn
+                    ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+                    : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+                }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Complete</span>

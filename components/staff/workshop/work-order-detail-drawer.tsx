@@ -32,6 +32,7 @@ interface WorkOrderDetailDrawerProps {
   onStatusChange: (orderId: string, newStatus: WorkOrderStatus) => void;
   isUpdating?: boolean;
   isAdmin?: boolean;
+  isTimedIn?: boolean;
   availableMechanics?: OnShiftMechanic[];
   onAssignMechanic?: (orderId: string, mechanicId: string, mechanicName: string) => void | Promise<void>;
 }
@@ -43,6 +44,7 @@ export function WorkOrderDetailDrawer({
   onStatusChange,
   isUpdating = false,
   isAdmin = false,
+  isTimedIn = true,
   availableMechanics: initialMechanics,
   onAssignMechanic,
 }: Readonly<WorkOrderDetailDrawerProps>) {
@@ -359,12 +361,17 @@ export function WorkOrderDetailDrawer({
 
                 <button
                   type="button"
-                  disabled={isUpdating}
+                  disabled={isUpdating || !isTimedIn}
                   onClick={() => {
                     onStatusChange(order.id, "COMPLETED");
                     onClose();
                   }}
-                  className="px-4 py-2 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Complete Service"}
+                  className={`px-4 py-2 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 ${
+                    !isTimedIn
+                      ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+                      : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+                  }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Complete Service</span>
@@ -389,12 +396,17 @@ export function WorkOrderDetailDrawer({
 
                 <button
                   type="button"
-                  disabled={isUpdating}
+                  disabled={isUpdating || !isTimedIn}
                   onClick={() => {
                     onStatusChange(order.id, "COMPLETED");
                     onClose();
                   }}
-                  className="px-4 py-2 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Complete Service"}
+                  className={`px-4 py-2 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 ${
+                    !isTimedIn
+                      ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+                      : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+                  }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Complete Service</span>

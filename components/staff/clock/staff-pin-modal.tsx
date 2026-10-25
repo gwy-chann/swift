@@ -6,11 +6,11 @@ import { verifyStaffPinAction } from "@/lib/staff/actions";
 import type { StaffKioskProfile } from "@/lib/staff/types";
 
 interface StaffPinModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  targetProfile: { id: string; name: string; role?: string; avatarInitials?: string };
-  onSuccess: (profile: StaffKioskProfile) => void;
-  actionContext?: "clock_in" | "switch_staff" | "clock_out" | "login";
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly targetProfile: { readonly id: string; readonly name: string; readonly role?: string; readonly avatarInitials?: string };
+  readonly onSuccess: (profile: StaffKioskProfile) => void;
+  readonly actionContext?: "clock_in" | "switch_staff" | "clock_out" | "login";
 }
 
 export function StaffPinModal({
@@ -19,7 +19,7 @@ export function StaffPinModal({
   targetProfile,
   onSuccess,
   actionContext = "clock_in",
-}: StaffPinModalProps) {
+}: Readonly<StaffPinModalProps>) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -81,7 +81,7 @@ export function StaffPinModal({
         const next = prev + digit;
         if (next.length === 4) {
           setTimeout(() => {
-            handleSubmit(next);
+            void handleSubmit(next);
           }, 0);
         }
         return next;
@@ -103,7 +103,7 @@ export function StaffPinModal({
       } else if (e.key === "Backspace") {
         handleBackspace();
       } else if (e.key === "Enter" && pin.length === 4) {
-        handleSubmit();
+        void handleSubmit();
       }
     }
 
@@ -123,11 +123,15 @@ export function StaffPinModal({
   }
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="pin-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-in fade-in duration-150"
     >
       <div className="bg-bg-surface border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-150">
         {/* Header */}
@@ -255,7 +259,7 @@ export function StaffPinModal({
           </button>
           <button
             type="button"
-            onClick={() => handleSubmit()}
+            onClick={() => void handleSubmit()}
             disabled={isVerifying || pin.length !== 4}
             className="flex-1 py-2.5 px-3 bg-primary hover:bg-primary-hover text-text-light rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
           >
@@ -263,6 +267,6 @@ export function StaffPinModal({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

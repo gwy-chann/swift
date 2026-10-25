@@ -158,8 +158,7 @@ export default function StaffCompatPage() {
         selectedModelId={selectedModel?.id}
         onSelectModel={handleSelectModel}
         onSelectUniversal={handleSelectUniversal}
-        title="Staff Floor MotoMatcher & Platform Selector"
-        subtitle="Select customer motorcycle platform to filter 100% verified parts from live inventory."
+        hideTitle={true}
       />
 
       {/* Subsystem Category & Universal Fitment Filter Bar */}

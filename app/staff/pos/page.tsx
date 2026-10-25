@@ -470,7 +470,7 @@ export default function StaffPosPage() {
           onSelectProduct={handleSelectProduct}
           onSelectService={handleSelectService}
           onScanNotFound={handleScanNotFound}
-          title="Fast-Lane Checkout"
+          showTitle={false}
         />
 
         {/* Right Pane: Hybrid Active Ticket & Cart */}

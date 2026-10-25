@@ -41,6 +41,10 @@ export interface MotorcycleSelectorProps {
    * Header subtitle override.
    */
   subtitle?: string;
+  /**
+   * Whether to hide the title and subtitle to prevent redundancy with the page topbar.
+   */
+  hideTitle?: boolean;
 }
 
 function getBrandLabel(brand: string): string {
@@ -58,6 +62,7 @@ export function MotorcycleSelector({
   className = "",
   title = "Select Motorcycle Make, Model & Displacement",
   subtitle = "Filter 100% verified motorcycle parts and compare OEM vs aftermarket compatibility.",
+  hideTitle = false,
 }: Readonly<MotorcycleSelectorProps>) {
   // Uncontrolled state when selectedModelId is not provided
   const [uncontrolledId, setUncontrolledId] = useState<string | null>(null);
@@ -121,28 +126,36 @@ export function MotorcycleSelector({
       data-testid="motorcycle-selector"
     >
       {/* Header & Title Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
-            <Bike className="w-5 h-5" />
+      {!hideTitle ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
+              <Bike className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-text-primary tracking-tight">
+                {title}
+              </h3>
+              <p className="text-xs text-text-secondary line-clamp-1">
+                {subtitle}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-text-primary tracking-tight">
-              {title}
-            </h3>
-            <p className="text-xs text-text-secondary line-clamp-1">
-              {subtitle}
-            </p>
+
+          {/* Count Badge */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-[11px] font-semibold text-text-muted bg-bg-card border border-border px-2.5 py-1 rounded-full">
+              {filteredModels.length} of {models.length} Platforms
+            </span>
           </div>
         </div>
-
-        {/* Count Badge */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+      ) : (
+        <div className="flex items-center justify-end">
           <span className="text-[11px] font-semibold text-text-muted bg-bg-card border border-border px-2.5 py-1 rounded-full">
             {filteredModels.length} of {models.length} Platforms
           </span>
         </div>
-      </div>
+      )}
 
       {/* Search Input Bar & Brand Filter Pills */}
       <div className="space-y-2.5 pt-1">

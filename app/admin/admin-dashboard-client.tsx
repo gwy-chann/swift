@@ -116,16 +116,6 @@ export function AdminDashboardClient({
 
   return (
     <div id="view-dashboard" className="space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* Welcome & Context Banner */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-          Operational Intelligence Dashboard
-        </h2>
-        <p className="text-xs sm:text-sm text-text-secondary mt-1">
-          Live workshop metrics, bay queue performance, and real-time revenue analytics.
-        </p>
-      </div>
-
       {/* 4 KPI Stat Cards Grid with Realtime POS Sales Subscription */}
       <AdminKpiGrid
         grossRevenue={grossRevenue}

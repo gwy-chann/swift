@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
@@ -40,7 +40,6 @@ export default function AdminPosPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
-
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
@@ -168,7 +167,7 @@ export default function AdminPosPage() {
 
     try {
       const result = await checkout({
-        cashier: "Admin Cashier",
+        cashier: "Carlos Rodriguez (Admin)",
         cashTendered,
         paymentMethod: "Cash",
         customerName: intakeData?.customerName,
@@ -219,19 +218,6 @@ export default function AdminPosPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Top Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center">
-          <ShoppingCart className="w-5 h-5" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-text-primary">Point of Sale (POS) Cashier</h2>
-          <p className="text-xs text-text-secondary">
-            Hybrid billing for parts sales, workshop bay labor line items, and dual-tier pricing.
-          </p>
-        </div>
-      </div>
-
       {/* High-Contrast Toast Notification Banner */}
       {toastMessage && (
         <output
@@ -260,24 +246,25 @@ export default function AdminPosPage() {
         </output>
       )}
 
-      {/* POS Terminal Workspace */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-13rem)]">
+      {/* POS Terminal Workspace: Admin does NOT need to time in */}
+      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-8.5rem)]">
         {/* Left Pane: Catalog */}
         <HybridCatalogPane
           products={products}
           laborServices={laborServices}
           onSelectProduct={handleSelectProduct}
           onSelectService={handleSelectService}
-          title="Parts & Services Catalog"
+          showTitle={false}
         />
 
-        {/* Right Pane: Hybrid Cart */}
+        {/* Right Pane: Hybrid Cart with isAdmin=true */}
         <HybridCartPane
           ticketNumber="TX-ADMIN-01"
           catalogProducts={products}
           onRequireOverride={handleRequireOverride}
           onCompleteSale={handleOpenPayment}
           isProcessing={isProcessing}
+          isAdmin={true}
         />
       </div>
 
@@ -322,4 +309,3 @@ export default function AdminPosPage() {
     </div>
   );
 }
-

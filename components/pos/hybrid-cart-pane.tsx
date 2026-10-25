@@ -17,6 +17,7 @@ export interface HybridCartPaneProps {
   isProcessing?: boolean;
   isShiftActive?: boolean;
   shiftStatus?: ShiftStateStatus;
+  isAdmin?: boolean;
 }
 
 function isDiscountTierActive(
@@ -83,12 +84,13 @@ export function HybridCartPane({
   onCompleteSale,
   isProcessing = false,
   isShiftActive: isShiftActiveProp,
-  shiftStatus: shiftStatusProp
+  shiftStatus: shiftStatusProp,
+  isAdmin = false
 }: Readonly<HybridCartPaneProps>) {
   const punchState = usePunchStore();
-  const shiftActive = isShiftActiveProp ?? punchState.isShiftActive;
-  const activeShiftStatus = shiftStatusProp ?? punchState.shiftStatus;
-  const isShiftReady = shiftActive && activeShiftStatus === 'on_shift';
+  const shiftActive = isAdmin ? true : (isShiftActiveProp ?? punchState.isShiftActive);
+  const activeShiftStatus = isAdmin ? 'on_shift' : (shiftStatusProp ?? punchState.shiftStatus);
+  const isShiftReady = isAdmin || (shiftActive && activeShiftStatus === 'on_shift');
   const shiftBanner = getShiftWarningBannerContent(activeShiftStatus);
 
   const {
@@ -112,7 +114,7 @@ export function HybridCartPane({
       return;
     }
 
-    const canOverride = punchState.currentPermissions?.can_override_discount;
+    const canOverride = isAdmin || punchState.currentPermissions?.can_override_discount;
     if (canOverride) {
       setDiscountTier(tierId);
     } else {
@@ -380,7 +382,7 @@ export function HybridCartPane({
         )}
 
         {/* Visual Inactive Shift Warning Indicator (SIAA-74) */}
-        {!isShiftReady && (
+        {!isAdmin && !isShiftReady && (
           <div
             data-testid="shift-inactive-warning-banner"
             className="p-2.5 rounded-lg bg-warning/15 border border-warning/40 text-warning flex items-center justify-between gap-2 shadow-2xs transition-all"
