@@ -68,6 +68,10 @@ export interface CheckoutPayload {
   receiptNumber?: string;
   cashierId?: string | null;
   cashierName?: string;
+  customerName?: string;
+  vehicleModel?: string;
+  plateNumber?: string;
+  notes?: string | null;
   pricingMode: PricingMode;
   subtotal: number;
   discountType?: TransactionDiscountType | null;
@@ -88,6 +92,8 @@ export type CheckoutActionResult =
       receiptNumber: string;
       itemsCount: number;
       partsDecremented: number;
+      workOrdersCreated?: number;
+      workOrderNumbers?: string[];
       createdAt: string;
     }
   | {
