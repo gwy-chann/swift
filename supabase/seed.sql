@@ -374,9 +374,9 @@ VALUES
         'Mike Morales',
         'Terminal #02',
         timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '8 hours'),
-        NULL,
-        0,
-        'on_shift',
+        timezone('utc'::text, now() - INTERVAL '1 day' + INTERVAL '17 hours'),
+        32400,
+        'completed',
         'Baseline demo shift'
     ),
     (
