@@ -19,7 +19,12 @@ interface AdminRepairsClientProps {
   initialSummary: RepairsDashboardKpiSummary;
   availableMechanics: { id: string; name: string; status: string }[];
   baysList: { id: string; name: string }[];
-  onRefresh: () => Promise<{ items: AdminMotorRepairItem[]; summary: RepairsDashboardKpiSummary } | null>;
+  onRefresh: () => Promise<{
+    items: AdminMotorRepairItem[];
+    summary: RepairsDashboardKpiSummary;
+    mechanics?: { id: string; name: string; status: string }[];
+  } | null>;
+  onFetchOnShiftMechanics?: () => Promise<{ id: string; name: string; status: string }[]>;
   onReassignMechanic: (
     workOrderId: string,
     orderNumber: string,
@@ -36,10 +41,12 @@ export function AdminRepairsClient({
   availableMechanics,
   baysList,
   onRefresh,
+  onFetchOnShiftMechanics,
   onReassignMechanic,
 }: Readonly<AdminRepairsClientProps>) {
   const [items, setItems] = useState<AdminMotorRepairItem[]>(initialItems);
   const [summary, setSummary] = useState<RepairsDashboardKpiSummary>(initialSummary);
+  const [liveMechanics, setLiveMechanics] = useState<{ id: string; name: string; status: string }[]>(availableMechanics);
   const [selectedItem, setSelectedItem] = useState<AdminMotorRepairItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isPending, startTransition] = useTransition();
@@ -57,9 +64,9 @@ export function AdminRepairsClient({
     items.forEach((item) => {
       if (item.mechanicName) names.add(item.mechanicName);
     });
-    availableMechanics.forEach((m) => names.add(m.name));
+    liveMechanics.forEach((m) => names.add(m.name));
     return Array.from(names);
-  }, [items, availableMechanics]);
+  }, [items, liveMechanics]);
 
   const filteredItems = useMemo(() => {
     return filterAdminRepairs(items, filters);
@@ -72,6 +79,11 @@ export function AdminRepairsClient({
   function handleOpenDrawer(item: AdminMotorRepairItem) {
     setSelectedItem(item);
     setIsDrawerOpen(true);
+    if (onFetchOnShiftMechanics) {
+      void onFetchOnShiftMechanics().then((mechs) => {
+        if (mechs) setLiveMechanics(mechs);
+      });
+    }
   }
 
   function handleCloseDrawer() {
@@ -84,6 +96,9 @@ export function AdminRepairsClient({
       if (refreshed) {
         setItems(refreshed.items);
         setSummary(refreshed.summary);
+        if (refreshed.mechanics) {
+          setLiveMechanics(refreshed.mechanics);
+        }
         if (selectedItem) {
           const updatedSelected = refreshed.items.find((i) => i.id === selectedItem.id);
           if (updatedSelected) {
@@ -207,7 +222,7 @@ export function AdminRepairsClient({
         item={selectedItem}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
-        availableMechanics={availableMechanics}
+        availableMechanics={liveMechanics}
         onReassignMechanic={handleReassign}
       />
     </div>

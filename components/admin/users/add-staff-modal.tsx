@@ -6,9 +6,9 @@ import type { StaffUserSummary } from "@/specs/030-supabase-rbac-extension-granu
 import { provisionStaffUserAction } from "@/lib/admin/user-actions";
 
 interface AddStaffModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onStaffAdded: (newUser: StaffUserSummary) => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onStaffAdded: (newUser: StaffUserSummary) => void;
 }
 
 const ROLE_OPTIONS = [
@@ -19,7 +19,7 @@ const ROLE_OPTIONS = [
 
 type ProvisionableRole = (typeof ROLE_OPTIONS)[number]["value"];
 
-export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalProps) {
+export function AddStaffModal({ isOpen, onClose, onStaffAdded }: Readonly<AddStaffModalProps>) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ProvisionableRole>("cashier");
@@ -54,6 +54,9 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
       return;
     }
 
+    const effectivePassword = trimmedPassword || "staff123";
+    const effectivePin = trimmedPin || "1234";
+
     setLoading(true);
 
     try {
@@ -61,8 +64,8 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
         fullName: trimmedName,
         email: trimmedEmail,
         role,
-        password: trimmedPassword || undefined,
-        pin: trimmedPin || undefined,
+        password: effectivePassword,
+        pin: effectivePin,
       });
 
       if (!result.success || !result.data) {
@@ -87,11 +90,15 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
   };
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="add-staff-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-fadeIn"
     >
       <div className="bg-bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
@@ -105,7 +112,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
                 Provision New Employee
               </h3>
               <p className="text-xs text-text-secondary">
-                Configure profile, credentials, and workstation role
+                Configure profile, credentials, and role (Employee ID is assigned automatically)
               </p>
             </div>
           </div>
@@ -169,7 +176,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
           {/* Temporary Password & Numeric PIN Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="staff-password" className="block text-xs font-semibold text-text-primary mb-1 flex items-center gap-1">
+              <label htmlFor="staff-password" className="flex items-center gap-1 text-xs font-semibold text-text-primary mb-1">
                 <KeyRound className="w-3.5 h-3.5 text-text-secondary" />
                 <span>Temporary Password</span>
               </label>
@@ -179,13 +186,13 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 6 characters"
+                placeholder="Min 6 characters (default: staff123)"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-bg-surface border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               />
             </div>
 
             <div>
-              <label htmlFor="staff-pin" className="block text-xs font-semibold text-text-primary mb-1 flex items-center gap-1">
+              <label htmlFor="staff-pin" className="flex items-center gap-1 text-xs font-semibold text-text-primary mb-1">
                 <Hash className="w-3.5 h-3.5 text-text-secondary" />
                 <span>Numeric PIN</span>
               </label>
@@ -197,7 +204,7 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
                 maxLength={6}
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="4 to 6 numeric digits"
+                placeholder="4 to 6 numeric digits (default: 1234)"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-bg-surface border border-border text-sm text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               />
             </div>
@@ -248,6 +255,6 @@ export function AddStaffModal({ isOpen, onClose, onStaffAdded }: AddStaffModalPr
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 }

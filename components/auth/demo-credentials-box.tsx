@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ALL_DEMO_ACCOUNTS } from "@/lib/auth/constants";
 import { DemoAccount } from "@/lib/auth/types";
 import { KeyRound } from "lucide-react";
 import { StaffPinModal } from "@/components/staff/clock/staff-pin-modal";
 import type { StaffKioskProfile } from "@/lib/staff/types";
+import { listStaffUsersAction } from "@/lib/admin/user-actions";
 
 interface DemoCredentialsBoxProps {
   onSelectDemo: (account: DemoAccount) => void;
@@ -17,12 +18,52 @@ interface DemoCredentialsBoxProps {
  * Displays credentials for Admin and shop floor staff (Cashier, Mechanic, Inventory Clerk)
  * and prompts for employee PIN code just like the terminal punch clock
  */
+function mergeDemoAccountsWithUsers(
+  prevAccounts: DemoAccount[],
+  users: Awaited<ReturnType<typeof listStaffUsersAction>>
+): DemoAccount[] {
+  return prevAccounts.map((acc) => {
+    const matched = users.find(
+      (u) => u.id === acc.id || u.email.toLowerCase() === acc.email.toLowerCase()
+    );
+    if (matched) {
+      return {
+        ...acc,
+        name: matched.fullName,
+        role: matched.role === "admin" ? "admin" : "staff",
+        staffRole: matched.role,
+        label: matched.roleDisplay,
+        buttonLabel: `Use ${matched.role === "inventory_clerk" ? "Clerk" : matched.roleDisplay}`,
+      };
+    }
+    return acc;
+  });
+}
+
 export function DemoCredentialsBox({
   onSelectDemo,
   disabled = false,
 }: Readonly<DemoCredentialsBoxProps>) {
+  const [accounts, setAccounts] = useState<DemoAccount[]>(ALL_DEMO_ACCOUNTS);
   const [selectedAccount, setSelectedAccount] = useState<DemoAccount | null>(null);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    listStaffUsersAction()
+      .then((users) => {
+        if (isMounted && users && users.length > 0) {
+          setAccounts((prev) => mergeDemoAccountsWithUsers(prev, users));
+        }
+      })
+      .catch(() => {
+        // Fallback to ALL_DEMO_ACCOUNTS
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function handleAccountClick(account: DemoAccount) {
     setSelectedAccount(account);
@@ -37,6 +78,8 @@ export function DemoCredentialsBox({
       id: profile.id,
       name: profile.name,
       role: selectedAccount.role,
+      staffRole: profile.role || selectedAccount.staffRole,
+      label: profile.roleDisplay || selectedAccount.label,
     });
     setSelectedAccount(null);
   }
@@ -52,7 +95,7 @@ export function DemoCredentialsBox({
       </div>
 
       <div className="space-y-2">
-        {ALL_DEMO_ACCOUNTS.map((account) => {
+        {accounts.map((account) => {
           const isAdmin = account.role === "admin";
           const initials = (account.name || account.label)
             .split(" ")

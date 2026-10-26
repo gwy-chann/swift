@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, UserCheck, Layers, AlertTriangle, Clock, X } from "lucide-react";
+import { Search, UserCheck, Layers, AlertTriangle, X } from "lucide-react";
 import type { DetailedWorkOrder, WorkshopQueueSummary } from "@/lib/types/workshop";
 import type { WorkOrderStatus } from "@/lib/types/service";
 import { usePunchStore } from "@/lib/store/punch-store";
@@ -43,14 +43,13 @@ export function WorkshopQueueClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const { currentStaff, currentStaffRole, isShiftActive, shiftStatus } = usePunchStore();
-  const isAdmin = propIsAdmin !== undefined ? propIsAdmin : currentStaffRole === "admin";
+  const { currentStaff, currentStaffRole, isShiftActive, shiftStatus, currentProfileId } = usePunchStore();
+  const isAdmin = propIsAdmin ?? (currentStaffRole === "admin");
   const isTimedIn = Boolean(isAdmin || (isShiftActive && shiftStatus === "on_shift"));
   const mechanicName = currentStaff || "Dante Reyes";
-  const currentMechanicId = DANTE_REYES_PROFILE_ID;
+  const currentMechanicId = currentProfileId || DANTE_REYES_PROFILE_ID;
 
   const selectedOrder = useMemo(() => {
     if (!selectedOrderId) return null;
@@ -59,7 +58,6 @@ export function WorkshopQueueClient({
 
   // Refresh Queue from Server
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
     try {
       const res = await fetchWorkshopOrdersAction();
       if (res.success && res.data) {
@@ -67,8 +65,6 @@ export function WorkshopQueueClient({
       }
     } catch (err) {
       console.error("[Workshop Queue] Failed to refresh queue:", err);
-    } finally {
-      setIsRefreshing(false);
     }
   }, []);
 
@@ -77,7 +73,7 @@ export function WorkshopQueueClient({
     if (typeof window === "undefined") return;
 
     const handlePosCheckout = () => {
-      handleRefresh();
+      void handleRefresh();
     };
 
     window.addEventListener("swift:pos:checkout", handlePosCheckout);
@@ -159,7 +155,12 @@ export function WorkshopQueueClient({
   // Calculate Summary KPIs
   const summary: WorkshopQueueSummary = useMemo(() => {
     const activeJobs = orders.filter((o) => o.status === "IN PROGRESS" || o.status === "QUEUED" || o.status === "PENDING_PARTS");
-    const myJobs = activeJobs.filter((o) => o.mechanicId === currentMechanicId || (!o.mechanicId && activeTab === "all-bays"));
+    const myJobs = activeJobs.filter(
+      (o) =>
+        o.mechanicId === currentMechanicId ||
+        (o.mechanicName?.toLowerCase() === mechanicName.toLowerCase()) ||
+        (!o.mechanicId && activeTab === "all-bays")
+    );
     const pendingParts = orders.filter((o) => o.status === "PENDING_PARTS");
     const completedToday = orders.filter((o) => o.status === "COMPLETED");
     const activeBays = orders.filter((o) => o.status === "IN PROGRESS" || o.status === "PENDING_PARTS");
@@ -172,7 +173,7 @@ export function WorkshopQueueClient({
       activeBaysCount: Math.min(4, activeBays.length),
       totalBaysCount: 4,
     };
-  }, [orders, currentMechanicId, activeTab]);
+  }, [orders, currentMechanicId, mechanicName, activeTab]);
 
   // Filter Orders based on Tab, Status, and Search Query
   const filteredOrders = useMemo(() => {
@@ -180,7 +181,10 @@ export function WorkshopQueueClient({
       // 1. Tab Segmentation
       if (activeTab === "my-jobs") {
         // Display orders assigned to current mechanic
-        const isMine = order.mechanicId === currentMechanicId || order.mechanicName?.toLowerCase().includes("dante");
+        const isMine =
+          order.mechanicId === currentMechanicId ||
+          (order.mechanicName?.toLowerCase() === mechanicName.toLowerCase()) ||
+          (!currentProfileId && order.mechanicName?.toLowerCase().includes("dante"));
         if (!isMine) return false;
       }
 
@@ -205,7 +209,7 @@ export function WorkshopQueueClient({
 
       return true;
     });
-  }, [orders, activeTab, selectedStatus, searchQuery, currentMechanicId]);
+  }, [orders, activeTab, selectedStatus, searchQuery, currentMechanicId, currentProfileId, mechanicName]);
 
   // Atomic Status Transition Handler
   async function handleStatusChange(orderId: string, newStatus: WorkOrderStatus) {

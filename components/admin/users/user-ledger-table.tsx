@@ -27,8 +27,25 @@ interface UserLedgerTableProps {
   initialUsers: StaffUserSummary[];
 }
 
+function parseEmpNumber(empId?: string): number {
+  if (!empId) return 999999;
+  const match = empId.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 999999;
+}
+
+function sortStaffUsers(staffList: StaffUserSummary[]): StaffUserSummary[] {
+  return [...staffList].sort((a, b) => {
+    const numA = parseEmpNumber(a.employeeId);
+    const numB = parseEmpNumber(b.employeeId);
+    if (numA !== numB) {
+      return numA - numB;
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+}
+
 export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>) {
-  const [users, setUsers] = useState<StaffUserSummary[]>(initialUsers);
+  const [users, setUsers] = useState<StaffUserSummary[]>(() => sortStaffUsers(initialUsers));
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -101,7 +118,8 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
         !q ||
         u.fullName.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q);
+        u.role.toLowerCase().includes(q) ||
+        (u.employeeId && u.employeeId.toLowerCase().includes(q));
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
       const matchesStatus =
         statusFilter === "all" || u.status === statusFilter;
@@ -110,7 +128,7 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
   }, [users, searchQuery, roleFilter, statusFilter]);
 
   const handleStaffAdded = (newUser: StaffUserSummary) => {
-    setUsers((prev) => [newUser, ...prev]);
+    setUsers((prev) => [...prev, newUser]);
   };
 
   const handleStaffUpdated = (updatedUser: StaffUserSummary) => {
@@ -208,7 +226,7 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search staff by name, email, or role..."
+            placeholder="Search staff by name, email, role, or ID..."
             aria-label="Search staff members"
             className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-bg-input text-text-primary rounded-md border border-border focus:outline-hidden focus:border-border-focus focus:ring-1 focus:ring-border-focus placeholder:text-text-muted transition-colors"
           />
@@ -239,7 +257,6 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
               <option value="inventory_clerk">Inventory Clerks</option>
               <option value="cashier">Cashiers</option>
               <option value="mechanic">Mechanics</option>
-              <option value="staff">Staff</option>
             </select>
           </div>
 
@@ -327,6 +344,7 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
             <thead>
               <tr className="border-b border-border bg-bg-surface/50 text-[11px] font-bold text-text-secondary uppercase tracking-wider">
                 <th className="py-3 px-4">Employee</th>
+                <th className="py-3 px-4">Employee ID</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -335,7 +353,7 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
             <tbody id="usersTableBody" className="divide-y divide-border text-xs">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-text-muted">
+                  <td colSpan={5} className="p-8 text-center text-text-muted">
                     No employee accounts found matching the criteria.
                   </td>
                 </tr>
@@ -367,6 +385,13 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
                             </div>
                           </div>
                         </div>
+                      </td>
+
+                      {/* Employee ID */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono text-xs font-semibold bg-bg-muted text-text-secondary border border-border">
+                          {user.employeeId || "—"}
+                        </span>
                       </td>
 
                       {/* Role Pill */}

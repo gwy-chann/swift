@@ -17,7 +17,8 @@ function getLabelColor(isShiftActive: boolean, shiftStatus: string): string {
   return "text-success";
 }
 
-function getLabelText(shiftStatus: string): string {
+function getLabelText(isShiftActive: boolean, shiftStatus: string): string {
+  if (!isShiftActive) return "Shift: Off";
   if (shiftStatus === "break") return "On Break:";
   return "Active Shift:";
 }
@@ -34,7 +35,7 @@ export function ShiftDurationTimer({
 
   const { formattedTimer, isShiftActive, shiftStatus } = usePunchStore();
   const labelColor = getLabelColor(isShiftActive, shiftStatus);
-  const labelText = getLabelText(shiftStatus);
+  const labelText = getLabelText(isShiftActive, shiftStatus);
 
   return (
     <div className={`flex items-center gap-1.5 text-xs ${className}`}>
@@ -49,7 +50,7 @@ export function ShiftDurationTimer({
           isShiftActive ? "text-text-primary" : "text-text-muted opacity-80"
         }`}
       >
-        {isClient ? formattedTimer : "04:12:30"}
+        {isClient && isShiftActive ? formattedTimer : "00:00:00"}
       </strong>
     </div>
   );

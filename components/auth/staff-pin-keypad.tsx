@@ -34,7 +34,7 @@ export function StaffPinKeypad({
     (digit: string) => {
       if (isVerifying) return;
       setErrorMessage(null);
-      setPin((prev) => (prev.length < 6 ? prev + digit : prev));
+      setPin((prev) => (prev.length < 4 ? prev + digit : prev));
     },
     [isVerifying]
   );
@@ -53,8 +53,8 @@ export function StaffPinKeypad({
 
   const handleVerifyPin = useCallback(async () => {
     if (isVerifying) return;
-    if (pin.length < 4 || pin.length > 6) {
-      setErrorMessage("PIN must consist of 4 to 6 numeric digits.");
+    if (pin.length !== 4) {
+      setErrorMessage("PIN must consist of 4 numeric digits.");
       return;
     }
 
@@ -74,12 +74,13 @@ export function StaffPinKeypad({
         return;
       }
 
-      // Sync active staff in punchStore for terminal compatibility
+      // Sync active staff in punchStore for terminal compatibility (starts off-shift, waiting for user to time in)
       if (staffSummary.userId) {
         punchStore.switchStaff({
           id: staffSummary.userId,
           name: staffSummary.name,
           role: staffSummary.role,
+          startOffShift: true,
         });
       }
 
@@ -108,7 +109,7 @@ export function StaffPinKeypad({
         handleClear();
       } else if (e.key === "Enter") {
         e.preventDefault();
-        if (pin.length >= 4) {
+        if (pin.length === 4) {
           handleVerifyPin();
         }
       }
@@ -160,7 +161,7 @@ export function StaffPinKeypad({
           Enter Your Staff PIN
         </h2>
         <p className="text-xs text-text-muted mt-0.5">
-          Type your 4 to 6 digit security PIN on the keypad
+          Type your 4-digit security PIN on the keypad
         </p>
       </div>
 
@@ -180,7 +181,7 @@ export function StaffPinKeypad({
         className="flex items-center justify-center gap-2.5 py-2.5"
         aria-label={`PIN entered: ${pin.length} digits`}
       >
-        {[0, 1, 2, 3, 4, 5].map((index) => {
+        {[0, 1, 2, 3].map((index) => {
           const isFilled = pin.length > index;
           return (
             <div
@@ -242,10 +243,10 @@ export function StaffPinKeypad({
       {/* Submit Button */}
       <button
         type="button"
-        disabled={isVerifying || pin.length < 4}
+        disabled={isVerifying || pin.length !== 4}
         onClick={handleVerifyPin}
         className={`w-full mt-2 py-3 px-4 rounded-md font-bold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm bg-secondary hover:bg-secondary-hover active:scale-[0.99] ${
-          isVerifying || pin.length < 4 ? "opacity-75 cursor-not-allowed" : ""
+          isVerifying || pin.length !== 4 ? "opacity-75 cursor-not-allowed" : ""
         }`}
       >
         {isVerifying ? (

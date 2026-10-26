@@ -6,16 +6,16 @@ import { usePathname } from "next/navigation";
 import { getStaffViewTitle, DEFAULT_STAFF_SHIFT } from "@/lib/staff/navigation";
 import { ShiftDurationTimer } from "./shift-duration-timer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, ShieldCheck, Monitor, ShoppingCart } from "lucide-react";
+import { Menu, Monitor, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
 
 interface StaffTopbarProps {
   onMenuToggle: () => void;
-  onOpenAdminSwitch: () => void;
+  onOpenAdminSwitch?: () => void;
 }
 
-export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProps) {
+export function StaffTopbar({ onMenuToggle }: Readonly<StaffTopbarProps>) {
   const pathname = usePathname();
   const currentTitle = getStaffViewTitle(pathname);
   const { totals } = useCartStore();
@@ -47,7 +47,7 @@ export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProp
         </div>
       </div>
 
-      {/* Right Area: Shift duration, theme toggle, POS cart indicator & Admin Portal Access */}
+      {/* Right Area: Shift duration, theme toggle, POS cart indicator */}
       <div className="flex items-center gap-2.5 lg:gap-4">
         {/* Quick-Access POS Cart Badge */}
         {canAccessPos && cartItemCount > 0 && (
@@ -69,19 +69,6 @@ export function StaffTopbar({ onMenuToggle, onOpenAdminSwitch }: StaffTopbarProp
 
         {/* Theme Toggle */}
         <ThemeToggle />
-
-        {/* Admin Portal Switch Trigger */}
-        <button
-          type="button"
-          id="btnAdminPortalAccess"
-          data-testid="admin-portal-switch"
-          onClick={onOpenAdminSwitch}
-          className="flex items-center gap-1.5 py-1.5 px-3 rounded-md bg-secondary hover:bg-secondary-hover text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Admin Portal Access</span>
-          <span className="sm:hidden">Admin</span>
-        </button>
       </div>
     </header>
   );

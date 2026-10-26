@@ -11,6 +11,7 @@ import {
 } from "@/lib/staff/navigation";
 import { StaffNavItemComponent } from "./staff-nav-item";
 import { logoutAction } from "@/lib/auth/actions";
+import { clockOutShiftAction } from "@/lib/staff/actions";
 import { LogOut, Loader2 } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
 import { usePunchStore } from "@/lib/store/punch-store";
@@ -38,7 +39,16 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { totals } = useCartStore();
   const cartItemCount = totals?.itemCount ?? 0;
-  const { isShiftActive, shiftStatus, currentStaff, currentStaffRole } = usePunchStore();
+  const {
+    isShiftActive,
+    shiftStatus,
+    currentStaff,
+    currentStaffRole,
+    currentProfileId,
+    activeShiftId,
+    clockOut,
+    resetShiftOnLogout,
+  } = usePunchStore();
 
   const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, currentStaffRole);
   const primaryRoute = getRolePrimaryRoute(currentStaffRole);
@@ -60,6 +70,16 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
   async function handleLogout() {
     setIsLoggingOut(true);
     try {
+      if (isShiftActive) {
+        try {
+          const shiftId = activeShiftId || "";
+          clockOut(displayName, currentProfileId);
+          await clockOutShiftAction(shiftId, "Auto clock-out on staff logout", currentProfileId);
+        } catch (clockErr) {
+          console.warn("Auto clock-out on logout error:", clockErr);
+        }
+      }
+      resetShiftOnLogout(currentProfileId);
       const result = await logoutAction();
       router.push(result.redirectTo);
     } catch (err) {

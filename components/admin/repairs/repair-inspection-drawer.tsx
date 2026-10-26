@@ -346,19 +346,26 @@ export function RepairInspectionDrawer({
                 >
                   Select On-Shift Mechanic
                 </label>
-                <select
-                  id="mechanic-select"
-                  value={selectedMechanicId}
-                  onChange={(e) => setSelectedMechanicId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle text-xs text-text-primary focus:outline-hidden focus:border-primary"
-                >
-                  <option value="">-- Choose on-shift technician --</option>
-                  {availableMechanics.map((mech) => (
-                    <option key={mech.id} value={mech.id}>
-                      {mech.name} ({mech.status === 'on_shift' ? 'Active On Shift' : 'Clocked In'})
-                    </option>
-                  ))}
-                </select>
+                {availableMechanics.length === 0 ? (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2">
+                    <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>No mechanics are currently timed in (on shift). Mechanics must clock in on the punch clock before work orders can be assigned.</span>
+                  </div>
+                ) : (
+                  <select
+                    id="mechanic-select"
+                    value={selectedMechanicId}
+                    onChange={(e) => setSelectedMechanicId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle text-xs text-text-primary focus:outline-hidden focus:border-primary"
+                  >
+                    <option value="">-- Choose on-shift technician --</option>
+                    {availableMechanics.map((mech) => (
+                      <option key={mech.id} value={mech.id}>
+                        {mech.name} (Active On Shift)
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>

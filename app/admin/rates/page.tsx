@@ -174,8 +174,17 @@ export default function AdminRatesPage() {
   };
 
   const handleToggleStatus = async (service: LaborService) => {
-    const nextStatus = service.active === false;
+    const isCurrentlyActive = service.active !== false;
+    const nextStatus = !isCurrentlyActive;
     const idToUse = service.id || service.code;
+
+    // Optimistically update UI so the status badge changes immediately
+    setServices((prev) =>
+      prev.map((s) =>
+        s.code === service.code ? { ...s, active: nextStatus } : s
+      )
+    );
+
     const res = await toggleServiceStatusAction(idToUse, nextStatus);
     if (res.success && res.data) {
       setServices((prev) =>
@@ -183,6 +192,16 @@ export default function AdminRatesPage() {
       );
       showNotification(
         `${nextStatus ? "Restored" : "Archived"} service ${service.name}`
+      );
+    } else {
+      // Revert if error
+      setServices((prev) =>
+        prev.map((s) =>
+          s.code === service.code ? { ...s, active: isCurrentlyActive } : s
+        )
+      );
+      showNotification(
+        `Failed to ${nextStatus ? "restore" : "archive"} service: ${res.error || "Operation failed"}`
       );
     }
   };
@@ -379,6 +398,7 @@ export default function AdminRatesPage() {
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
         onCreate={handleCreateService}
+        existingCodes={services.map((s) => s.code)}
       />
     </section>
   );

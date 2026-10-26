@@ -45,6 +45,7 @@ function resolveRawDataset(
       if ("day_label" in d) {
         return {
           day: d.day_label,
+          date: d.date,
           partsAmount: d.parts_amount,
           partsDisplay: d.parts_display || `₱${(d.parts_amount / 1000).toFixed(1)}k`,
           laborAmount: d.labor_amount,

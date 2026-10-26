@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { getAdminViewTitle } from "@/lib/admin/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, ArrowRightLeft } from "lucide-react";
+import { Menu } from "lucide-react";
 
 interface AdminTopbarProps {
   onOpenMobileMenu?: () => void;
@@ -12,12 +12,7 @@ interface AdminTopbarProps {
 
 export function AdminTopbar({ onOpenMobileMenu }: AdminTopbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const title = getAdminViewTitle(pathname);
-
-  function handleSwitchPortal() {
-    router.push("/staff/pos");
-  }
 
   return (
     <header className="h-16 px-4 sm:px-6 bg-bg-surface border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-10 select-none print:hidden">
@@ -45,19 +40,9 @@ export function AdminTopbar({ onOpenMobileMenu }: AdminTopbarProps) {
           <span className="text-text-secondary text-[11px] font-medium">Terminal #01</span>
         </div>
 
-        {/* Switch Portal Button */}
-        <button
-          type="button"
-          onClick={handleSwitchPortal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-white text-xs font-semibold hover:bg-secondary-hover active:scale-[0.98] transition-all cursor-pointer shadow-xs"
-        >
-          <ArrowRightLeft className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Switch to Staff Portal</span>
-          <span className="sm:hidden">Staff POS</span>
-        </button>
-
         <ThemeToggle />
       </div>
     </header>
   );
 }
+

@@ -66,6 +66,25 @@ export default function StaffPosPage() {
     }, 5000);
   }, []);
 
+  // Display redirect toast if routed from unauthorized workspace
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      if (typeof window !== "undefined") {
+        const storedToast = sessionStorage.getItem("swift_staff_redirect_toast");
+        if (storedToast) {
+          sessionStorage.removeItem("swift_staff_redirect_toast");
+          timer = setTimeout(() => {
+            showToast("error", storedToast);
+          }, 0);
+        }
+      }
+    } catch {}
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showToast]);
+
   // SIAA-85: Route guard redirecting non-cashier roles (mechanic, inventory_clerk, staff) to authorized workspace
   useEffect(() => {
     if (isUnauthorizedRole) {

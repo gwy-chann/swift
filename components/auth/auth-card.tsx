@@ -1,15 +1,10 @@
 "use client";
 
 import React, { useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
-import { PortalRole, DemoAccount } from "@/lib/auth/types";
-import { DEMO_ACCOUNTS } from "@/lib/auth/constants";
+import { PortalRole } from "@/lib/auth/types";
 import { getSavedTerminalRole } from "@/lib/auth/storage";
-import { authenticateUserAction } from "@/lib/auth/actions";
-import { punchStore } from "@/lib/store/punch-store";
 import { RoleTabSwitcher } from "./role-tab-switcher";
 import { LoginForm } from "./login-form";
-import { DemoCredentialsBox } from "./demo-credentials-box";
 
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -29,7 +24,6 @@ interface AuthCardProps {
 }
 
 export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
-  const router = useRouter();
   const savedRole = useSyncExternalStore(
     subscribe,
     getClientSavedRole,
@@ -41,49 +35,12 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
     initialNotice === "pin_challenge_pending" || initialNotice === "pin_required";
   const selectedRole = activeRole ?? (isPinChallengeNotice ? "staff" : savedRole);
 
-  const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[selectedRole].email);
-
-  const [password, setPassword] = useState<string>("••••••••••••");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [rememberTerminal, setRememberTerminal] = useState<boolean>(true);
 
   function handleRoleChange(newRole: PortalRole) {
     setActiveRole(newRole);
-    const otherRole: PortalRole = newRole === "admin" ? "staff" : "admin";
-    if (email === DEMO_ACCOUNTS[otherRole].email) {
-      setEmail(DEMO_ACCOUNTS[newRole].email);
-    }
-  }
-
-  async function handleSelectDemo(account: DemoAccount) {
-    setActiveRole(account.role);
-    setEmail(account.email);
-    if (account.defaultPassword) {
-      setPassword(account.defaultPassword);
-    }
-
-    if (account.id) {
-      punchStore.switchStaff({
-        id: account.id,
-        name: account.name || account.label,
-        role: account.staffRole || account.role,
-      });
-    }
-
-    try {
-      const result = await authenticateUserAction({
-        email: account.email,
-        password: account.defaultPassword || "staff123••••••••",
-        selectedRole: account.role,
-        rememberTerminal,
-      });
-
-      if (result.success) {
-        const dest = account.targetUrl || result.redirectTo || (account.role === "admin" ? "/admin" : "/staff/pos");
-        router.push(dest);
-      }
-    } catch (err) {
-      console.error("Auto authentication error:", err);
-    }
   }
 
   return (
@@ -105,9 +62,6 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
         setRememberTerminal={setRememberTerminal}
         initialNotice={initialNotice}
       />
-
-      {/* Demo Credentials Quick-Fill Box */}
-      <DemoCredentialsBox onSelectDemo={handleSelectDemo} />
     </div>
   );
 }

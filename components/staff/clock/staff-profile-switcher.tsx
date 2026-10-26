@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Users, ChevronDown, CheckCircle2, ShieldCheck, Clock } from "lucide-react";
-import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
+import { MOCK_STAFF_PROFILES, type MockStaffUserProfile } from "@/lib/mock-data/users";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { StaffPinModal } from "./staff-pin-modal";
 import type { StaffKioskProfile } from "@/lib/staff/types";
+import { mapDbRoleToDisplay, type DbUserRole } from "@/lib/types/auth";
+import { listStaffUsersAction } from "@/lib/admin/user-actions";
 
 interface StaffProfileSwitcherProps {
   className?: string;
@@ -16,15 +18,47 @@ export function StaffProfileSwitcher({
   className = "",
   onStaffSwitched,
 }: StaffProfileSwitcherProps) {
-  const { currentStaff, currentProfileId, switchStaff, getStaffSession } = usePunchStore();
+  const { currentStaff, currentProfileId, currentStaffRole, switchStaff, getStaffSession } = usePunchStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<StaffKioskProfile | null>(null);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [staffProfiles, setStaffProfiles] = useState<MockStaffUserProfile[]>(MOCK_STAFF_PROFILES);
+
+  useEffect(() => {
+    let isMounted = true;
+    listStaffUsersAction()
+      .then((users) => {
+        if (isMounted && users && users.length > 0) {
+          const mapped: MockStaffUserProfile[] = users.map((u) => ({
+            id: u.id,
+            name: u.fullName,
+            email: u.email,
+            employeeId: u.employeeId,
+            role: u.role,
+            roleDisplay: u.roleDisplay,
+            status: u.status,
+            permissions: u.permissions,
+            createdAt: u.createdAt,
+            updatedAt: u.updatedAt,
+          }));
+          setStaffProfiles(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback to MOCK_STAFF_PROFILES
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const activeProfile =
-    MOCK_STAFF_PROFILES.find((p) => p.id === currentProfileId) || MOCK_STAFF_PROFILES[1];
+    staffProfiles.find((p) => p.id === currentProfileId) ||
+    MOCK_STAFF_PROFILES.find((p) => p.id === currentProfileId) ||
+    MOCK_STAFF_PROFILES[1];
 
-  function handleSelectStaff(profile: typeof MOCK_STAFF_PROFILES[0]) {
+  function handleSelectStaff(profile: MockStaffUserProfile) {
     setIsDropdownOpen(false);
     if (profile.id === currentProfileId) return;
 
@@ -84,7 +118,7 @@ export function StaffProfileSwitcher({
               {currentStaff || activeProfile.name}
             </div>
             <div className="text-xs text-text-muted">
-              {activeProfile.roleDisplay} • <span className="font-mono">Terminal #01</span>
+              {currentStaffRole ? mapDbRoleToDisplay(currentStaffRole as DbUserRole) : activeProfile.roleDisplay} • <span className="font-mono">Terminal #01</span>
             </div>
           </div>
         </div>
@@ -119,7 +153,7 @@ export function StaffProfileSwitcher({
           </div>
 
           <div className="space-y-1">
-            {MOCK_STAFF_PROFILES.map((profile) => {
+            {staffProfiles.map((profile) => {
               const isCurrent = profile.id === currentProfileId;
               const session = getStaffSession(profile.id);
               const sessionStatus = session?.shiftStatus || "idle";

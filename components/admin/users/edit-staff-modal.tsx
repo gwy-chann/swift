@@ -6,6 +6,7 @@ import type { DbUserRole, StaffPermissions } from "@/lib/types/auth";
 import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/types/auth";
 import type { StaffUserSummary } from "@/specs/031-user-account-provisioning-rbac-management/contracts/user-management.contract";
 import { updateStaffUserAction } from "@/lib/admin/user-actions";
+import { punchStore } from "@/lib/store/punch-store";
 
 interface EditStaffModalProps {
   isOpen: boolean;
@@ -15,11 +16,10 @@ interface EditStaffModalProps {
 }
 
 const ROLE_OPTIONS: { label: string; value: DbUserRole }[] = [
+  { label: "Admin", value: "admin" },
   { label: "Inventory Clerk", value: "inventory_clerk" },
   { label: "Cashier", value: "cashier" },
   { label: "Mechanic", value: "mechanic" },
-  { label: "Staff", value: "staff" },
-  { label: "Admin", value: "admin" },
 ];
 
 export function EditStaffModal({
@@ -90,6 +90,12 @@ function EditStaffModalDialog({
         setErrorMsg(result.error || "Failed to update staff account.");
         setLoading(false);
         return;
+      }
+
+      try {
+        punchStore.syncStaffRole(result.data.id, result.data.role, result.data.permissions);
+      } catch {
+        // Ignore punchStore sync if running outside client storage context
       }
 
       onStaffUpdated(result.data);
@@ -173,6 +179,22 @@ function EditStaffModalDialog({
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Maria Clara Santos"
               className="w-full px-3.5 py-2 rounded-xl bg-bg-surface border border-border text-xs text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-primary transition-colors"
+            />
+          </div>
+
+          {/* Employee ID (Auto-Assigned, Read-Only) */}
+          <div className="space-y-1">
+            <label htmlFor="edit-staff-employee-id" className="text-xs font-semibold text-text-secondary">
+              Employee ID (Auto-Assigned)
+            </label>
+            <input
+              id="edit-staff-employee-id"
+              data-testid="input-edit-staff-employee-id"
+              type="text"
+              readOnly
+              disabled
+              value={user.employeeId || "—"}
+              className="w-full px-3.5 py-2 rounded-xl bg-bg-muted border border-border text-xs text-text-muted font-mono cursor-not-allowed"
             />
           </div>
 

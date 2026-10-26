@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Plus, AlertCircle } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { X, Plus, AlertCircle, Lock } from "lucide-react";
 import type { CreateLaborServicePayload } from "@/lib/types/service";
+import { generateServiceCode } from "@/lib/admin/service-utils";
 
 interface NewServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: CreateLaborServicePayload) => Promise<boolean>;
+  existingCodes?: string[];
 }
 
 const STANDARD_BAYS = [
@@ -20,9 +22,9 @@ const STANDARD_BAYS = [
 export function NewServiceModal({
   isOpen,
   onClose,
-  onCreate
+  onCreate,
+  existingCodes = []
 }: NewServiceModalProps) {
-  const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [bay, setBay] = useState(STANDARD_BAYS[0]);
   const [isCustomBay, setIsCustomBay] = useState(false);
@@ -33,20 +35,19 @@ export function NewServiceModal({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Auto-generate standardized service code (read-only, non-overridable)
+  const autoCode = useMemo(() => {
+    return generateServiceCode(name, existingCodes);
+  }, [name, existingCodes]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const normalizedCode = code.trim().toUpperCase();
-    if (!normalizedCode) {
-      setError("Please specify a service code.");
-      return;
-    }
-
-    if (!/^[A-Z0-9_-]+$/.test(normalizedCode)) {
-      setError("Service code must contain only alphanumeric characters, dashes, or underscores.");
+    if (!name.trim()) {
+      setError("Please specify a service title.");
       return;
     }
 
@@ -70,7 +71,7 @@ export function NewServiceModal({
     setIsSubmitting(true);
     try {
       const success = await onCreate({
-        code: normalizedCode,
+        code: autoCode,
         name: name.trim(),
         bay: selectedBay,
         rate: parsedRate,
@@ -80,7 +81,6 @@ export function NewServiceModal({
       });
 
       if (success) {
-        setCode("");
         setName("");
         setRate("");
         setDuration("");
@@ -130,19 +130,43 @@ export function NewServiceModal({
             </div>
           )}
 
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1">
+              Service Title
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="e.g. Drive Chain Cleaning & Tension Adjustment"
+              className="w-full px-3 py-2 text-xs bg-bg-input border border-border rounded-lg text-text-primary focus:border-primary outline-hidden"
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Service Code
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-text-muted" />
+                  <span>Service Code</span>
+                </label>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-light text-primary border border-primary/20">
+                  Auto-Generated
+                </span>
+              </div>
               <input
                 type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                required
-                placeholder="e.g. SRV-CHAIN-01"
-                className="w-full px-3 py-2 text-xs font-mono font-bold uppercase bg-bg-input border border-border rounded-lg text-text-primary focus:border-primary outline-hidden"
+                value={autoCode}
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+                title="Service code is automatically assigned by the system and cannot be edited."
+                className="w-full px-3 py-2 text-xs font-mono font-bold uppercase bg-bg-surface/50 border border-border rounded-lg text-text-primary cursor-not-allowed select-none outline-hidden opacity-90"
               />
+              <p className="text-[10px] text-text-muted mt-1">
+                Assigned by system based on title and catalog sequence.
+              </p>
             </div>
 
             <div>
@@ -165,20 +189,6 @@ export function NewServiceModal({
                 />
               </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary mb-1">
-              Service Title
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="e.g. Drive Chain Cleaning & Tension Adjustment"
-              className="w-full px-3 py-2 text-xs bg-bg-input border border-border rounded-lg text-text-primary focus:border-primary outline-hidden"
-            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

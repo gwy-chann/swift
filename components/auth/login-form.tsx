@@ -136,6 +136,7 @@ export function LoginForm({
           id: matchedDemo.id,
           name: matchedDemo.name || matchedDemo.label,
           role: matchedDemo.staffRole || matchedDemo.role,
+          startOffShift: true,
         });
       }
 
@@ -149,9 +150,8 @@ export function LoginForm({
   }
 
   // Render Step 2 Keypad View when active
-  if (step === "PIN" && pendingStaff && selectedRole === "staff") {
+  if (step === "PIN" && pendingStaff) {
     return (
-
       <StaffPinKeypad
         staffSummary={pendingStaff}
         rememberTerminal={rememberTerminal}

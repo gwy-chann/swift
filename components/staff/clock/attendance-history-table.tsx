@@ -4,6 +4,8 @@ import React, { useMemo } from "react";
 import { Calendar } from "lucide-react";
 import { usePunchStore } from "@/lib/store/punch-store";
 import type { PunchLog } from "@/lib/types/logs";
+import { normalizeProfileId } from "@/lib/staff/constants";
+import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
 
 export interface AttendanceHistoryTableProps {
   initialLogs?: PunchLog[];
@@ -31,23 +33,105 @@ function formatDisplayDate(dateStr: string): string {
   return dateStr;
 }
 
+function formatDisplayTime(timeStr?: string, dateStr?: string): string {
+  if (!timeStr || timeStr === "—" || timeStr.includes("-- Active Shift --")) {
+    return timeStr || "—";
+  }
+  // If already in 12-hour AM/PM format (e.g., "09:35:51 PM" or "8:00 AM"), return as-is
+  if (/\b(AM|PM)\b/i.test(timeStr)) {
+    return timeStr;
+  }
+  // If it's a 24-hour UTC slice like "13:30" or "13:30:00" from a database timestamp:
+  const match24 = timeStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (match24) {
+    try {
+      const baseDate = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr : new Date().toISOString().split("T")[0];
+      const hh = match24[1].padStart(2, "0");
+      const mm = match24[2];
+      const ss = match24[3] || "00";
+      const d = new Date(`${baseDate}T${hh}:${mm}:${ss}Z`);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        });
+      }
+    } catch {
+      // Fallback below
+    }
+  }
+
+  // If it's an ISO timestamp
+  const parsedDate = new Date(timeStr);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  }
+
+  return timeStr;
+}
+
 export function AttendanceHistoryTable({
   initialLogs,
   title = "My Attendance & Shift Log History",
   terminalLabel = "Terminal #01",
 }: AttendanceHistoryTableProps) {
-  const { punchLogs: storeLogs, isShiftActive, activeShiftId, formattedTimer } = usePunchStore();
+  const {
+    punchLogs: storeLogs,
+    isShiftActive,
+    activeShiftId,
+    formattedTimer,
+    currentStaff,
+    currentProfileId,
+  } = usePunchStore();
 
   const logs = useMemo(() => {
     const raw = storeLogs.length > 0 ? storeLogs : (initialLogs ?? []);
+
+    // Enforce account isolation: only the active staff member's own attendance records are visible
+    const canonicalCurrent = normalizeProfileId(currentProfileId);
+    const matchedProfile = MOCK_STAFF_PROFILES.find(
+      (p) => p.id === currentProfileId || (canonicalCurrent && p.id === canonicalCurrent)
+    );
+    const profileName = matchedProfile?.name?.trim().toLowerCase();
+    const currentName = currentStaff?.trim().toLowerCase();
+
+    const myLogs = raw.filter((log) => {
+      // If neither staff name nor profile ID is set, fallback to raw
+      if (!currentStaff && !currentProfileId) return true;
+
+      const logStaff = log.staff?.trim().toLowerCase();
+      const matchesStaffName = Boolean(
+        logStaff && (
+          (currentName && logStaff === currentName) ||
+          (profileName && logStaff === profileName)
+        )
+      );
+
+      const matchesProfileId = Boolean(
+        currentProfileId &&
+          log.profileId &&
+          (log.profileId === currentProfileId ||
+            (canonicalCurrent && log.profileId === canonicalCurrent))
+      );
+
+      return matchesStaffName || matchesProfileId;
+    });
+
     // Sort in reverse chronological order (newest date and time on top)
-    return [...raw].sort((a, b) => {
+    return [...myLogs].sort((a, b) => {
       if (a.date !== b.date) {
         return b.date.localeCompare(a.date);
       }
       return (b.timeIn || "").localeCompare(a.timeIn || "");
     });
-  }, [storeLogs, initialLogs]);
+  }, [storeLogs, initialLogs, currentStaff, currentProfileId]);
 
   return (
     <div
@@ -93,12 +177,12 @@ export function AttendanceHistoryTable({
                       {formatDisplayDate(log.date)}
                     </td>
                     <td className="py-3 px-4 text-text-secondary">{log.staff}</td>
-                    <td className="py-3 px-4 text-text-secondary font-mono">{log.timeIn}</td>
+                    <td className="py-3 px-4 text-text-secondary font-mono">{formatDisplayTime(log.timeIn, log.date)}</td>
                     <td className="py-3 px-4 font-mono">
                       {isActive ? (
                         <span className="text-accent font-semibold">-- Active Shift --</span>
                       ) : (
-                        <span className="text-text-secondary">{log.timeOut}</span>
+                        <span className="text-text-secondary">{formatDisplayTime(log.timeOut, log.date)}</span>
                       )}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-text-primary">

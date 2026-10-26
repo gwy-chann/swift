@@ -33,7 +33,22 @@ export function AttendanceView({
   const [filters, setFilters] = useState<AttendanceFilterState>(DEFAULT_FILTERS);
   const [isPending, startTransition] = useTransition();
 
-  // 1. Live Elapsed Time Counter for Active Shifts (re-ticks every 30s)
+  // 1. Refresh Action
+  const handleRefresh = React.useCallback(() => {
+    startTransition(async () => {
+      try {
+        const result = await getAdminStaffAttendanceAction();
+        if (result.success) {
+          setShifts(result.shifts);
+          setMetrics(result.metrics);
+        }
+      } catch (err) {
+        console.error('[AttendanceView] Error refreshing attendance records:', err);
+      }
+    });
+  }, []);
+
+  // 2. Live Elapsed Time Counter for Active Shifts (re-ticks every 1s for real-time driftless counter)
   useEffect(() => {
     const hasActiveShifts = shifts.some((s) => s.status === 'on_shift' || s.status === 'break');
     if (!hasActiveShifts) return;
@@ -57,19 +72,20 @@ export function AttendanceView({
           return shift;
         })
       );
-    }, 30000);
+    }, 1000);
 
     return () => clearInterval(timer);
   }, [shifts]);
 
-  // 2. Client-side Instant Filtered Shifts Subset
+  // 3. Client-side Instant Filtered Shifts Subset
   const filteredShifts = useMemo(() => {
     return filterAdminShifts(shifts, filters);
   }, [shifts, filters]);
 
-  // 3. Supabase Realtime CDC subscription for public.staff_shifts
+  // 4. Supabase Realtime CDC subscription for public.staff_shifts
   useStaffRealtimeShifts({
     enabled: true,
+    channelName: 'admin_attendance_realtime',
     onInsert: () => {
       handleRefresh();
     },
@@ -81,20 +97,27 @@ export function AttendanceView({
     },
   });
 
-  // 4. Refresh Action
-  function handleRefresh() {
-    startTransition(async () => {
-      try {
-        const result = await getAdminStaffAttendanceAction();
-        if (result.success) {
-          setShifts(result.shifts);
-          setMetrics(result.metrics);
-        }
-      } catch (err) {
-        console.error('[AttendanceView] Error refreshing attendance records:', err);
+  // 5. Periodic Heartbeat Polling & Window Focus Auto-Sync (Sub-5s live admin reflection)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      handleRefresh();
+    }, 4000);
+
+    const onVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        handleRefresh();
       }
-    });
-  }
+    };
+
+    window.addEventListener('visibilitychange', onVisibilityOrFocus);
+    window.addEventListener('focus', onVisibilityOrFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('visibilitychange', onVisibilityOrFocus);
+      window.removeEventListener('focus', onVisibilityOrFocus);
+    };
+  }, [handleRefresh]);
 
   function handleResetFilters() {
     setFilters(DEFAULT_FILTERS);
