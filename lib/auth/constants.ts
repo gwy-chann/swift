@@ -89,3 +89,6 @@ export const TERMINAL_ROLE_STORAGE_KEY = "swift_terminal_role";
 
 export const INACTIVE_ACCOUNT_ERROR =
   "Account is inactive. Please contact your workshop administrator.";
+
+export const PIN_ERROR_INVALID = "Invalid PIN. Please try again.";
+export const PIN_VALIDATION_ERROR_MSG = "PIN must consist of 4 to 6 numeric digits.";

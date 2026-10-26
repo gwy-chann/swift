@@ -7,31 +7,21 @@ import type {
   PendingStaffAuthChallenge,
   PendingStaffSummary,
 } from "./types.ts";
-import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG, INACTIVE_ACCOUNT_ERROR } from "./constants.ts";
+import {
+  ALL_DEMO_ACCOUNTS,
+  PORTAL_CONFIG,
+  INACTIVE_ACCOUNT_ERROR,
+  PIN_ERROR_INVALID,
+  PIN_VALIDATION_ERROR_MSG,
+} from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
 import { getStaffUserStatus } from "../admin/user-actions.ts";
+import { memoryCookieJar } from "./test-cookie-jar.ts";
 
-export { INACTIVE_ACCOUNT_ERROR };
-export const PIN_ERROR_INVALID = "Invalid PIN. Please try again.";
-export const PIN_VALIDATION_ERROR_MSG = "PIN must consist of 4 to 6 numeric digits.";
 interface CookieWriter {
   get(name: string): { value: string } | undefined;
   set(name: string, value: string, options?: Record<string, unknown>): void;
   delete(name: string): void;
-}
-
-const memoryCookieJar = new Map<string, string>();
-
-export function __setTestCookie(name: string, value: string): void {
-  memoryCookieJar.set(name, value);
-}
-
-export function __getTestCookie(name: string): string | undefined {
-  return memoryCookieJar.get(name);
-}
-
-export function __clearTestCookies(): void {
-  memoryCookieJar.clear();
 }
 
 async function getSafeCookieStore(): Promise<CookieWriter> {

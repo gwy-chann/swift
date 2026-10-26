@@ -4,11 +4,15 @@ import {
   authenticateUserAction,
   completeStaffTwoStepLoginAction,
   cancelStaffPinChallengeAction,
-  __getTestCookie,
-  __clearTestCookies,
+} from '../actions.ts';
+import {
   PIN_ERROR_INVALID,
   PIN_VALIDATION_ERROR_MSG,
-} from '../actions.ts';
+} from '../constants.ts';
+import {
+  __getTestCookie,
+  __clearTestCookies,
+} from '../test-cookie-jar.ts';
 import {
   resolveSession,
   evaluateRouteAccess,
