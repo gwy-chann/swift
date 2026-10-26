@@ -1,16 +1,11 @@
 import React from 'react';
 import { getStockAdjustmentLogsAction } from '@/lib/admin/stock-audit-actions';
-import { getSecurityAuditLogsAction } from '@/lib/admin/audit-actions';
 import { StockAuditPanel } from '@/components/admin/logs/stock-audit-panel';
-import { AuditLogsTable } from '@/components/admin/logs/audit-logs-table';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLogsPage() {
-  const [stockResponse, auditResponse] = await Promise.all([
-    getStockAdjustmentLogsAction({ limit: 50 }),
-    getSecurityAuditLogsAction({ limit: 50 }),
-  ]);
+  const stockResponse = await getStockAdjustmentLogsAction({ limit: 50 });
 
   const stockLogs = stockResponse.success ? stockResponse.logs : [];
   const stockMetrics = stockResponse.success
@@ -23,9 +18,6 @@ export default async function AdminLogsPage() {
       };
   const stockTotal = stockResponse.success ? stockResponse.total : 0;
 
-  const securityLogs = auditResponse.success && auditResponse.data ? auditResponse.data : [];
-  const securityTotal = auditResponse.totalCount ?? securityLogs.length;
-
   return (
     <div id="view-settings" className="space-y-6 animate-fadeIn">
       {/* 1. Stock Adjustment Audit Trail & Shrinkage Analytics (SIAA-65) */}
@@ -34,14 +26,6 @@ export default async function AdminLogsPage() {
           initialLogs={stockLogs}
           initialMetrics={stockMetrics}
           initialTotal={stockTotal}
-        />
-      </section>
-
-      {/* 2. System Activity & Forensic Security Logs (SIAA-62) */}
-      <section aria-labelledby="security-logs-heading">
-        <AuditLogsTable
-          initialLogs={securityLogs}
-          totalCount={securityTotal}
         />
       </section>
     </div>

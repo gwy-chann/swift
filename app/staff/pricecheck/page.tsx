@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useTransition, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { SearchX, Search, RotateCcw, AlertCircle } from 'lucide-react';
+import { SearchX, AlertCircle } from 'lucide-react';
 import { lookupProductPriceAction } from '@/lib/staff/actions';
 import type { ProductPriceCheckResult } from '@/lib/staff/types';
 import { PriceScanCard } from '@/components/staff/pricecheck/price-scan-card';
@@ -13,7 +13,8 @@ import { getRolePrimaryRoute } from '@/lib/staff/navigation';
 
 export default function StaffPriceCheckPage() {
   const router = useRouter();
-  const { currentStaffRole } = usePunchStore();
+  const { currentStaffRole, currentPermissions } = usePunchStore();
+  const isAdmin = currentStaffRole?.toLowerCase() === 'admin' || Boolean(currentPermissions?.can_manage_pricing);
   const isUnauthorizedRole = Boolean(
     currentStaffRole && currentStaffRole !== 'inventory_clerk' && currentStaffRole !== 'admin'
   );
@@ -111,24 +112,8 @@ export default function StaffPriceCheckPage() {
       className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200"
     >
       {/* 1. Barcode & SKU Lookup Scanner Box (mockup/staff.html lines 226-238) */}
-      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs space-y-4">
-        {hasQuery && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('');
-                setLookupResult(null);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Clear</span>
-            </button>
-          </div>
-        )}
-
-        {/* Input Bar with Instant Button */}
+      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs">
+        {/* Input Bar with Instant Buttons */}
         <div className="flex gap-2.5">
           <div className="relative flex-1">
             <input
@@ -157,10 +142,20 @@ export default function StaffPriceCheckPage() {
           <button
             type="button"
             onClick={() => executeLookup(query)}
-            className="px-5 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-xs"
+            className="px-5 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm transition-colors cursor-pointer shrink-0 shadow-xs"
           >
-            <Search className="w-4 h-4" />
-            <span>Check Price</span>
+            Check Price
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              setLookupResult(null);
+            }}
+            disabled={!hasQuery}
+            className="px-5 py-3 rounded-xl bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover font-bold text-sm transition-colors cursor-pointer shrink-0 shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Clear
           </button>
         </div>
       </div>
@@ -169,8 +164,8 @@ export default function StaffPriceCheckPage() {
       {matchedProduct && (
         <div className="space-y-4">
           <PriceScanCard product={matchedProduct} />
-          {/* Interactive Margin Simulator */}
-          <MarginSimulator product={matchedProduct} />
+          {/* Interactive Margin Simulator (Admin Only) */}
+          {isAdmin && <MarginSimulator product={matchedProduct} />}
         </div>
       )}
 

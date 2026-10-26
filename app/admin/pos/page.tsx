@@ -13,12 +13,16 @@ import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
+import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contracts";
 
 export default function AdminPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
+
+  // Multi-terminal realtime sync with master products catalog
+  useInventoryRealtime();
   const {
     items,
     totals,
@@ -107,18 +111,16 @@ export default function AdminPosPage() {
   const handleSelectProduct = useCallback(
     (product: Product) => {
       if (product.stock <= 0) {
-        setPendingOverrideProduct(product);
-        setIsOverrideModalOpen(true);
+        showToast("error", `Cannot add ${product.name}: Item is out of stock.`);
         return;
       }
 
       const res = addPart(product, 1);
       if (!res.success) {
-        setPendingOverrideProduct(product);
-        setIsOverrideModalOpen(true);
+        showToast("error", `Cannot add ${product.name}: Insufficient stock available.`);
       }
     },
-    [addPart]
+    [addPart, showToast]
   );
 
   const handleSelectService = useCallback(
@@ -137,10 +139,12 @@ export default function AdminPosPage() {
     [addPart]
   );
 
-  const handleRequireOverride = useCallback((product: Product) => {
-    setPendingOverrideProduct(product);
-    setIsOverrideModalOpen(true);
-  }, []);
+  const handleRequireOverride = useCallback(
+    (product: Product) => {
+      showToast("error", `Cannot increase quantity for ${product.name}: Exceeds available stock.`);
+    },
+    [showToast]
+  );
 
   const handleOpenPayment = useCallback(() => {
     if (items.length === 0 || isProcessing) return;
@@ -221,7 +225,7 @@ export default function AdminPosPage() {
       {/* High-Contrast Toast Notification Banner */}
       {toastMessage && (
         <output
-          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all ${
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all print:hidden ${
             toastMessage.type === "success"
               ? "bg-success-light text-success border-success/30"
               : "bg-danger-light text-danger border-danger/30"
@@ -247,7 +251,7 @@ export default function AdminPosPage() {
       )}
 
       {/* POS Terminal Workspace: Admin does NOT need to time in */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-8.5rem)]">
+      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-8.5rem)] print:hidden">
         {/* Left Pane: Catalog */}
         <HybridCatalogPane
           products={products}
@@ -300,6 +304,10 @@ export default function AdminPosPage() {
       <ThermalReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={closeReceiptModal}
+        onProceed={() => {
+          closeReceiptModal();
+          showToast("success", "Checkout session finalized.");
+        }}
         onFinish={() => {
           closeReceiptModal();
           showToast("success", "Receipt printed & checkout session finalized.");

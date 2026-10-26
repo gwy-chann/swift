@@ -230,3 +230,46 @@ body {
   z-index: 20;
 }
 
+/* ==========================================================================
+   Print Media Isolation for Thermal Receipts (SIAA-22 / SIAA-23)
+   Hides all application UI chrome, navigation, headers, sidebars, and POS
+   panes so that only the pure 80mm thermal receipt prints cleanly.
+   ========================================================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Completely hide all navigation, headers, sidebars, drawers, toolbars, and buttons */
+  header,
+  nav,
+  aside,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Thermal receipt print isolation */
+  .thermal-receipt-paper,
+  #thermal-receipt-print-area {
+    display: block !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+}
+
+

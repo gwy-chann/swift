@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPaymentHistoryPage() {
-  const transactions = await getTransactionsAction(100);
+  const transactions = await getTransactionsAction(500, { filterTestRecords: true });
 
   return (
     <div className="w-full max-w-7xl mx-auto py-2 space-y-4 animate-in fade-in duration-200">

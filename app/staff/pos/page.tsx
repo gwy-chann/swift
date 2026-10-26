@@ -19,6 +19,7 @@ import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
+import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { evaluatePosHotkey } from "@/lib/pos/barcode-scanner";
 import { evaluatePosCheckoutAuthorization } from "@/lib/contracts/checkout-guard";
 import { logSecurityEventAction } from "@/lib/admin/audit-actions";
@@ -29,6 +30,10 @@ import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contrac
 export default function StaffPosPage() {
   const router = useRouter();
   const { products, hydrateProducts } = useInventoryStore();
+
+  // Multi-terminal realtime sync with master products catalog
+  useInventoryRealtime();
+
   const { isShiftActive, shiftStatus, currentStaff, currentStaffRole } = usePunchStore();
   const isUnauthorizedRole = Boolean(
     currentStaffRole && currentStaffRole !== "cashier" && currentStaffRole !== "admin"
@@ -157,18 +162,16 @@ export default function StaffPosPage() {
   const handleSelectProduct = useCallback(
     (product: Product) => {
       if (product.stock <= 0) {
-        setPendingOverrideProduct(product);
-        setIsOverrideModalOpen(true);
+        showToast("error", `Cannot add ${product.name}: Item is out of stock.`);
         return;
       }
 
       const res = addPart(product, 1);
       if (!res.success) {
-        setPendingOverrideProduct(product);
-        setIsOverrideModalOpen(true);
+        showToast("error", `Cannot add ${product.name}: Insufficient stock available.`);
       }
     },
-    [addPart]
+    [addPart, showToast]
   );
 
   const handleSelectService = useCallback(
@@ -187,10 +190,12 @@ export default function StaffPosPage() {
     [addPart]
   );
 
-  const handleRequireOverride = useCallback((product: Product) => {
-    setPendingOverrideProduct(product);
-    setIsOverrideModalOpen(true);
-  }, []);
+  const handleRequireOverride = useCallback(
+    (product: Product) => {
+      showToast("error", `Cannot increase quantity for ${product.name}: Exceeds available stock.`);
+    },
+    [showToast]
+  );
 
   const logUnauthorizedCheckoutAttempt = useCallback(
     (attemptedRole: string) => {
@@ -218,7 +223,7 @@ export default function StaffPosPage() {
     if (items.length === 0 || isProcessing) return;
 
     if (!isShiftActive || shiftStatus !== "on_shift") {
-      setIsShiftGuardModalOpen(true);
+      router.push("/staff/clock");
       return;
     }
 
@@ -238,7 +243,7 @@ export default function StaffPosPage() {
         return;
       }
       if (auth.reason === "SHIFT_INACTIVE") {
-        setIsShiftGuardModalOpen(true);
+        router.push("/staff/clock");
         return;
       }
       if (auth.reason === "CART_EMPTY") {
@@ -269,6 +274,7 @@ export default function StaffPosPage() {
     logUnauthorizedCheckoutAttempt,
     openPaymentModal,
     showToast,
+    router,
   ]);
 
   const handleIntakeSubmit = useCallback(
@@ -394,7 +400,7 @@ export default function StaffPosPage() {
           return;
         }
         if (evaluation.reason === "SHIFT_INACTIVE") {
-          setIsShiftGuardModalOpen(true);
+          router.push("/staff/clock");
           return;
         }
         if (evaluation.reason === "CART_EMPTY") {
@@ -425,7 +431,8 @@ export default function StaffPosPage() {
     logUnauthorizedCheckoutAttempt,
     handleOpenPayment,
     handleCloseModals,
-    showToast
+    showToast,
+    router,
   ]);
 
   if (isUnauthorizedRole) {
@@ -456,7 +463,7 @@ export default function StaffPosPage() {
       {/* High-Contrast Toast Notification Banner */}
       {toastMessage && (
         <output
-          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all shrink-0 ${
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all shrink-0 print:hidden ${
             toastMessage.type === "success"
               ? "bg-success-light text-success border-success/30"
               : "bg-danger-light text-danger border-danger/30"
@@ -481,7 +488,7 @@ export default function StaffPosPage() {
         </output>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0 print:hidden">
         {/* Left Pane: Hybrid Fast Catalog */}
         <HybridCatalogPane
           products={products}
@@ -560,6 +567,10 @@ export default function StaffPosPage() {
       <ThermalReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={closeReceiptModal}
+        onProceed={() => {
+          closeReceiptModal();
+          showToast("success", "Checkout session finalized.");
+        }}
         onFinish={() => {
           closeReceiptModal();
           showToast("success", "Receipt printed & checkout session finalized.");

@@ -17,6 +17,7 @@ import {
   exportAccountingCsvAction,
   type AnalyticsPeriod,
 } from '@/lib/analytics/export';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export interface AdminReportsClientProps {
   initialPnlData: CategoryPnlData;
@@ -44,6 +45,8 @@ export function AdminReportsClient({
   const [pnlData, setPnlData] = useState<CategoryPnlData>(initialPnlData);
   const [isExporting, setIsExporting] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const pagination = usePagination(pnlData.categories, 10);
 
   const handlePeriodChange = (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period || isPending) return;
@@ -290,7 +293,7 @@ export function AdminReportsClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {pnlData.categories.map((cat) => {
+              {pagination.paginatedItems.map((cat) => {
                 const isHighMargin = cat.margin_pct >= 70.0;
                 return (
                   <tr
@@ -353,6 +356,16 @@ export function AdminReportsClient({
             </tfoot>
           </table>
         </div>
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="categories"
+        />
       </div>
     </div>
   );

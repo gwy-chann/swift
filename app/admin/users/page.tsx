@@ -3,7 +3,7 @@ import { listStaffUsersAction } from "@/lib/admin/user-actions";
 import { UserLedgerTable } from "@/components/admin/users/user-ledger-table";
 
 export const metadata = {
-  title: "User Account Management & RBAC | SWIFT Admin",
+  title: "Staff Management & RBAC | SWIFT Admin",
   description: "Employee account provisioning, access permissions, and role assignment.",
 };
 
