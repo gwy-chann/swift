@@ -24,7 +24,7 @@ export function StaffTopbar({ onMenuToggle }: Readonly<StaffTopbarProps>) {
   const canAccessPos = currentStaffRole === "cashier" || currentStaffRole === "admin";
 
   return (
-    <header className="h-16 bg-bg-surface border-b border-border px-4 lg:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20">
+    <header className="h-16 bg-bg-surface border-b border-border px-4 lg:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 print:hidden">
       {/* Left Area: Hamburger (mobile) + View Title & Station info */}
       <div className="flex items-center gap-3">
         <button

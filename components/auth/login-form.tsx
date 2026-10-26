@@ -23,6 +23,7 @@ interface LoginFormProps {
   rememberTerminal: boolean;
   setRememberTerminal: (remember: boolean) => void;
   initialNotice?: string | null;
+  onRoleChange?: (role: PortalRole) => void;
 }
 
 function getInitialErrorMessage(notice?: string | null): string | null {
@@ -44,6 +45,7 @@ export function LoginForm({
   rememberTerminal,
   setRememberTerminal,
   initialNotice,
+  onRoleChange,
 }: Readonly<LoginFormProps>) {
   const router = useRouter();
   const [step, setStep] = useState<"CREDENTIALS" | "PIN">("CREDENTIALS");
@@ -54,24 +56,46 @@ export function LoginForm({
   );
 
   const portalConfig = PORTAL_CONFIG[selectedRole];
+  const isPinChallengeNotice =
+    initialNotice === "pin_challenge_pending" || initialNotice === "pin_required";
 
-  // Rehydrate pending PIN challenge on initial mount if redirected with pending state
+  const [prevRole, setPrevRole] = useState(selectedRole);
+  if (selectedRole !== prevRole) {
+    setPrevRole(selectedRole);
+    setErrorMessage(null);
+    if (selectedRole === "admin" && step === "PIN") {
+      setStep("CREDENTIALS");
+      setPendingStaff(null);
+    }
+  }
+
+  // When selectedRole switches to Admin, exit any staff PIN challenge state on server
+  useEffect(() => {
+    if (selectedRole === "admin" && step === "PIN") {
+      cancelStaffPinChallengeAction().catch(() => {});
+    }
+  }, [selectedRole, step]);
+
+  // Rehydrate pending PIN challenge on initial mount or when redirected
   useEffect(() => {
     async function checkExistingChallenge() {
-      if (initialNotice === "pin_challenge_pending" || initialNotice === "pin_required") {
-        try {
-          const existing = await getPendingStaffChallengeAction();
-          if (existing) {
-            setPendingStaff(existing);
-            setStep("PIN");
+      try {
+        const existing = await getPendingStaffChallengeAction();
+        if (existing) {
+          if (selectedRole === "admin" && !isPinChallengeNotice) {
+            await cancelStaffPinChallengeAction();
+            return;
           }
-        } catch {
-          // Fallback to credentials form
+          onRoleChange?.("staff");
+          setPendingStaff(existing);
+          setStep("PIN");
         }
+      } catch {
+        // Fallback to credentials form
       }
     }
     checkExistingChallenge();
-  }, [initialNotice]);
+  }, [initialNotice, isPinChallengeNotice, selectedRole, onRoleChange]);
 
   async function handleBackToCredentials() {
     setIsLoading(true);
@@ -121,6 +145,7 @@ export function LoginForm({
 
       // If staff role requires Step 2 PIN verification
       if (result.requiresPin) {
+        onRoleChange?.("staff");
         setPendingStaff(result.staffSummary);
         setStep("PIN");
         setIsLoading(false);
@@ -149,8 +174,8 @@ export function LoginForm({
     }
   }
 
-  // Render Step 2 Keypad View when active
-  if (step === "PIN" && pendingStaff) {
+  // Render Step 2 Keypad View when active for Staff
+  if (selectedRole === "staff" && step === "PIN" && pendingStaff) {
     return (
       <StaffPinKeypad
         staffSummary={pendingStaff}

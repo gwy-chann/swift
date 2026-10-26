@@ -118,6 +118,7 @@ export function StaffPinModal({
 
   if (!isOpen) return null;
 
+  const isClockIn = actionContext === "clock_in";
   let actionTitle = "Terminal Shift Clock-In";
   if (actionContext === "switch_staff") {
     actionTitle = "Authenticate Staff Switch";
@@ -142,7 +143,7 @@ export function StaffPinModal({
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
           <div className="flex items-center gap-2 text-primary">
-            <Lock className="w-5 h-5" />
+            {!isClockIn && <Lock className="w-5 h-5" />}
             <span id="pin-modal-title" className="text-sm font-extrabold text-text-primary uppercase tracking-wider">
               {actionTitle}
             </span>
@@ -158,61 +159,63 @@ export function StaffPinModal({
         </div>
 
         {/* Staff Persona Badge with Inline Switcher */}
-        <div className="mb-4">
-          <div className="p-3 bg-bg-card border border-border rounded-xl flex items-center justify-between gap-3 text-left">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary font-black flex items-center justify-center text-sm shrink-0">
-                {activeProfile.avatarInitials || activeProfile.name.substring(0, 2).toUpperCase()}
+        {!isClockIn && (
+          <div className="mb-4">
+            <div className="p-3 bg-bg-card border border-border rounded-xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary font-black flex items-center justify-center text-sm shrink-0">
+                  {activeProfile.avatarInitials || activeProfile.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-text-primary truncate">{activeProfile.name}</div>
+                  <div className="text-xs text-text-muted truncate">{activeProfile.role || "Floor Staff"}</div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-text-primary truncate">{activeProfile.name}</div>
-                <div className="text-xs text-text-muted truncate">{activeProfile.role || "Floor Staff"}</div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsPickerOpen((prev) => !prev)}
+                className="text-xs text-primary font-bold hover:underline shrink-0 cursor-pointer px-2 py-1 rounded-md hover:bg-bg-hover flex items-center gap-1 border border-primary/20 bg-primary/5"
+              >
+                <span>Change</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${isPickerOpen ? "rotate-180" : ""}`} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsPickerOpen((prev) => !prev)}
-              className="text-xs text-primary font-bold hover:underline shrink-0 cursor-pointer px-2 py-1 rounded-md hover:bg-bg-hover flex items-center gap-1 border border-primary/20 bg-primary/5"
-            >
-              <span>Change</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${isPickerOpen ? "rotate-180" : ""}`} />
-            </button>
-          </div>
 
-          {/* Quick Roster Selector Popover */}
-          {isPickerOpen && (
-            <div className="mt-1.5 p-1.5 bg-bg-card border border-border rounded-xl shadow-lg space-y-1 text-left animate-in fade-in zoom-in-95 duration-100">
-              {MOCK_STAFF_PROFILES.map((p) => {
-                const isSelected = p.id === activeProfile.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveProfile({
-                        id: p.id,
-                        name: p.name,
-                        role: p.roleDisplay,
-                        avatarInitials: p.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
-                      });
-                      setIsPickerOpen(false);
-                      setPin("");
-                      setError(null);
-                    }}
-                    className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-xs transition-colors cursor-pointer ${
-                      isSelected
-                        ? "bg-primary-light/50 font-bold text-primary border border-primary/30"
-                        : "hover:bg-bg-hover text-text-primary border border-transparent"
-                    }`}
-                  >
-                    <span>{p.name} ({p.roleDisplay})</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+            {/* Quick Roster Selector Popover */}
+            {isPickerOpen && (
+              <div className="mt-1.5 p-1.5 bg-bg-card border border-border rounded-xl shadow-lg space-y-1 text-left animate-in fade-in zoom-in-95 duration-100">
+                {MOCK_STAFF_PROFILES.map((p) => {
+                  const isSelected = p.id === activeProfile.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveProfile({
+                          id: p.id,
+                          name: p.name,
+                          role: p.roleDisplay,
+                          avatarInitials: p.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
+                        });
+                        setIsPickerOpen(false);
+                        setPin("");
+                        setError(null);
+                      }}
+                      className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-primary-light/50 font-bold text-primary border border-primary/30"
+                          : "hover:bg-bg-hover text-text-primary border border-transparent"
+                      }`}
+                    >
+                      <span>{p.name} ({p.roleDisplay})</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <p className="text-xs text-text-secondary mb-4">
           Enter 4-digit PIN for terminal authorization:

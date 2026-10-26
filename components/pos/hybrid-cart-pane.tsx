@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Plus, Minus, Trash2, CheckCircle2, Wrench, Tag, Clock } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import { usePunchStore, type ShiftStateStatus } from '@/lib/store/punch-store';
@@ -87,6 +87,7 @@ export function HybridCartPane({
   shiftStatus: shiftStatusProp,
   isAdmin = false
 }: Readonly<HybridCartPaneProps>) {
+  const router = useRouter();
   const punchState = usePunchStore();
   const shiftActive = isAdmin ? true : (isShiftActiveProp ?? punchState.isShiftActive);
   const activeShiftStatus = isAdmin ? 'on_shift' : (shiftStatusProp ?? punchState.shiftStatus);
@@ -141,8 +142,10 @@ export function HybridCartPane({
     if (item.type === 'part' && delta > 0 && !item.isOverridden) {
       const product = catalogProducts.find((p) => p.sku === item.sku);
       const availableStock = product?.stock ?? item.stock ?? 999;
-      if (nextQty > availableStock && onRequireOverride && product) {
-        onRequireOverride(product);
+      if (nextQty > availableStock) {
+        if (onRequireOverride && product) {
+          onRequireOverride(product);
+        }
         return;
       }
     }
@@ -150,7 +153,15 @@ export function HybridCartPane({
     updateQuantity(item.id, nextQty);
   };
 
-  const isCheckoutDisabled = items.length === 0 || isProcessing;
+  const handleCheckoutClick = () => {
+    if (!isShiftReady) {
+      router.push('/staff/clock');
+      return;
+    }
+    onCompleteSale?.();
+  };
+
+  const isCheckoutDisabled = isProcessing || (isShiftReady && items.length === 0);
   const checkoutTitle = getCheckoutButtonTitle(isShiftReady, items.length);
   const checkoutClass = getCheckoutButtonClass(isCheckoutDisabled, isShiftReady);
   const checkoutLabel = getCheckoutButtonLabel(isProcessing, isShiftReady);
@@ -384,8 +395,18 @@ export function HybridCartPane({
         {/* Visual Inactive Shift Warning Indicator (SIAA-74) */}
         {!isAdmin && !isShiftReady && (
           <div
+            role="button"
+            tabIndex={0}
+            onClick={() => router.push('/staff/clock')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push('/staff/clock');
+              }
+            }}
             data-testid="shift-inactive-warning-banner"
-            className="p-2.5 rounded-lg bg-warning/15 border border-warning/40 text-warning flex items-center justify-between gap-2 shadow-2xs transition-all"
+            className="p-2.5 rounded-lg bg-warning/15 border border-warning/40 text-warning flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer hover:bg-warning/25"
+            title="Time-in required: Click to go to Punch Clock"
           >
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-warning animate-pulse" />
@@ -399,12 +420,9 @@ export function HybridCartPane({
                 </div>
               </div>
             </div>
-            <Link
-              href="/staff/clock"
-              className="px-2 py-1 rounded text-[10px] font-extrabold uppercase tracking-wide bg-warning text-text-light hover:bg-warning/90 transition-colors shadow-2xs"
-            >
-              Punch Clock
-            </Link>
+            <span className="text-[10px] font-bold underline text-warning shrink-0">
+              Punch Clock &rarr;
+            </span>
           </div>
         )}
 
@@ -412,8 +430,8 @@ export function HybridCartPane({
         <button
           type="button"
           disabled={isCheckoutDisabled}
-          onClick={onCompleteSale}
-          title={checkoutTitle}
+          onClick={handleCheckoutClick}
+          title={!isShiftReady ? 'Time-in required: Click to go to Punch Clock' : checkoutTitle}
           className={`w-full py-3 px-4 rounded-lg text-xs font-extrabold shadow-md uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${checkoutClass}`}
         >
           {!isShiftReady ? (

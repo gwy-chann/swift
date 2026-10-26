@@ -10,6 +10,26 @@ interface WorkshopEmptyStateProps {
   onSwitchToAllBays: () => void;
 }
 
+function getEmptyStateTitle(isMyJobs: boolean, isCompleted: boolean): string {
+  if (isMyJobs) {
+    return isCompleted ? "No Completed Jobs Yet" : "No Active Jobs Assigned To You";
+  }
+  return isCompleted ? "No Completed Work Orders" : "No Work Orders Found in this Segment";
+}
+
+function getEmptyStateDescription(isMyJobs: boolean, statusFilter: string): string {
+  const isCompleted = statusFilter === "COMPLETED";
+  if (isMyJobs) {
+    return isCompleted
+      ? "You have not completed any work orders yet today."
+      : "You currently have no jobs in progress or queued. Check the Workshop Bay Queue to claim an unassigned vehicle.";
+  }
+  if (isCompleted) {
+    return "There are currently no completed repair jobs recorded.";
+  }
+  return `There are currently no repair jobs matching status "${statusFilter}". Try adjusting your filters.`;
+}
+
 export function WorkshopEmptyState({
   tab,
   statusFilter,
@@ -29,15 +49,11 @@ export function WorkshopEmptyState({
       </div>
 
       <h3 className="text-base font-bold text-text-primary tracking-tight">
-        {isMyJobs
-          ? "No Active Jobs Assigned To You"
-          : "No Work Orders Found in this Segment"}
+        {getEmptyStateTitle(isMyJobs, statusFilter === "COMPLETED")}
       </h3>
 
       <p className="text-xs sm:text-sm text-text-muted max-w-md mt-1.5 mb-5">
-        {isMyJobs
-          ? "You currently have no jobs in progress or queued. Check the Workshop Bay Queue to claim an unassigned vehicle."
-          : `There are currently no repair jobs matching status "${statusFilter}". Try adjusting your filters.`}
+        {getEmptyStateDescription(isMyJobs, statusFilter)}
       </p>
 
       <div className="flex items-center gap-2.5">

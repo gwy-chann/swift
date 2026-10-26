@@ -41,6 +41,7 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
 
   function handleRoleChange(newRole: PortalRole) {
     setActiveRole(newRole);
+    setPassword("");
   }
 
   return (
@@ -61,6 +62,7 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
         rememberTerminal={rememberTerminal}
         setRememberTerminal={setRememberTerminal}
         initialNotice={initialNotice}
+        onRoleChange={handleRoleChange}
       />
     </div>
   );

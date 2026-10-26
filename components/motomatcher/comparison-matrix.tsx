@@ -107,6 +107,7 @@ export function ComparisonMatrix({
   touchOptimized = true,
   activeMobileTab: externalActiveMobileTab,
   onMobileTabChange: externalOnMobileTabChange,
+  canAddToCart = true,
 }: Readonly<ComparisonMatrixProps>) {
   const [internalAddedSku, setInternalAddedSku] = useState<string | null>(null);
   const [internalMobileTab, setInternalMobileTab] = useState<ComparisonMatrixTab>("oem");
@@ -211,15 +212,17 @@ export function ComparisonMatrix({
             )}
           </div>
 
-          <button
-            type="button"
-            disabled={isOutOfStock}
-            onClick={() => handleCardAddToCart(part)}
-            aria-label={isOutOfStock ? `${part.name} is out of stock` : `Add ${part.name} to POS Cart`}
-            className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${buttonTouchClass} active:scale-98 ${buttonClasses}`}
-          >
-            {renderAddToCartButtonContent(isAdded, isOutOfStock)}
-          </button>
+          {canAddToCart && (
+            <button
+              type="button"
+              disabled={isOutOfStock}
+              onClick={() => handleCardAddToCart(part)}
+              aria-label={isOutOfStock ? `${part.name} is out of stock` : `Add ${part.name} to POS Cart`}
+              className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${buttonTouchClass} active:scale-98 ${buttonClasses}`}
+            >
+              {renderAddToCartButtonContent(isAdded, isOutOfStock)}
+            </button>
+          )}
         </div>
       </div>
     );

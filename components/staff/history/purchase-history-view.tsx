@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -22,6 +22,7 @@ import { mapDbTransactionToThermalReceipt } from '@/lib/pos/contracts';
 import { calculateWarrantyStatus, STORE_WARRANTY_DAYS } from '@/lib/staff/warranty';
 import { WarrantyBadge } from './warranty-badge';
 import { ThermalReceiptModal } from '@/components/pos/thermal-receipt-modal';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export type DateFilterOption = 'all' | 'warranty_eligible' | 'today' | 'last_30_days';
 
@@ -117,12 +118,19 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
     };
   }, [filteredTransactions, now]);
 
+  const pagination = usePagination(filteredTransactions, 10);
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [searchQuery, dateFilter, resetPage]);
+
   return (
     <div className="space-y-4">
       {/* Search and Filters Bar (Filters placed beside search bar to save vertical space) */}
       <div className="bg-bg-surface border border-border rounded-xl p-3 sm:p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center gap-3 justify-between">
         {/* Search Box */}
-        <div className="relative flex-1 min-w-[280px]">
+        <div className="relative flex-1 min-w-70">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
@@ -308,7 +316,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
-                {filteredTransactions.map((tx) => {
+                {pagination.paginatedItems.map((tx) => {
                   const txId = tx.id || tx.receipt_number;
                   const isExpanded = expandedRows.has(txId);
                   const warranty = calculateWarrantyStatus(tx.created_at || '', now);
@@ -526,6 +534,16 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
             )}
           </div>
         )}
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="transactions"
+        />
       </div>
 
       {/* Printable Thermal Receipt Modal for Reprinting */}

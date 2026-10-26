@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Zap, Search, ShieldAlert, AlertTriangle, Wrench } from 'lucide-react';
+import { Zap, Search, AlertTriangle, Wrench } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import { StockBadge } from '@/components/inventory/stock-badge';
 import { resolveBarcodeScanQuery } from '@/lib/pos/barcode-scanner';
@@ -104,6 +104,7 @@ export function HybridCatalogPane({
         });
       }
     } else {
+      if (item.stock <= 0) return;
       onSelectProduct(item);
     }
   };
@@ -121,7 +122,8 @@ export function HybridCatalogPane({
         const srv = result.matchedItem as LaborService;
         onSelectService(srv);
       } else if (result.status === 'OUT_OF_STOCK_OVERRIDE' && result.matchedItem) {
-        onSelectProduct(result.matchedItem as Product);
+        const item = result.matchedItem as Product;
+        onScanNotFound?.(`Item ${item.sku} is out of stock.`);
       } else {
         onScanNotFound?.(query);
       }
@@ -223,12 +225,7 @@ export function HybridCatalogPane({
 
               const renderActionBadge = () => {
                 if (isOutOfStock) {
-                  return (
-                    <span className="text-[11px] font-bold text-danger flex items-center gap-1 group-hover:underline">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>Override</span>
-                    </span>
-                  );
+                  return null;
                 }
                 if (isLowStock) {
                   return (
@@ -249,11 +246,12 @@ export function HybridCatalogPane({
                 <button
                   type="button"
                   key={item.sku}
+                  disabled={isOutOfStock}
                   onClick={() => handleItemClick(item)}
-                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs group cursor-pointer text-left w-full ${
+                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs text-left w-full ${
                     isOutOfStock
-                      ? 'border-danger/30 hover:border-danger/60 bg-danger-light/10'
-                      : 'border-border hover:border-primary'
+                      ? 'border-border/60 bg-bg-muted/30 opacity-60 cursor-not-allowed'
+                      : 'border-border hover:border-primary cursor-pointer group'
                   }`}
                 >
                   <div>

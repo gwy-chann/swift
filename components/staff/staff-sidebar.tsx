@@ -97,7 +97,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
 
   return (
     <aside
-      className={`w-58 bg-bg-sidebar text-text-light flex flex-col justify-between shrink-0 h-screen border-r border-border-subtle ${className}`}
+      className={`w-58 bg-bg-sidebar text-text-light flex flex-col justify-between shrink-0 h-screen border-r border-border-subtle print:hidden ${className}`}
     >
       {/* Brand Header */}
       <div>

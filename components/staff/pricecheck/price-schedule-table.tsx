@@ -1,19 +1,51 @@
 'use client';
 
-import React from 'react';
-import { Layers, ArrowRight } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
+import { Layers } from 'lucide-react';
+import { useInventoryStore } from '@/lib/store/inventory-store';
+import { getProductsAction } from '@/lib/admin/product-actions';
+import { useInventoryRealtime } from '@/lib/hooks/use-inventory-realtime';
 import { MOCK_PRODUCTS } from '@/lib/mock-data/products';
 import { computeGrossMarkupPercent } from '@/lib/staff/margin-math';
 import { ShelfLocationTag } from '@/components/inventory/shelf-location-tag';
+import type { Product } from '@/lib/types/product';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export interface PriceScheduleTableProps {
   onSelectSku: (sku: string) => void;
   activeSku?: string;
+  products?: Product[];
 }
 
-export function PriceScheduleTable({ onSelectSku, activeSku }: Readonly<PriceScheduleTableProps>) {
-  // Show top high-velocity reference products from catalog
-  const referenceItems = MOCK_PRODUCTS.slice(0, 8);
+export function PriceScheduleTable({ onSelectSku, activeSku, products: propProducts }: Readonly<PriceScheduleTableProps>) {
+  const { products: storeProducts, hydrateProducts } = useInventoryStore();
+
+  // Subscribe to realtime database product updates
+  useInventoryRealtime();
+
+  useEffect(() => {
+    let isMounted = true;
+    getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hydrateProducts]);
+
+  // Use live database products from admin backend, with prop override or initial mock fallback
+  const referenceItems: Product[] = useMemo(() => {
+    if (propProducts && propProducts.length > 0) return propProducts;
+    if (storeProducts && storeProducts.length > 0) return storeProducts;
+    return MOCK_PRODUCTS.slice(0, 8);
+  }, [propProducts, storeProducts]);
+
+  const pagination = usePagination(referenceItems, 10);
 
   return (
     <div className="bg-bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
@@ -43,8 +75,8 @@ export function PriceScheduleTable({ onSelectSku, activeSku }: Readonly<PriceSch
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {referenceItems.map((item) => {
-              const markup = computeGrossMarkupPercent(item.retail, item.cost);
+            {pagination.paginatedItems.map((item) => {
+              const markup = computeGrossMarkupPercent(item.retail ?? 0, item.cost ?? 0);
               const isSelected = activeSku?.toUpperCase() === item.sku.toUpperCase();
 
               return (
@@ -63,10 +95,10 @@ export function PriceScheduleTable({ onSelectSku, activeSku }: Readonly<PriceSch
                     <div className="text-[10px] text-text-muted">{item.category} • {item.model}</div>
                   </td>
                   <td className="py-3 px-4 font-mono font-bold text-warning">
-                    ₱{item.wholesale.toFixed(2)}
+                    ₱{(item.wholesale ?? 0).toFixed(2)}
                   </td>
                   <td className="py-3 px-4 font-mono font-bold text-success">
-                    ₱{item.retail.toFixed(2)}
+                    ₱{(item.retail ?? 0).toFixed(2)}
                   </td>
                   <td className="py-3 px-4">
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary-light text-primary">
@@ -83,10 +115,9 @@ export function PriceScheduleTable({ onSelectSku, activeSku }: Readonly<PriceSch
                         e.stopPropagation();
                         onSelectSku(item.sku);
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-primary group-hover:underline cursor-pointer"
+                      className="text-[11px] font-bold text-primary group-hover:underline cursor-pointer"
                     >
-                      <span>Scan</span>
-                      <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                      Scan
                     </button>
                   </td>
                 </tr>
@@ -95,6 +126,16 @@ export function PriceScheduleTable({ onSelectSku, activeSku }: Readonly<PriceSch
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="products"
+      />
     </div>
   );
 }

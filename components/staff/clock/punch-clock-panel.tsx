@@ -204,6 +204,8 @@ export function PunchClockPanel({ className = "" }: PunchClockPanelProps) {
               toggleBreak(currentProfileId);
             }
           }
+        } else {
+          rehydrateShift(null, undefined, undefined, currentProfileId);
         }
       } catch (err) {
         console.warn("[PunchClockPanel] Error syncing active shift on mount:", err);

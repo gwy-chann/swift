@@ -6,6 +6,7 @@ import { usePunchStore } from "@/lib/store/punch-store";
 import type { PunchLog } from "@/lib/types/logs";
 import { normalizeProfileId } from "@/lib/staff/constants";
 import { MOCK_STAFF_PROFILES } from "@/lib/mock-data/users";
+import { TablePagination, usePagination } from "@/components/common/table-pagination";
 
 export interface AttendanceHistoryTableProps {
   initialLogs?: PunchLog[];
@@ -107,10 +108,11 @@ export function AttendanceHistoryTable({
       if (!currentStaff && !currentProfileId) return true;
 
       const logStaff = log.staff?.trim().toLowerCase();
+      const isCashierLegacy = logStaff === "swift fast-lane cashier";
       const matchesStaffName = Boolean(
         logStaff && (
-          (currentName && logStaff === currentName) ||
-          (profileName && logStaff === profileName)
+          (currentName && (logStaff === currentName || (isCashierLegacy && currentName === "mike morales"))) ||
+          (profileName && (logStaff === profileName || (isCashierLegacy && profileName === "mike morales")))
         )
       );
 
@@ -132,6 +134,8 @@ export function AttendanceHistoryTable({
       return (b.timeIn || "").localeCompare(a.timeIn || "");
     });
   }, [storeLogs, initialLogs, currentStaff, currentProfileId]);
+
+  const pagination = usePagination(logs, 10);
 
   return (
     <div
@@ -160,13 +164,20 @@ export function AttendanceHistoryTable({
               <th className="py-3 px-4">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y border-border">
             {logs.length > 0 ? (
-              logs.map((log, index) => {
+              pagination.paginatedItems.map((log, index) => {
                 const isActive =
                   isShiftActive &&
                   (log.status === "On Shift" || log.status === "on_shift" || log.status === "Break" || log.status === "break") &&
                   (activeShiftId ? log.id === activeShiftId : (index === 0 && log.timeOut === "-- Active Shift --"));
+
+                const isCashierLog =
+                  log.staff === "SWIFT Fast-Lane Cashier" ||
+                  ((log.profileId === "c0000000-0000-0000-0000-000000000002" ||
+                    log.profileId === "00000000-0000-0000-0000-000000000002") &&
+                    (!log.staff || log.staff === "Staff Member" || log.staff === "SWIFT Fast-Lane Cashier"));
+                const displayStaffName = isCashierLog ? (currentStaff || "Mike Morales") : log.staff;
 
                 return (
                   <tr
@@ -176,7 +187,7 @@ export function AttendanceHistoryTable({
                     <td className="py-3 px-4 text-text-primary font-bold">
                       {formatDisplayDate(log.date)}
                     </td>
-                    <td className="py-3 px-4 text-text-secondary">{log.staff}</td>
+                    <td className="py-3 px-4 text-text-secondary">{displayStaffName}</td>
                     <td className="py-3 px-4 text-text-secondary font-mono">{formatDisplayTime(log.timeIn, log.date)}</td>
                     <td className="py-3 px-4 font-mono">
                       {isActive ? (
@@ -210,6 +221,16 @@ export function AttendanceHistoryTable({
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="shifts"
+      />
     </div>
   );
 }
