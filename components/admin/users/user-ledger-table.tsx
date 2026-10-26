@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Power,
@@ -22,6 +22,7 @@ import { toggleUserStatusAction } from "@/lib/admin/user-actions";
 import { AddStaffModal } from "./add-staff-modal";
 import { EditStaffModal } from "./edit-staff-modal";
 import { ResetCredentialsModal } from "./reset-credentials-modal";
+import { TablePagination, usePagination } from "@/components/common/table-pagination";
 
 interface UserLedgerTableProps {
   initialUsers: StaffUserSummary[];
@@ -126,6 +127,13 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
+
+  const pagination = usePagination(filteredUsers, 10);
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [searchQuery, roleFilter, statusFilter, resetPage]);
 
   const handleStaffAdded = (newUser: StaffUserSummary) => {
     setUsers((prev) => [...prev, newUser]);
@@ -358,7 +366,7 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => {
+                pagination.paginatedItems.map((user) => {
                   const isActive = user.status === "Active";
                   const initial = user.fullName.charAt(0).toUpperCase() || "S";
                   const isBusy = togglingId === user.id;
@@ -472,6 +480,16 @@ export function UserLedgerTable({ initialUsers }: Readonly<UserLedgerTableProps>
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="accounts"
+        />
       </div>
 
       {/* Add Staff Modal */}

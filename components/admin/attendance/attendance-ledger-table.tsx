@@ -3,6 +3,7 @@
 import React from 'react';
 import type { AdminStaffShift } from '@/lib/types/logs';
 import { Clock, AlertTriangle, Monitor, RotateCcw } from 'lucide-react';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 interface AttendanceLedgerTableProps {
   shifts: AdminStaffShift[];
@@ -10,11 +11,18 @@ interface AttendanceLedgerTableProps {
   hasActiveFilters?: boolean;
 }
 
+function getShiftDurationClass(isActive: boolean, isOnBreak: boolean): string {
+  if (isActive) return 'text-success font-bold';
+  if (isOnBreak) return 'text-accent font-bold';
+  return 'text-text-primary font-medium';
+}
+
 export function AttendanceLedgerTable({
   shifts,
   onResetFilters,
   hasActiveFilters,
 }: Readonly<AttendanceLedgerTableProps>) {
+  const pagination = usePagination(shifts, 10);
   if (shifts.length === 0) {
     return (
       <div className="bg-bg-card border border-border-subtle rounded-xl p-12 text-center shadow-xs">
@@ -59,7 +67,7 @@ export function AttendanceLedgerTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle/50">
-            {shifts.map((shift) => {
+            {pagination.paginatedItems.map((shift) => {
               const isActive = shift.status === 'on_shift';
               const isOnBreak = shift.status === 'break';
               const isCompleted = shift.status === 'completed';
@@ -120,15 +128,7 @@ export function AttendanceLedgerTable({
                   {/* Duration */}
                   <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px]">
                     <div className="flex items-center gap-1.5">
-                      <span
-                        className={
-                          isActive
-                            ? 'text-success font-bold'
-                            : isOnBreak
-                            ? 'text-accent font-bold'
-                            : 'text-text-primary font-medium'
-                        }
-                      >
+                      <span className={getShiftDurationClass(isActive, isOnBreak)}>
                         {shift.duration}
                       </span>
                       {shift.isExtendedShift && (
@@ -178,15 +178,15 @@ export function AttendanceLedgerTable({
         </table>
       </div>
 
-      {/* Footer Summary */}
-      <div className="p-3 border-t border-border-subtle bg-bg-subtle/30 flex items-center justify-between text-[11px] text-text-muted">
-        <div>
-          Showing <span className="font-bold text-text-primary">{shifts.length}</span> recorded shift{shifts.length === 1 ? '' : 's'}
-        </div>
-        <div className="text-[10px]">
-          Time-in and Time-out recorded in Store Local Time
-        </div>
-      </div>
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="shifts"
+      />
     </div>
   );
 }

@@ -104,9 +104,6 @@ export function RevenueComparisonChart({
         <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-primary">
           7-Day Revenue Comparison (Parts Sales vs Labor Services)
         </h3>
-        <span className="px-2.5 py-1 rounded text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-bg-muted text-text-secondary border border-border-subtle">
-          {normalizedWeekly.dateRangeLabel}
-        </span>
       </div>
 
       {/* Chart Body */}

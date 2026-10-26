@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, PackageX } from 'lucide-react';
 import type { StockAdjustmentLogEntry } from '@/lib/types/stock-audit';
 import { formatAuditTimestamp } from '@/lib/admin/stock-audit-utils';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 interface StockAuditTableProps {
   logs: StockAdjustmentLogEntry[];
@@ -12,6 +13,7 @@ export function StockAuditTable({
   logs,
   isLoading = false,
 }: StockAuditTableProps) {
+  const pagination = usePagination(logs, 10);
   const getAdjustmentTypeBadge = (type: string) => {
     const t = type.toLowerCase();
     if (t.includes('damaged')) {
@@ -74,7 +76,7 @@ export function StockAuditTable({
       );
     }
 
-    return logs.map((log) => {
+    return pagination.paginatedItems.map((log) => {
       const isPositive = log.quantityDelta > 0;
       const formattedDelta = isPositive
         ? `+${log.quantityDelta} Units`
@@ -133,22 +135,34 @@ export function StockAuditTable({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse text-xs">
-        <thead>
-          <tr className="border-b border-border bg-bg-muted/50 text-text-muted uppercase tracking-wider font-semibold">
-            <th className="py-3 px-4">Timestamp</th>
-            <th className="py-3 px-4">SKU</th>
-            <th className="py-3 px-4">Type</th>
-            <th className="py-3 px-4">Change</th>
-            <th className="py-3 px-4">Reason / Reference</th>
-            <th className="py-3 px-4">Authorized By</th>
-          </tr>
-        </thead>
-        <tbody id="stockAdjLogsBody" className="divide-y divide-border/60">
-          {renderTableRows()}
-        </tbody>
-      </table>
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-border bg-bg-muted/50 text-text-muted uppercase tracking-wider font-semibold">
+              <th className="py-3 px-4">Timestamp</th>
+              <th className="py-3 px-4">SKU</th>
+              <th className="py-3 px-4">Type</th>
+              <th className="py-3 px-4">Change</th>
+              <th className="py-3 px-4">Reason / Reference</th>
+              <th className="py-3 px-4">Authorized By</th>
+            </tr>
+          </thead>
+          <tbody id="stockAdjLogsBody" className="divide-y divide-border/60">
+            {renderTableRows()}
+          </tbody>
+        </table>
+      </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="adjustments"
+      />
     </div>
   );
 }

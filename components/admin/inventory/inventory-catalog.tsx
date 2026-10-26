@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useInventoryStore } from '@/lib/store/inventory-store';
 import {
@@ -36,7 +36,6 @@ export interface InventoryCatalogProps {
 export function InventoryCatalog({
   initialProducts,
   initialPricingRules,
-  showHeader = false,
   initialStockFilter = 'all',
   initialLowStockOnly = false
 }: InventoryCatalogProps = {}) {
@@ -115,27 +114,26 @@ export function InventoryCatalog({
     setSelectedCategory('All');
     setStockFilter('all');
     setLowStockOnly(false);
+    setSelectedCategory('All');
+    setStockFilter('all');
+    setLowStockOnly(false);
     setCurrentPage(1);
   };
 
-  // Reset pagination to page 1 whenever search query or filters change
-  useEffect(() => {
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${searchQuery}|${selectedCategory}|${stockFilter}|${lowStockOnly}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, stockFilter, lowStockOnly]);
-
-  // Clamp current page when total items / page size changes
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-    if (currentPage > maxPage) {
-      setCurrentPage(maxPage);
-    }
-  }, [filteredProducts.length, pageSize, currentPage]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const effectivePage = Math.min(Math.max(1, currentPage), totalPages);
+
   const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
+    const startIndex = (effectivePage - 1) * pageSize;
     return filteredProducts.slice(startIndex, startIndex + pageSize);
-  }, [filteredProducts, currentPage, pageSize]);
+  }, [filteredProducts, effectivePage, pageSize]);
 
   const handleAdjustStock = (sku: string) => {
     const target = products.find((p) => p.sku === sku);
@@ -340,7 +338,7 @@ export function InventoryCatalog({
             onAdjustStock={handleAdjustStock}
           />
           <CatalogPagination
-            currentPage={currentPage}
+            currentPage={effectivePage}
             totalPages={totalPages}
             totalItems={filteredProducts.length}
             pageSize={pageSize}

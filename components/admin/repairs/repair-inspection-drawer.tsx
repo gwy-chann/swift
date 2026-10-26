@@ -167,13 +167,13 @@ export function RepairInspectionDrawer({
             </div>
           </div>
 
-          {/* Section: Live Technician Status & Punch Duration */}
+          {/* Section: Live Mechanic Status & Punch Duration */}
           <div className="p-4 rounded-xl border border-border-subtle bg-bg-base/50 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                  Assigned Technician
+                  Assigned Mechanic
                 </span>
               </div>
               <span className="text-xs font-semibold text-text-secondary">
@@ -323,7 +323,7 @@ export function RepairInspectionDrawer({
 
             <p className="text-xs text-text-secondary">
               Reassign this job to balance workload or escalate stalled bay bottlenecks. The action
-              is immediately synced across technician terminals and logged in the audit ledger.
+              is immediately synced across mechanic terminals and logged in the audit ledger.
             </p>
 
             {feedbackMessage && (
@@ -358,7 +358,7 @@ export function RepairInspectionDrawer({
                     onChange={(e) => setSelectedMechanicId(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle text-xs text-text-primary focus:outline-hidden focus:border-primary"
                   >
-                    <option value="">-- Choose on-shift technician --</option>
+                    <option value="">-- Choose on-shift mechanic --</option>
                     {availableMechanics.map((mech) => (
                       <option key={mech.id} value={mech.id}>
                         {mech.name} (Active On Shift)
@@ -380,7 +380,7 @@ export function RepairInspectionDrawer({
                   type="text"
                   value={reassignReason}
                   onChange={(e) => setReassignReason(e.target.value)}
-                  placeholder="e.g. Bottleneck escalation, technician specialist required"
+                  placeholder="e.g. Bottleneck escalation, mechanic specialist required"
                   className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle text-xs text-text-primary focus:outline-hidden focus:border-primary"
                 />
               </div>
@@ -399,7 +399,7 @@ export function RepairInspectionDrawer({
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>Confirm Technician Reassignment</span>
+                    <span>Confirm Mechanic Reassignment</span>
                   </>
                 )}
               </button>

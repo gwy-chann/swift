@@ -2,6 +2,7 @@ import React from 'react';
 import { formatCurrencyPhp, formatUnitCount, isHighYieldMargin } from '@/lib/admin/pnl-cogs-utils';
 import type { CategoryPnlItem } from '@/lib/types/analytics';
 import { ArrowUpRight, AlertCircle } from 'lucide-react';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export interface CategoryPnlTableProps {
   categories: CategoryPnlItem[];
@@ -32,6 +33,7 @@ export function CategoryPnlTable({
   categories,
   targetMarginThreshold = 30.0,
 }: CategoryPnlTableProps) {
+  const pagination = usePagination(categories, 10);
   return (
     <div className="bg-bg-card border border-border rounded-xl shadow-xs overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -64,7 +66,7 @@ export function CategoryPnlTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {categories.map((item) => {
+            {pagination.paginatedItems.map((item) => {
               const highYield = isHighYieldMargin(item.margin_pct, targetMarginThreshold);
               const profitColor = getProfitColorClass(highYield, item.net_profit);
               const marginBadge = getMarginBadgeClass(highYield, item.margin_pct);
@@ -118,6 +120,16 @@ export function CategoryPnlTable({
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="categories"
+      />
     </div>
   );
 }

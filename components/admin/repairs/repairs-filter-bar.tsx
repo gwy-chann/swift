@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, LayoutGrid, List, Filter, X } from 'lucide-react';
+import { Search, LayoutGrid, List, Filter, X, RefreshCw } from 'lucide-react';
 import type { RepairsFilterState } from '@/lib/repairs/repairs-contracts';
 import type { WorkOrderStatus } from '@/lib/types/service';
 
@@ -11,6 +11,8 @@ interface RepairsFilterBarProps {
   mechanicsList: string[];
   baysList: { id: string; name: string }[];
   totalResults: number;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const STATUS_TABS: { label: string; value: 'ALL' | WorkOrderStatus }[] = [
@@ -27,6 +29,8 @@ export function RepairsFilterBar({
   mechanicsList,
   baysList,
   totalResults,
+  onRefresh,
+  isRefreshing,
 }: Readonly<RepairsFilterBarProps>) {
   const isFiltered =
     filters.searchQuery !== '' ||
@@ -44,11 +48,11 @@ export function RepairsFilterBar({
   }
 
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 mb-6 shadow-xs space-y-4">
+    <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 shadow-xs space-y-4">
       {/* Top Row: Search & View Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Instant Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
@@ -60,7 +64,7 @@ export function RepairsFilterBar({
           {filters.searchQuery && (
             <button
               onClick={() => onFilterChange({ searchQuery: '' })}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary cursor-pointer"
               title="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -68,9 +72,9 @@ export function RepairsFilterBar({
           )}
         </div>
 
-        {/* View Switcher & Result Count */}
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <span className="text-xs font-medium text-text-muted">
+        {/* View Switcher, Result Count & Refresh */}
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+          <span className="text-xs font-medium text-text-muted whitespace-nowrap">
             Showing <strong className="text-text-primary">{totalResults}</strong> motors
           </span>
 
@@ -78,7 +82,7 @@ export function RepairsFilterBar({
             <button
               type="button"
               onClick={() => onFilterChange({ viewMode: 'grid' })}
-              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors ${
+              className={`p-1.5 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                 filters.viewMode === 'grid'
                   ? 'bg-bg-surface text-primary shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
@@ -91,7 +95,7 @@ export function RepairsFilterBar({
             <button
               type="button"
               onClick={() => onFilterChange({ viewMode: 'table' })}
-              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors ${
+              className={`p-1.5 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                 filters.viewMode === 'table'
                   ? 'bg-bg-surface text-primary shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
@@ -102,6 +106,19 @@ export function RepairsFilterBar({
               <span className="hidden md:inline">Table</span>
             </button>
           </div>
+
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 px-2.5 rounded-lg border border-border-subtle bg-bg-base hover:bg-bg-surface text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Refresh Feed"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          )}
         </div>
       </div>
 
