@@ -33,6 +33,7 @@ export const StaffPermissionsSchema = z.object({
 export const ProvisionStaffUserSchema = z.object({
   email: z.string().trim().email('Invalid email address format'),
   fullName: z.string().trim().min(2, 'Full name must be at least 2 characters'),
+  employeeId: z.string().trim().optional(),
   role: DbUserRoleSchema,
   permissions: StaffPermissionsSchema.partial().optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
@@ -58,6 +59,7 @@ export interface StaffUserSummary {
   id: string;
   email: string;
   fullName: string;
+  employeeId?: string;
   role: DbUserRole;
   roleDisplay: UserRole;
   status: 'Active' | 'Inactive' | 'Suspended';

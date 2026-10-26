@@ -19,6 +19,7 @@ export const DbUserRoleSchema = z.enum([
 export const ProvisionStaffUserSchema = z.object({
   fullName: z.string().min(2, 'Full name must contain at least 2 characters').max(100),
   email: z.string().email('Invalid email address format'),
+  employeeId: z.string().trim().optional(),
   role: DbUserRoleSchema,
   password: z.string().min(6, 'Password or temporary PIN must be at least 6 characters').optional(),
   permissions: StaffPermissionsSchema.partial().optional(),
@@ -29,6 +30,7 @@ export type ProvisionStaffUserPayload = z.infer<typeof ProvisionStaffUserSchema>
 export const UpdateStaffUserSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   fullName: z.string().min(2, 'Full name must contain at least 2 characters').max(100).optional(),
+  employeeId: z.string().trim().optional(),
   role: DbUserRoleSchema.optional(),
   permissions: StaffPermissionsSchema.partial().optional(),
 });
@@ -46,6 +48,7 @@ export interface StaffUserSummary {
   id: string;
   email: string;
   fullName: string;
+  employeeId?: string;
   role: DbUserRole;
   roleDisplay: UserRole;
   status: 'Active' | 'Inactive' | 'Suspended';
