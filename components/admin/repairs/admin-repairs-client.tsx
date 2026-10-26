@@ -7,7 +7,7 @@ import type {
   RepairsDashboardKpiSummary,
   RepairsFilterState,
 } from '@/lib/repairs/repairs-contracts';
-import { filterAdminRepairs } from '@/lib/repairs/repairs-actions';
+import { filterAdminRepairs } from '@/lib/repairs/repairs-utils';
 import { RepairsKpiSummary } from './repairs-kpi-summary';
 import { RepairsFilterBar } from './repairs-filter-bar';
 import { RepairMotorCard } from './repair-motor-card';
