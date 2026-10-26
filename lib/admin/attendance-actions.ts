@@ -43,16 +43,30 @@ const STATUS_LABELS: Record<DbStaffShift['status'], 'On Shift' | 'Break' | 'Comp
   completed: 'Completed',
 };
 
+import { MOCK_STAFF_PROFILES } from '../mock-data/users.ts';
+import { CANONICAL_DB_PROFILE_IDS } from '../staff/constants.ts';
+
 const STAFF_METADATA_BY_PROFILE: Record<string, { name: string; role: string }> = {
   'c0000000-0000-0000-0000-000000000002': { name: 'Mike Morales', role: 'Cashier' },
   '00000000-0000-0000-0000-000000000002': { name: 'Mike Morales', role: 'Cashier' },
   'd0000000-0000-0000-0000-000000000003': { name: 'Dante Reyes', role: 'Mechanic' },
   '00000000-0000-0000-0000-000000000003': { name: 'Dante Reyes', role: 'Mechanic' },
   '00000000-0000-0000-0000-000000000004': { name: 'Rico Santos', role: 'Inventory Clerk' },
+  'd0000000-0000-0000-0000-000000000004': { name: 'Rico Santos', role: 'Inventory Clerk' },
   '1d72a1c9-13c3-4dc1-a035-166299b4d060': { name: 'Elena Vance', role: 'Inventory Clerk' },
   'a0000000-0000-0000-0000-000000000001': { name: 'Carlos Rodriguez', role: 'Admin' },
   '00000000-0000-0000-0000-000000000001': { name: 'Carlos Rodriguez', role: 'Admin' },
+  'c9e4d1e8-ac08-4215-852c-e5d8a01ff57c': { name: 'Rene Baterbonia', role: 'Cashier' },
 };
+
+// Also enrich with any profiles in MOCK_STAFF_PROFILES
+for (const p of MOCK_STAFF_PROFILES) {
+  STAFF_METADATA_BY_PROFILE[p.id] = { name: p.name, role: p.roleDisplay };
+  const canonical = CANONICAL_DB_PROFILE_IDS[p.id];
+  if (canonical) {
+    STAFF_METADATA_BY_PROFILE[canonical] = { name: p.name, role: p.roleDisplay };
+  }
+}
 
 /**
  * Maps a raw DbStaffShift row from PostgreSQL into an enriched AdminStaffShift.
@@ -65,8 +79,8 @@ function mapDbRowToAdminShift(row: DbStaffShift): AdminStaffShift {
 
   const matchedMeta = row.profile_id ? STAFF_METADATA_BY_PROFILE[row.profile_id] : undefined;
   let resolvedName = row.staff_name || matchedMeta?.name || 'Staff Member';
-  if (resolvedName === 'Maria Santos') {
-    resolvedName = matchedMeta?.name || 'Mike Morales';
+  if (resolvedName === 'Maria Santos' || resolvedName === 'SWIFT Fast-Lane Cashier') {
+    resolvedName = matchedMeta?.name || resolvedName;
   }
   const resolvedRole = matchedMeta?.role || 'Staff';
 

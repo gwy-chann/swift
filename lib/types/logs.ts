@@ -18,6 +18,7 @@ export interface AuditLog {
 
 export interface PunchLog {
   id?: string;
+  profileId?: string;
   date: string;
   staff: string;
   timeIn: string;
@@ -57,11 +58,16 @@ function formatShiftDate(iso: string): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Formats an ISO 8601 timestamp as HH:mm wall-clock time (UTC). */
+/** Formats an ISO 8601 timestamp as 12-hour wall-clock time with AM/PM (e.g. "09:30:00 PM"). */
 function formatClockTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return ACTIVE_PLACEHOLDER;
-  return date.toISOString().slice(11, 16);
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
 }
 
 /** Formats a shift duration in seconds as "HHh MMm"; null or zero renders the placeholder. */
@@ -81,6 +87,7 @@ export function mapStaffShiftRow(row: DbStaffShift): PunchLog {
 
   return {
     id: row.id,
+    profileId: row.profile_id,
     date: formatShiftDate(row.clock_in),
     staff: row.staff_name,
     timeIn: formatClockTime(row.clock_in),

@@ -30,6 +30,15 @@ describe('Staff Terminal Role-Aware Navigation & RBAC (SIAA-85)', () => {
       assert.ok(!ids.includes('work-orders'), 'Work Order Queue must be hidden for inventory clerk');
     });
 
+    it('filters navigation items for Cashier to pos, search, compat, history, and clock (hiding pricecheck and work-orders)', () => {
+      const filtered = filterNavItemsByRole(STAFF_NAV_ITEMS, 'cashier');
+      const ids = filtered.map((item) => item.id);
+
+      assert.deepEqual(ids.sort(), ['clock', 'compat', 'history', 'pos', 'search'].sort());
+      assert.ok(!ids.includes('pricecheck'), 'Item Code Price Check must be hidden for cashier');
+      assert.ok(!ids.includes('work-orders'), 'Work Order Queue must be hidden for cashier');
+    });
+
     it('renders all 7 navigation items for Admin including work-orders', () => {
       const filtered = filterNavItemsByRole(STAFF_NAV_ITEMS, 'admin');
       const ids = filtered.map((item) => item.id);

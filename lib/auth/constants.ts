@@ -54,6 +54,18 @@ export const DEMO_STAFF_ACCOUNTS: DemoAccount[] = [
     defaultPassword: "staff123••••••••",
     pin: "3333",
   },
+  {
+    id: "c9e4d1e8-ac08-4215-852c-e5d8a01ff57c",
+    name: "Rene Baterbonia",
+    label: "Cashier",
+    email: "cashier1@swift.local",
+    role: "staff",
+    staffRole: "cashier",
+    targetUrl: "/staff/pos",
+    buttonLabel: "Use Cashier",
+    defaultPassword: "staff123••••••••",
+    pin: "2008",
+  },
 ];
 
 export const ALL_DEMO_ACCOUNTS: DemoAccount[] = [

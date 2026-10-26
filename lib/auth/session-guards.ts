@@ -11,6 +11,8 @@ export interface ResolvedSession {
   isAuthenticated: boolean;
   role: PortalRole | null;
   userId?: string;
+  userName?: string;
+  staffRole?: string;
   source: "supabase" | "demo" | "none";
   isInactive?: boolean;
   hasPendingPinChallenge?: boolean;
@@ -81,6 +83,45 @@ export function classifyRoute(pathname: string): RouteClassification {
   return "OTHER";
 }
 
+function parsePendingChallenge(cookieValue?: string): {
+  hasPendingPinChallenge: boolean;
+  pendingStaffEmail?: string;
+  pendingStaffName?: string;
+  pendingStaffRole?: string;
+} {
+  if (!cookieValue) {
+    return { hasPendingPinChallenge: false };
+  }
+  try {
+    const parsed = JSON.parse(decodeURIComponent(cookieValue));
+    if (parsed?.userId && parsed?.portalRole === "staff") {
+      return {
+        hasPendingPinChallenge: true,
+        pendingStaffEmail: parsed.email,
+        pendingStaffName: parsed.name,
+        pendingStaffRole: parsed.role,
+      };
+    }
+  } catch {
+    // Ignore JSON parse errors
+  }
+  return { hasPendingPinChallenge: false };
+}
+
+function determineBaseRole(
+  metaRole?: string,
+  isStaffRole?: boolean,
+  validCookieRole?: PortalRole | null
+): PortalRole {
+  if (metaRole === "admin") {
+    return "admin";
+  }
+  if (isStaffRole) {
+    return "staff";
+  }
+  return validCookieRole || "admin";
+}
+
 /**
  * Resolves authentication status from cookies and optional Supabase user record.
  */
@@ -91,45 +132,42 @@ export function resolveSession(
   const roleCookie = cookies?.get("swift-session-role")?.value?.toLowerCase();
   const isElevated = cookies?.get("swift_admin_elevated")?.value === "true";
   const userIdCookie = cookies?.get("swift-session-user-id")?.value;
+  const userNameCookie = cookies?.get("swift-user-name")?.value;
+  const staffRoleCookie = cookies?.get("swift-session-staff-role")?.value;
   const validCookieRole: PortalRole | null =
     roleCookie === "admin" || roleCookie === "staff" ? roleCookie : null;
 
-  const pendingChallengeCookie = cookies?.get("swift-pending-staff-auth")?.value;
-  let hasPendingPinChallenge = false;
-  let pendingStaffEmail: string | undefined;
-  let pendingStaffName: string | undefined;
-  let pendingStaffRole: string | undefined;
-
-  if (pendingChallengeCookie) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(pendingChallengeCookie));
-      if (parsed?.userId && parsed?.portalRole === "staff") {
-        hasPendingPinChallenge = true;
-        pendingStaffEmail = parsed.email;
-        pendingStaffName = parsed.name;
-        pendingStaffRole = parsed.role;
-      }
-    } catch {
-      // Ignore JSON parse errors
-    }
-  }
+  const {
+    hasPendingPinChallenge,
+    pendingStaffEmail,
+    pendingStaffName,
+    pendingStaffRole,
+  } = parsePendingChallenge(cookies?.get("swift-pending-staff-auth")?.value);
 
   if (supabaseUser) {
     const metaRole =
       (supabaseUser.user_metadata?.role as string)?.toLowerCase() ||
       (supabaseUser.app_metadata?.role as string)?.toLowerCase();
 
-    const baseRole: PortalRole =
-      metaRole === "admin" || metaRole === "staff"
-        ? (metaRole as PortalRole)
-        : validCookieRole || "admin";
+    const isStaffRole =
+      metaRole === "staff" ||
+      metaRole === "cashier" ||
+      metaRole === "mechanic" ||
+      metaRole === "inventory_clerk";
 
+    const baseRole = determineBaseRole(metaRole, isStaffRole, validCookieRole);
     const role: PortalRole = isElevated ? "admin" : baseRole;
+    const resolvedFullName =
+      (supabaseUser.user_metadata?.full_name as string) ||
+      (supabaseUser.user_metadata?.name as string) ||
+      userNameCookie;
 
     return {
       isAuthenticated: true,
       role,
       userId: supabaseUser.id,
+      userName: resolvedFullName,
+      staffRole: metaRole || staffRoleCookie,
       source: "supabase",
       hasPendingPinChallenge,
       pendingStaffEmail,
@@ -143,6 +181,8 @@ export function resolveSession(
       isAuthenticated: true,
       role: "admin",
       userId: userIdCookie,
+      userName: userNameCookie || "Carlos Rodriguez",
+      staffRole: "admin",
       source: "demo",
       hasPendingPinChallenge,
       pendingStaffEmail,
@@ -156,6 +196,8 @@ export function resolveSession(
       isAuthenticated: true,
       role: validCookieRole,
       userId: userIdCookie,
+      userName: userNameCookie,
+      staffRole: staffRoleCookie,
       source: "demo",
       hasPendingPinChallenge,
       pendingStaffEmail,

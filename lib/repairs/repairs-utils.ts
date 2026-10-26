@@ -15,7 +15,7 @@ export function deriveVehicleMake(vehicleModel: string): string {
   const trimmed = vehicleModel.trim();
   const knownMakes = ['Yamaha', 'Honda', 'Suzuki', 'Kawasaki', 'Kymco', 'Vespa', 'Ducati', 'BMW', 'KTM'];
   for (const make of knownMakes) {
-    if (new RegExp(`^${make}\\b`, 'i').test(trimmed)) {
+    if (new RegExp(String.raw`^${make}\b`, 'i').test(trimmed)) {
       return make;
     }
   }
@@ -28,7 +28,7 @@ export function deriveVehicleMake(vehicleModel: string): string {
  */
 export function deriveChassisNumber(orderNumber: string, plateNumber: string, id: string): string {
   const cleanPlate = (plateNumber || 'SWIFT').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  const shortId = (id || orderNumber || '0000').replace(/-/g, '').slice(-4).toUpperCase();
+  const shortId = (id || orderNumber || '0000').replaceAll('-', '').slice(-4).toUpperCase();
   return `CHAS-${cleanPlate}-${shortId}`;
 }
 
@@ -61,7 +61,7 @@ export function calculateElapsedMinutes(
   if (!reference) return 0;
   const refMs = new Date(reference).getTime();
   const nowMs = Date.now();
-  if (isNaN(refMs) || refMs > nowMs) return 0;
+  if (Number.isNaN(refMs) || refMs > nowMs) return 0;
   return Math.max(0, Math.round((nowMs - refMs) / 60000));
 }
 

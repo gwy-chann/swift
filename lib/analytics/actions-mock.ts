@@ -116,7 +116,7 @@ export const DETERMINISTIC_FALLBACK_SERVICE_BAYS: ServiceBayDisplayItem[] = [
     bayName: 'Bay 2 (Scooter Bay)',
     status: 'IN PROGRESS',
     vehicleService: 'Honda Click 150i • Full CVT Overhaul',
-    mechanicInfo: 'Mechanic: Alex Lim (~25 mins left)',
+    mechanicInfo: 'Mechanic: Dante Reyes (~25 mins left)',
   },
   {
     id: 'f0000000-0000-0000-0000-000000000003',

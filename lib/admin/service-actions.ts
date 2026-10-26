@@ -9,6 +9,7 @@ import type {
   ServiceActionResult
 } from '../types/service.ts';
 import { MOCK_SERVICES } from '../mock-data/services.ts';
+import { generateServiceCode } from './service-utils.ts';
 
 // In-memory fallback cache for environments without a live PostgreSQL connection
 let memoryServices: LaborService[] = [...MOCK_SERVICES];
@@ -215,7 +216,18 @@ async function executePrismaCreateService(
 export async function createLaborServiceAction(
   payload: CreateLaborServicePayload
 ): Promise<ServiceActionResult<LaborService>> {
-  const fieldErrors = validateCreateServiceInput(payload);
+  let codeToUse = payload.code?.trim();
+  if (!codeToUse && payload.name?.trim()) {
+    const existing = await getAdminLaborServicesAction();
+    codeToUse = generateServiceCode(payload.name, existing.map((s) => s.code));
+  }
+
+  const effectivePayload = {
+    ...payload,
+    code: codeToUse ?? ''
+  };
+
+  const fieldErrors = validateCreateServiceInput(effectivePayload);
   if (Object.keys(fieldErrors).length > 0) {
     return {
       success: false,
@@ -225,9 +237,9 @@ export async function createLaborServiceAction(
     };
   }
 
-  const normalizedCode = payload.code.trim().toUpperCase();
+  const normalizedCode = effectivePayload.code.trim().toUpperCase();
 
-  const supabaseResult = await executeSupabaseCreateService(normalizedCode, payload);
+  const supabaseResult = await executeSupabaseCreateService(normalizedCode, effectivePayload);
   if (supabaseResult) {
     await safeRevalidatePaths();
     return supabaseResult;
@@ -309,11 +321,19 @@ async function executeSupabaseUpdateService(
   try {
     const { createClient, createAdminClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
+    const adminClient = createAdminClient();
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId);
-    const { data: currentService } = await (isUuid
+    let { data: currentService } = await (isUuid
       ? supabase.from('labor_services').select('*').eq('id', serviceId).maybeSingle()
       : supabase.from('labor_services').select('*').eq('code', serviceId).maybeSingle());
+
+    if (!currentService) {
+      const adminLookup = await (isUuid
+        ? adminClient.from('labor_services').select('*').eq('id', serviceId).maybeSingle()
+        : adminClient.from('labor_services').select('*').eq('code', serviceId).maybeSingle());
+      currentService = adminLookup.data;
+    }
 
     if (!currentService) return null;
 
@@ -327,8 +347,7 @@ async function executeSupabaseUpdateService(
       .select()
       .single();
 
-    if (updateError?.message.toLowerCase().includes('permission denied')) {
-      const adminClient = createAdminClient();
+    if (updateError) {
       const retry = await adminClient
         .from('labor_services')
         .update(updateData)
@@ -339,11 +358,13 @@ async function executeSupabaseUpdateService(
       if (!retry.error && retry.data) {
         updatedService = retry.data;
         updateError = null;
+      } else if (retry.error) {
+        console.warn('[updateLaborServiceAction] Supabase admin update error:', retry.error.message);
       }
     }
 
     if (!updateError && updatedService) {
-      await logServiceRateAuditSupabase(supabase, currentService, payload, oldRate);
+      await logServiceRateAuditSupabase(adminClient, currentService, payload, oldRate);
       return { success: true, data: mapDbServiceToDomain(updatedService) };
     }
   } catch (err) {

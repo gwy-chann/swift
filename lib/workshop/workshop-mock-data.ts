@@ -2,7 +2,6 @@ import type { DetailedWorkOrder } from '../types/workshop.ts';
 import type { ServiceBay } from '../types/service.ts';
 
 export const DANTE_REYES_PROFILE_ID = 'd0000000-0000-0000-0000-000000000003';
-export const ALEX_LIM_PROFILE_ID = 'd0000000-0000-0000-0000-000000000004';
 
 export const MOCK_SERVICE_BAYS: ServiceBay[] = [
   {
@@ -110,8 +109,8 @@ export const INITIAL_MOCK_WORK_ORDERS: DetailedWorkOrder[] = [
     plateNumber: 'XYZ-7890',
     serviceCode: 'SRV-CVT-01',
     serviceName: 'Full CVT Cleaning & Regreasing',
-    mechanicId: ALEX_LIM_PROFILE_ID,
-    mechanicName: 'Alex Lim',
+    mechanicId: DANTE_REYES_PROFILE_ID,
+    mechanicName: 'Dante Reyes',
     status: 'IN PROGRESS',
     estimatedDurationMinutes: 45,
     remainingMinutes: 25,

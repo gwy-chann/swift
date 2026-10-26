@@ -40,6 +40,7 @@ export interface MockStaffUserProfile {
   id: string;
   name: string;
   email: string;
+  employeeId?: string;
   role: DbUserRole;
   roleDisplay: UserRole;
   status: 'Active' | 'Inactive' | 'Suspended';
@@ -54,6 +55,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     id: '00000000-0000-0000-0000-000000000001',
     name: 'Carlos Rodriguez',
     email: 'admin@swift.local',
+    employeeId: 'EMP-001',
     role: 'admin',
     roleDisplay: 'Admin',
     status: 'Active',
@@ -66,6 +68,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     id: '00000000-0000-0000-0000-000000000002',
     name: 'Mike Morales',
     email: 'cashier@swift.local',
+    employeeId: 'EMP-002',
     role: 'cashier',
     roleDisplay: 'Cashier',
     status: 'Active',
@@ -78,6 +81,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     id: '00000000-0000-0000-0000-000000000003',
     name: 'Dante Reyes',
     email: 'mechanic1@swift.local',
+    employeeId: 'EMP-003',
     role: 'mechanic',
     roleDisplay: 'Mechanic',
     status: 'Active',
@@ -90,6 +94,7 @@ export const MOCK_STAFF_PROFILES: MockStaffUserProfile[] = [
     id: '00000000-0000-0000-0000-000000000004',
     name: 'Rico Santos',
     email: 'warehouse@swift.local',
+    employeeId: 'EMP-004',
     role: 'inventory_clerk',
     roleDisplay: 'Inventory Clerk',
     status: 'Active',

@@ -1,6 +1,6 @@
 'use server';
 
-import type { DbUserRole, StaffPermissions } from '../types/auth.ts';
+import type { DbUserRole, StaffPermissions, UserRole } from '../types/auth.ts';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   DEFAULT_STAFF_PERMISSIONS,
@@ -25,11 +25,14 @@ import {
   PIN_VALIDATION_ERROR_MSG,
 } from '../../specs/104-staff-credential-provisioning-and-reset/contracts/credentials.contract.ts';
 import { logSecurityEventAction } from './audit-actions.ts';
+import { DEFAULT_DEMO_PINS } from '../staff/constants.ts';
 
 // In-memory fallback cache for test suites and environments without live Supabase
+let isTestIsolationMode = false;
 let memoryStaffUsers: MockStaffUserProfile[] = structuredClone(MOCK_STAFF_PROFILES);
 
 export async function resetInMemoryStaffUsers(): Promise<void> {
+  isTestIsolationMode = true;
   memoryStaffUsers = structuredClone(MOCK_STAFF_PROFILES);
   await Promise.resolve();
 }
@@ -41,6 +44,71 @@ async function safeRevalidatePaths(): Promise<void> {
   } catch {
     // Suppressed when executing in unit testing or outside Next.js request context
   }
+}
+
+async function getSupabaseAdminOrFallback() {
+  const { createAdminClient, createClient } = await import('../supabase/server.ts');
+  try {
+    return createAdminClient();
+  } catch {
+    return await createClient();
+  }
+}
+
+async function ensureUserInMemory(userId: string): Promise<number> {
+  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === userId);
+  if (existingIndex !== -1) {
+    return existingIndex;
+  }
+  if (!isTestIsolationMode) {
+    try {
+      const supabase = await getSupabaseAdminOrFallback();
+      const { data: dbProfile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      if (dbProfile) {
+        const mapped = mapProfileToSummary(dbProfile);
+        memoryStaffUsers.push({
+          id: mapped.id,
+          name: mapped.fullName,
+          email: mapped.email,
+          employeeId: mapped.employeeId,
+          role: mapped.role,
+          roleDisplay: mapped.roleDisplay,
+          status: mapped.status,
+          permissions: mapped.permissions,
+          createdAt: mapped.createdAt,
+          updatedAt: mapped.updatedAt,
+        });
+        return memoryStaffUsers.length - 1;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  try {
+    const { ALL_DEMO_ACCOUNTS } = await import('../auth/constants.ts');
+    const demoMatch = ALL_DEMO_ACCOUNTS.find((a) => a.id === userId);
+    if (demoMatch) {
+      const role = (demoMatch.staffRole || demoMatch.role || 'cashier') as DbUserRole;
+      memoryStaffUsers.push({
+        id: demoMatch.id || userId,
+        name: demoMatch.name || 'Staff User',
+        email: demoMatch.email,
+        employeeId: 'EMP-005',
+        role,
+        roleDisplay: mapDbRoleToDisplay(role),
+        status: 'Active',
+        permissions: { ...(DEFAULT_ROLE_PERMISSIONS[role] || DEFAULT_STAFF_PERMISSIONS) },
+        pinCode: demoMatch.pin,
+        createdAt: '2026-10-05T08:00:00.000Z',
+        updatedAt: '2026-10-05T08:00:00.000Z',
+      });
+      return memoryStaffUsers.length - 1;
+    }
+  } catch {
+    // fallback
+  }
+  return -1;
 }
 
 
@@ -62,11 +130,13 @@ function mapProfileToSummary(profile: MockStaffUserProfile | Record<string, any>
   }
 
   const nameVal = p.full_name || p.fullName || p.name || splitEmail(p.email);
+  const employeeId = p.employee_id || p.employeeId || undefined;
 
   return {
     id: String(p.id),
     email: String(p.email),
     fullName: String(nameVal),
+    employeeId: employeeId ? String(employeeId) : undefined,
     role,
     roleDisplay: mapDbRoleToDisplay(role),
     status: (p.status as 'Active' | 'Inactive' | 'Suspended') || 'Active',
@@ -81,6 +151,23 @@ function splitEmail(email: unknown): string {
     return email.split('@')[0];
   }
   return 'Staff Member';
+}
+
+function parseEmpNumber(empId?: string): number {
+  if (!empId) return 999999;
+  const match = /\d+/.exec(empId);
+  return match ? Number.parseInt(match[0], 10) : 999999;
+}
+
+function sortStaffSummaries(list: StaffUserSummary[]): StaffUserSummary[] {
+  return [...list].sort((a, b) => {
+    const numA = parseEmpNumber(a.employeeId);
+    const numB = parseEmpNumber(b.employeeId);
+    if (numA !== numB) {
+      return numA - numB;
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 }
 
 /**
@@ -123,13 +210,52 @@ async function resolveCallerContext(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function syncDbProfileToMemoryCaches(p: Record<string, any>): void {
+  const summary = mapProfileToSummary(p);
+  const mappedMock: MockStaffUserProfile = {
+    id: summary.id,
+    name: summary.fullName,
+    email: summary.email,
+    employeeId: summary.employeeId,
+    role: summary.role,
+    roleDisplay: summary.roleDisplay,
+    status: summary.status,
+    permissions: summary.permissions,
+    createdAt: summary.createdAt,
+    updatedAt: summary.updatedAt,
+  };
+  const idx = memoryStaffUsers.findIndex((u) => u.id === summary.id);
+  if (idx >= 0) {
+    memoryStaffUsers[idx] = mappedMock;
+  } else {
+    memoryStaffUsers.push(mappedMock);
+  }
+
+  const mockIdx = MOCK_STAFF_PROFILES.findIndex(
+    (u) => u.id === summary.id || u.email.toLowerCase() === summary.email.toLowerCase()
+  );
+  if (mockIdx >= 0) {
+    MOCK_STAFF_PROFILES[mockIdx] = mappedMock;
+  } else {
+    MOCK_STAFF_PROFILES.push(mappedMock);
+  }
+
+  if (p.pin_code) {
+    DEFAULT_DEMO_PINS[summary.id] = p.pin_code;
+  }
+}
+
 /**
  * Lists all staff profiles, hydrated from Supabase public.profiles or in-memory fallback.
  */
 export async function listStaffUsersAction(): Promise<StaffUserSummary[]> {
+  if (isTestIsolationMode) {
+    return sortStaffSummaries(memoryStaffUsers.map(mapProfileToSummary));
+  }
+
   try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
+    const supabase = await getSupabaseAdminOrFallback();
 
     const { data: dbProfiles, error } = await supabase
       .from('profiles')
@@ -137,7 +263,8 @@ export async function listStaffUsersAction(): Promise<StaffUserSummary[]> {
       .order('created_at', { ascending: true });
 
     if (!error && dbProfiles && dbProfiles.length > 0) {
-      return dbProfiles.map(mapProfileToSummary);
+      dbProfiles.forEach(syncDbProfileToMemoryCaches);
+      return sortStaffSummaries(dbProfiles.map(mapProfileToSummary));
     }
   } catch (error) {
     console.warn(
@@ -146,17 +273,7 @@ export async function listStaffUsersAction(): Promise<StaffUserSummary[]> {
     );
   }
 
-  return memoryStaffUsers.map(mapProfileToSummary);
-}
-
-function generateSecurePin(): string {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint32Array(1);
-    crypto.getRandomValues(array);
-    const pin = (array[0] % 9000) + 1000;
-    return `SwiftTemp#${pin}`;
-  }
-  return 'SwiftTemp#5678';
+  return sortStaffSummaries(memoryStaffUsers.map(mapProfileToSummary));
 }
 
 const APPROVED_STAFF_ROLES = new Set<string>(['cashier', 'mechanic', 'inventory_clerk']);
@@ -196,25 +313,80 @@ async function logStaffCreationSuccess(
   }
 }
 
-async function trySupabaseAdminAuthProvision(
-  payload: { email: string; fullName: string; role: DbUserRole; password?: string; pin?: string },
-  permissions: StaffPermissions,
-  nowIso: string
-): Promise<MockStaffUserProfile | null | 'DUPLICATE_EMAIL'> {
+function extractEmployeeNumber(raw?: string | null): number | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const match = /EMP-(\d+)/i.exec(raw);
+  if (!match) return null;
+  const num = Number.parseInt(match[1], 10);
+  return Number.isNaN(num) ? null : num;
+}
+
+async function getMaxEmpNumFromSupabase(): Promise<number> {
+  if (isTestIsolationMode) return 0;
   try {
-    const { createAdminClient, createClient } = await import('../supabase/server.ts');
-    const supabaseAdmin = createAdminClient();
-    const effectivePin = payload.pin || generateSecurePin().replace(/\D/g, '').slice(0, 4) || '1234';
+    const supabase = await getSupabaseAdminOrFallback();
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('employee_id');
+
+    if (!profiles || profiles.length === 0) return 0;
+    return profiles.reduce((max, p) => {
+      const num = extractEmployeeNumber(p.employee_id);
+      return num !== null && num > max ? num : max;
+    }, 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function generateNextEmployeeId(): Promise<string> {
+  const maxFromDb = await getMaxEmpNumFromSupabase();
+  const maxNum = memoryStaffUsers.reduce((max, u) => {
+    const num = extractEmployeeNumber(u.employeeId);
+    return num !== null && num > max ? num : max;
+  }, maxFromDb);
+
+  return `EMP-${String(maxNum + 1).padStart(3, '0')}`;
+}
+
+async function trySupabaseAdminAuthProvision(
+  payload: { email: string; fullName: string; role: DbUserRole; password?: string; pin?: string; employeeId?: string },
+  permissions: StaffPermissions,
+  nowIso: string,
+  effectiveEmployeeId: string
+): Promise<MockStaffUserProfile | null | 'DUPLICATE_EMAIL'> {
+  if (isTestIsolationMode) {
+    return null;
+  }
+
+  try {
+    const supabaseAdmin = await getSupabaseAdminOrFallback();
+
+    // Pre-check for duplicate email in public.profiles table
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', payload.email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      return 'DUPLICATE_EMAIL';
+    }
+
+    const effectivePin = payload.pin || '1234';
+    const effectivePassword = payload.password || 'staff123';
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: payload.email,
-      password: payload.password || generateSecurePin(),
+      password: effectivePassword,
       email_confirm: true,
       user_metadata: {
+        name: payload.fullName,
         full_name: payload.fullName,
         role: payload.role,
         permissions,
         pin_code: effectivePin,
+        employee_id: effectiveEmployeeId,
       },
     });
 
@@ -227,11 +399,11 @@ async function trySupabaseAdminAuthProvision(
 
     if (authData?.user) {
       try {
-        const supabase = await createClient();
-        await supabase.from('profiles').upsert({
+        await supabaseAdmin.from('profiles').upsert({
           id: authData.user.id,
           full_name: payload.fullName,
           role: payload.role,
+          employee_id: effectiveEmployeeId,
           status: 'Active',
           pin_code: effectivePin,
           permissions,
@@ -249,6 +421,7 @@ async function trySupabaseAdminAuthProvision(
         id: authData.user.id,
         name: payload.fullName,
         email: payload.email,
+        employeeId: effectiveEmployeeId,
         role: payload.role,
         roleDisplay: mapDbRoleToDisplay(payload.role),
         status: 'Active',
@@ -355,12 +528,15 @@ export async function provisionStaffUserAction(
   };
 
   const nowIso = new Date().toISOString();
+  // Automatically generate sequential Employee ID without requiring manual admin input
+  const effectiveEmployeeId = (rawPayload as { employeeId?: string })?.employeeId?.trim() || await generateNextEmployeeId();
 
   // Attempt Supabase Admin Auth Provisioning
   const supabaseResult = await trySupabaseAdminAuthProvision(
-    { ...payload, email: normalizedEmail, pin: rawPin },
+    { ...payload, email: normalizedEmail, pin: rawPin, employeeId: effectiveEmployeeId },
     mergedPermissions,
-    nowIso
+    nowIso,
+    effectiveEmployeeId
   );
 
   if (supabaseResult === 'DUPLICATE_EMAIL') {
@@ -375,6 +551,7 @@ export async function provisionStaffUserAction(
     id: `00000000-0000-0000-0000-${String(Date.now()).slice(-12).padStart(12, '0')}`,
     name: payload.fullName,
     email: normalizedEmail,
+    employeeId: effectiveEmployeeId,
     role: payload.role,
     roleDisplay: mapDbRoleToDisplay(payload.role),
     status: 'Active',
@@ -385,6 +562,15 @@ export async function provisionStaffUserAction(
   };
 
   memoryStaffUsers.push(finalUser);
+  if (!MOCK_STAFF_PROFILES.some((p) => p.id === finalUser.id || p.email.toLowerCase() === normalizedEmail)) {
+    MOCK_STAFF_PROFILES.push(finalUser);
+  }
+  try {
+    const { DEFAULT_DEMO_PINS } = await import('../staff/constants.ts');
+    DEFAULT_DEMO_PINS[finalUser.id] = finalUser.pinCode || '1234';
+  } catch {
+    // Suppress
+  }
   await safeRevalidatePaths();
   await logStaffCreationSuccess(normalizedEmail, payload.fullName, payload.role, mergedPermissions);
 
@@ -420,7 +606,7 @@ export async function updateUserPermissionsAction(
     };
   }
 
-  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === userId);
+  const existingIndex = await ensureUserInMemory(userId);
   if (existingIndex === -1) {
     return {
       success: false,
@@ -440,8 +626,7 @@ export async function updateUserPermissionsAction(
 
   // Try updating Supabase database
   try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
+    const supabase = await getSupabaseAdminOrFallback();
     await supabase
       .from('profiles')
       .update({
@@ -462,6 +647,146 @@ export async function updateUserPermissionsAction(
     success: true,
     data: mapProfileToSummary(targetUser),
   };
+}
+
+function checkSelfDemotionGuard(
+  targetUserId: string,
+  targetCurrentRole: DbUserRole,
+  callerId: string,
+  requestedRole?: DbUserRole
+): boolean {
+  return (
+    targetUserId === callerId &&
+    targetCurrentRole === 'admin' &&
+    !!requestedRole &&
+    requestedRole !== 'admin'
+  );
+}
+
+function syncMockProfilesOnUpdate(
+  userId: string,
+  email: string,
+  updates: {
+    name: string;
+    role: DbUserRole;
+    roleDisplay: UserRole;
+    permissions: StaffPermissions;
+    employeeId?: string;
+    updatedAt: string;
+  }
+): void {
+  const normEmail = email.toLowerCase();
+  const mockIdx = MOCK_STAFF_PROFILES.findIndex(
+    (p) => p.id === userId || p.email.toLowerCase() === normEmail
+  );
+  if (mockIdx !== -1) {
+    const p = MOCK_STAFF_PROFILES[mockIdx];
+    p.name = updates.name;
+    p.role = updates.role;
+    p.roleDisplay = updates.roleDisplay;
+    p.permissions = updates.permissions;
+    if (updates.employeeId) p.employeeId = updates.employeeId;
+    p.updatedAt = updates.updatedAt;
+  }
+}
+
+async function syncDemoAccountsOnUpdate(
+  userId: string,
+  email: string,
+  updates: {
+    name: string;
+    role: DbUserRole;
+    roleDisplay: UserRole;
+  }
+): Promise<void> {
+  try {
+    const { ALL_DEMO_ACCOUNTS, DEMO_STAFF_ACCOUNTS } = await import('../auth/constants.ts');
+    const { ROLE_ROUTE_CONFIG } = await import('../staff/navigation.ts');
+    const targetRoute =
+      ROLE_ROUTE_CONFIG[updates.role as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || '/staff/pos';
+    const normEmail = email.toLowerCase();
+
+    const updateAccount = (acc: { id?: string; email: string; name?: string; role: 'admin' | 'staff'; staffRole?: string; label: string; buttonLabel: string; targetUrl: string }) => {
+      if (acc.id === userId || acc.email.toLowerCase() === normEmail) {
+        acc.name = updates.name;
+        acc.role = updates.role === 'admin' ? 'admin' : 'staff';
+        acc.staffRole = updates.role;
+        acc.label = updates.roleDisplay;
+        acc.buttonLabel = `Use ${updates.role === 'inventory_clerk' ? 'Clerk' : updates.roleDisplay}`;
+        acc.targetUrl = targetRoute;
+      }
+    };
+
+    ALL_DEMO_ACCOUNTS.forEach(updateAccount);
+    DEMO_STAFF_ACCOUNTS.forEach(updateAccount);
+  } catch {
+    // Suppress demo accounts sync issue
+  }
+}
+
+async function persistStaffUpdateToSupabase(
+  userId: string,
+  updates: {
+    fullName: string;
+    employeeId?: string;
+    role: DbUserRole;
+    permissions: StaffPermissions;
+    updatedAt: string;
+  }
+): Promise<void> {
+  if (isTestIsolationMode) return;
+  try {
+    const supabase = await getSupabaseAdminOrFallback();
+    await supabase
+      .from('profiles')
+      .update({
+        full_name: updates.fullName,
+        employee_id: updates.employeeId,
+        role: updates.role,
+        permissions: updates.permissions,
+        updated_at: updates.updatedAt,
+      })
+      .eq('id', userId);
+
+    const { createAdminClient } = await import('../supabase/server.ts');
+    const supabaseAdmin = createAdminClient();
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        role: updates.role,
+        full_name: updates.fullName,
+      },
+    });
+  } catch (error) {
+    console.warn(
+      '[updateStaffUserAction] Supabase update issue, retained in memory:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+async function logStaffUpdateSecurityAudit(
+  targetEmail: string,
+  targetUserId: string,
+  updatedRole: DbUserRole,
+  updatedRoleDisplay: UserRole,
+  updatedPermissions: StaffPermissions
+): Promise<void> {
+  try {
+    await logSecurityEventAction({
+      action: `Updated employee account for ${targetEmail} (Role: ${updatedRoleDisplay})`,
+      severity: 'info',
+      terminalIp: '192.168.1.100 (Admin PC)',
+      userEmail: 'admin@swift.ph',
+      metadata: {
+        targetUserId,
+        targetEmail,
+        updatedRole,
+        updatedPermissions,
+      },
+    });
+  } catch {
+    // Suppress audit logging error
+  }
 }
 
 /**
@@ -495,7 +820,7 @@ export async function updateStaffUserAction(
   }
 
   const payload = parsed.data;
-  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === payload.userId);
+  const existingIndex = await ensureUserInMemory(payload.userId);
   if (existingIndex === -1) {
     return {
       success: false,
@@ -506,13 +831,7 @@ export async function updateStaffUserAction(
 
   const targetUser = memoryStaffUsers[existingIndex];
 
-  // Self-demotion guard: Admin cannot change their own role to non-admin
-  if (
-    payload.userId === callerId &&
-    targetUser.role === 'admin' &&
-    payload.role &&
-    payload.role !== 'admin'
-  ) {
+  if (checkSelfDemotionGuard(payload.userId, targetUser.role, callerId, payload.role)) {
     return {
       success: false,
       error: 'Admin self-lockout or role demotion is prohibited.',
@@ -521,6 +840,7 @@ export async function updateStaffUserAction(
   }
 
   const updatedName = payload.fullName?.trim() || targetUser.name;
+  const updatedEmployeeId = payload.employeeId !== undefined ? payload.employeeId.trim() || undefined : targetUser.employeeId;
   const updatedRole = payload.role || targetUser.role;
   const updatedRoleDisplay = mapDbRoleToDisplay(updatedRole);
   const updatedPermissions: StaffPermissions = {
@@ -529,48 +849,42 @@ export async function updateStaffUserAction(
   };
 
   targetUser.name = updatedName;
+  targetUser.employeeId = updatedEmployeeId;
   targetUser.role = updatedRole;
   targetUser.roleDisplay = updatedRoleDisplay;
   targetUser.permissions = updatedPermissions;
   targetUser.updatedAt = new Date().toISOString();
 
-  // Try updating Supabase database
-  try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
-    await supabase
-      .from('profiles')
-      .update({
-        full_name: updatedName,
-        role: updatedRole,
-        permissions: updatedPermissions,
-        updated_at: targetUser.updatedAt,
-      })
-      .eq('id', payload.userId);
-  } catch (error) {
-    console.warn(
-      '[updateStaffUserAction] Supabase update issue, retained in memory:',
-      error instanceof Error ? error.message : String(error)
-    );
-  }
+  syncMockProfilesOnUpdate(payload.userId, targetUser.email, {
+    name: updatedName,
+    role: updatedRole,
+    roleDisplay: updatedRoleDisplay,
+    permissions: updatedPermissions,
+    employeeId: updatedEmployeeId,
+    updatedAt: targetUser.updatedAt,
+  });
 
-  // Security audit log event
-  try {
-    await logSecurityEventAction({
-      action: `Updated employee account for ${targetUser.email} (Role: ${updatedRoleDisplay})`,
-      severity: 'info',
-      terminalIp: '192.168.1.100 (Admin PC)',
-      userEmail: 'admin@swift.ph',
-      metadata: {
-        targetUserId: payload.userId,
-        targetEmail: targetUser.email,
-        updatedRole,
-        updatedPermissions,
-      },
-    });
-  } catch {
-    // Suppress audit logging error
-  }
+  await syncDemoAccountsOnUpdate(payload.userId, targetUser.email, {
+    name: updatedName,
+    role: updatedRole,
+    roleDisplay: updatedRoleDisplay,
+  });
+
+  await persistStaffUpdateToSupabase(payload.userId, {
+    fullName: updatedName,
+    employeeId: updatedEmployeeId,
+    role: updatedRole,
+    permissions: updatedPermissions,
+    updatedAt: targetUser.updatedAt,
+  });
+
+  await logStaffUpdateSecurityAudit(
+    targetUser.email,
+    payload.userId,
+    updatedRole,
+    updatedRoleDisplay,
+    updatedPermissions
+  );
 
   await safeRevalidatePaths();
 
@@ -611,7 +925,7 @@ export async function toggleUserStatusAction(
     };
   }
 
-  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === userId);
+  const existingIndex = await ensureUserInMemory(userId);
   if (existingIndex === -1) {
     return {
       success: false,
@@ -636,8 +950,7 @@ export async function toggleUserStatusAction(
 
   // Try updating Supabase database and revoking active sessions
   try {
-    const { createClient, createAdminClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
+    const supabase = await getSupabaseAdminOrFallback();
     await supabase
       .from('profiles')
       .update({
@@ -648,6 +961,7 @@ export async function toggleUserStatusAction(
 
     if (status === 'Inactive') {
       try {
+        const { createAdminClient } = await import('../supabase/server.ts');
         const supabaseAdmin = createAdminClient();
         await supabaseAdmin.auth.admin.signOut(userId, 'global');
       } catch {
@@ -708,23 +1022,24 @@ export async function getStaffUserStatus(
   }
 
   // 2. Check live Supabase profiles
-  try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
-    const query = supabase
-      .from('profiles')
-      .select('status')
-      .limit(1);
+  if (!isTestIsolationMode) {
+    try {
+      const supabase = await getSupabaseAdminOrFallback();
+      const query = supabase
+        .from('profiles')
+        .select('status')
+        .limit(1);
 
-    const { data, error } = userIdOrEmail.includes('@')
-      ? await query.eq('email', normalized).maybeSingle()
-      : await query.eq('id', userIdOrEmail).maybeSingle();
+      const { data, error } = userIdOrEmail.includes('@')
+        ? await query.eq('email', normalized).maybeSingle()
+        : await query.eq('id', userIdOrEmail).maybeSingle();
 
-    if (!error && data?.status) {
-      return data.status as 'Active' | 'Inactive' | 'Suspended';
+      if (!error && data?.status) {
+        return data.status as 'Active' | 'Inactive' | 'Suspended';
+      }
+    } catch {
+      // Offline or unit testing mode
     }
-  } catch {
-    // Offline or unit testing mode
   }
 
   // 3. Fallback to default mock profiles
@@ -732,6 +1047,64 @@ export async function getStaffUserStatus(
     (p) => p.id === userIdOrEmail || p.email.toLowerCase() === normalized
   );
   return fallback ? fallback.status : null;
+}
+
+/**
+ * Resolves the assigned role of a staff member by ID or email address,
+ * inspecting in-memory store first with fallback to live Supabase profiles.
+ */
+export async function getStaffUserRole(
+  userIdOrEmail: string
+): Promise<DbUserRole | null> {
+  const normalized = userIdOrEmail.trim().toLowerCase();
+
+  // 1. Check in-memory store first
+  const memoryUser = memoryStaffUsers.find(
+    (u) => u.id === userIdOrEmail || u.email.toLowerCase() === normalized
+  );
+  if (memoryUser) {
+    return memoryUser.role;
+  }
+
+  // 2. Check live Supabase profiles
+  if (!isTestIsolationMode) {
+    try {
+      const supabase = await getSupabaseAdminOrFallback();
+      const query = supabase
+        .from('profiles')
+        .select('role')
+        .limit(1);
+
+      const { data, error } = userIdOrEmail.includes('@')
+        ? await query.eq('email', normalized).maybeSingle()
+        : await query.eq('id', userIdOrEmail).maybeSingle();
+
+      if (!error && data?.role) {
+        return data.role as DbUserRole;
+      }
+    } catch {
+      // Offline or unit testing mode
+    }
+  }
+
+  // 3. Fallback to default mock profiles and demo accounts
+  const fallback = MOCK_STAFF_PROFILES.find(
+    (p) => p.id === userIdOrEmail || p.email.toLowerCase() === normalized
+  );
+  if (fallback) return fallback.role;
+
+  try {
+    const { ALL_DEMO_ACCOUNTS } = await import('../auth/constants.ts');
+    const demo = ALL_DEMO_ACCOUNTS.find(
+      (a) => a.id === userIdOrEmail || a.email.toLowerCase() === normalized
+    );
+    if (demo?.staffRole) return demo.staffRole as DbUserRole;
+    if (demo?.role === 'admin') return 'admin';
+  } catch {
+    // Suppress
+  }
+
+  return null;
 }
 
 /**
@@ -765,7 +1138,7 @@ export async function resetStaffCredentialsAction(
   }
 
   const { userId, password, pin } = parsed.data;
-  const existingIndex = memoryStaffUsers.findIndex((u) => u.id === userId);
+  const existingIndex = await ensureUserInMemory(userId);
   if (existingIndex === -1) {
     return {
       success: false,
@@ -798,8 +1171,7 @@ export async function resetStaffCredentialsAction(
 
   // Supabase public.profiles pin_code update
   try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
+    const supabase = await getSupabaseAdminOrFallback();
     await supabase
       .from('profiles')
       .update({
@@ -842,6 +1214,7 @@ export async function resetStaffCredentialsAction(
 }
 
 export async function getInMemoryStaffUserPin(userId: string): Promise<string | undefined> {
+  await Promise.resolve();
   const user = memoryStaffUsers.find((u) => u.id === userId);
   return user?.pinCode;
 }

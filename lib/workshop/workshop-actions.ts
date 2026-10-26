@@ -50,8 +50,8 @@ export async function fetchWorkshopOrdersAction(): Promise<WorkshopActionResult<
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       try {
-        const { createClient } = await import('../supabase/server.ts');
-        const supabase = await createClient();
+        const { createAdminClient } = await import('../supabase/server.ts');
+        const supabase = createAdminClient();
 
         const { data: dbOrders, error } = await supabase
           .from('work_orders')
@@ -61,7 +61,8 @@ export async function fetchWorkshopOrdersAction(): Promise<WorkshopActionResult<
               name
             ),
             profiles:mechanic_id (
-              name
+              id,
+              full_name
             )
           `)
           .order('created_at', { ascending: false });
@@ -82,7 +83,7 @@ export async function fetchWorkshopOrdersAction(): Promise<WorkshopActionResult<
               serviceCode: row.service_code,
               serviceName: row.service_name,
               mechanicId: row.mechanic_id ?? null,
-              mechanicName: row.profiles?.name ?? (row.mechanic_id === DANTE_REYES_PROFILE_ID ? 'Dante Reyes' : mockMatch?.mechanicName),
+              mechanicName: row.profiles?.full_name ?? row.profiles?.name ?? (row.mechanic_id === DANTE_REYES_PROFILE_ID ? 'Dante Reyes' : mockMatch?.mechanicName),
               status: row.status as WorkOrderStatus,
               estimatedDurationMinutes: row.estimated_duration_minutes ?? 30,
               remainingMinutes: calculateRemainingMinutes(row.started_at, row.estimated_duration_minutes ?? 30),
@@ -297,15 +298,44 @@ export const DEFAULT_ON_SHIFT_MECHANICS: import('./intake-dispatch-contracts.ts'
     status: 'on_shift',
     clockInTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
   },
-  {
-    id: 'd0000000-0000-0000-0000-000000000005',
-    name: 'Alex Lim',
-    email: 'alex.lim@swift.local',
-    role: 'mechanic',
-    status: 'on_shift',
-    clockInTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-  },
 ];
+
+async function querySupabaseOnShiftMechanics(): Promise<
+  import('./intake-dispatch-contracts.ts').OnShiftMechanic[] | null
+> {
+  const { createAdminClient } = await import('../supabase/server.ts');
+  const supabase = createAdminClient();
+
+  const { data: shiftRows, error: shiftErr } = await supabase
+    .from('staff_shifts')
+    .select('id, profile_id, status, clock_in')
+    .eq('status', 'on_shift');
+
+  if (shiftErr || !shiftRows) return null;
+
+  const profileIds = Array.from(new Set(shiftRows.map((s) => s.profile_id).filter(Boolean)));
+  if (profileIds.length === 0) return null;
+
+  const { data: profileRows, error: profErr } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, role, status')
+    .in('id', profileIds)
+    .or('role.eq.mechanic,role.eq.technician');
+
+  if (profErr || !profileRows) return null;
+
+  const shiftMap = new Map(shiftRows.map((s) => [s.profile_id, s]));
+  return profileRows
+    .filter((p) => p.status !== 'Inactive')
+    .map((p) => ({
+      id: p.id,
+      name: p.full_name || 'Mechanic',
+      email: p.email,
+      role: 'mechanic' as const,
+      status: 'on_shift' as const,
+      clockInTime: shiftMap.get(p.id)?.clock_in || new Date().toISOString(),
+    }));
+}
 
 /**
  * Fetches all workshop technicians who are currently clocked in (status = 'on_shift').
@@ -317,34 +347,9 @@ export async function fetchOnShiftMechanicsAction(): Promise<
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       try {
-        const { createClient } = await import('../supabase/server.ts');
-        const supabase = await createClient();
-
-        const { data, error } = await supabase
-          .from('staff_shifts')
-          .select('id, profile_id, status, clock_in, profiles:profile_id ( id, full_name, email, role )')
-          .eq('status', 'on_shift');
-
-        if (!error && data && data.length > 0) {
-          const mechanics = data
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((row: any) => {
-              const prof = row.profiles;
-              return prof && (prof.role === 'mechanic' || prof.role === 'technician');
-            })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((row: any) => ({
-              id: row.profiles.id,
-              name: row.profiles.full_name || 'Mechanic',
-              email: row.profiles.email,
-              role: 'mechanic' as const,
-              status: 'on_shift' as const,
-              clockInTime: row.clock_in,
-            }));
-
-          if (mechanics.length > 0) {
-            return { success: true, data: mechanics };
-          }
+        const mechanics = await querySupabaseOnShiftMechanics();
+        if (mechanics) {
+          return { success: true, data: mechanics };
         }
       } catch (dbErr) {
         console.warn('[Workshop Action] Supabase on-shift mechanics query warning:', dbErr);

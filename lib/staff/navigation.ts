@@ -93,7 +93,7 @@ export const STAFF_NAV_ITEMS: StaffNavItem[] = [
     href: "/staff/pricecheck",
     category: "Shop Floor Operations",
     icon: Barcode,
-    allowedRoles: ["inventory_clerk", "cashier", "admin", "staff"],
+    allowedRoles: ["inventory_clerk", "admin"],
   },
   {
     id: "history",
@@ -109,8 +109,8 @@ export const STAFF_NAV_ITEMS: StaffNavItem[] = [
     href: "/staff/clock",
     category: "Shop Floor Operations",
     badge: {
-      text: "ON SHIFT",
-      variant: "success",
+      text: "OFF SHIFT",
+      variant: "info",
     },
     icon: Clock,
     allowedRoles: ["cashier", "mechanic", "inventory_clerk", "admin", "staff"],
@@ -158,6 +158,7 @@ export function getRolePrimaryRoute(role: string | undefined): RoleRouteRedirect
  * Default staff user profile displayed in sidebar footer
  */
 export const DEFAULT_STAFF_USER: StaffUserProfile = {
+  id: "00000000-0000-0000-0000-000000000002",
   name: "Mike Morales",
   role: "Cashier / Floor Staff",
   avatarInitials: "MM",
@@ -171,8 +172,8 @@ export const DEFAULT_STAFF_SHIFT: StaffShiftState = {
   terminalId: "Terminal #01 - Shop Floor",
   employeeName: "Mike Morales",
   role: "Cashier / Floor Staff",
-  initialElapsedSeconds: 15150, // 04:12:30 in seconds
-  isOnShift: true,
+  initialElapsedSeconds: 0,
+  isOnShift: false,
 };
 
 /**

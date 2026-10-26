@@ -7,7 +7,10 @@ import {
   updateStaffUserAction,
   toggleUserStatusAction,
   resetInMemoryStaffUsers,
+  getStaffUserRole,
 } from '../user-actions.ts';
+import { authenticateUserAction, completeStaffTwoStepLoginAction } from '../../auth/actions.ts';
+import { fetchStaffShiftAction } from '../../staff/actions.ts';
 import {
   DbUserRoleSchema,
   StaffPermissionsSchema,
@@ -294,6 +297,112 @@ describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema &
 
       assert.equal(result.success, false);
       assert.equal(result.code, 'USER_NOT_FOUND');
+    });
+  });
+
+  describe('Employee ID Assignment and Management', () => {
+    it('provides baseline employee IDs EMP-001 through EMP-004 for seed staff', async () => {
+      const users = await listStaffUsersAction();
+      const admin = users.find((u) => u.email === 'admin@swift.local');
+      const cashier = users.find((u) => u.email === 'cashier@swift.local');
+      const mechanic = users.find((u) => u.email === 'mechanic1@swift.local');
+      const clerk = users.find((u) => u.email === 'warehouse@swift.local');
+
+      assert.equal(admin?.employeeId, 'EMP-001');
+      assert.equal(cashier?.employeeId, 'EMP-002');
+      assert.equal(mechanic?.employeeId, 'EMP-003');
+      assert.equal(clerk?.employeeId, 'EMP-004');
+    });
+
+    it('auto-generates next sequential employee ID when omitted in provisioning', async () => {
+      const result = await provisionStaffUserAction(
+        {
+          email: 'new.clerk@swift.local',
+          fullName: 'New Clerk',
+          role: 'inventory_clerk',
+        },
+        'admin'
+      );
+
+      assert.equal(result.success, true);
+      assert.equal(result.data?.employeeId, 'EMP-005');
+    });
+
+    it('respects explicitly provided custom employee ID when provisioning', async () => {
+      const result = await provisionStaffUserAction(
+        {
+          email: 'custom.cashier@swift.local',
+          fullName: 'Custom Cashier',
+          employeeId: 'EMP-999',
+          role: 'cashier',
+        },
+        'admin'
+      );
+
+      assert.equal(result.success, true);
+      assert.equal(result.data?.employeeId, 'EMP-999');
+    });
+
+    it('updates employee ID when modified via updateStaffUserAction', async () => {
+      const targetId = '00000000-0000-0000-0000-000000000002';
+      const result = await updateStaffUserAction(
+        {
+          userId: targetId,
+          employeeId: 'EMP-042',
+        },
+        'admin'
+      );
+
+      assert.equal(result.success, true);
+      assert.equal(result.data?.employeeId, 'EMP-042');
+    });
+
+    it('properly reflects role changes for that specific staff across authentication and shift actions', async () => {
+      const reneId = 'c9e4d1e8-ac08-4215-852c-e5d8a01ff57c';
+      const reneEmail = 'cashier1@swift.local';
+
+      // 1. Initial role is cashier
+      const initialRole = await getStaffUserRole(reneId);
+      assert.equal(initialRole, 'cashier');
+
+      // 2. Change Rene's role to inventory_clerk
+      const updateResult = await updateStaffUserAction(
+        {
+          userId: reneId,
+          role: 'inventory_clerk',
+        },
+        'admin'
+      );
+      assert.equal(updateResult.success, true);
+      assert.equal(updateResult.data?.role, 'inventory_clerk');
+      assert.equal(updateResult.data?.roleDisplay, 'Inventory Clerk');
+
+      // 3. getStaffUserRole reflects the updated role immediately
+      const updatedRole = await getStaffUserRole(reneId);
+      assert.equal(updatedRole, 'inventory_clerk');
+
+      // 4. Two-step authentication reflects the new role and target inventory route (/staff/search)
+      const authResult = await authenticateUserAction({
+        email: reneEmail,
+        password: 'any-password',
+        selectedRole: 'staff',
+        rememberTerminal: false,
+      });
+      assert.equal(authResult.success, true);
+      assert.equal(authResult.requiresPin, true);
+      assert.equal(authResult.staffSummary?.role, 'inventory_clerk');
+      assert.equal(authResult.staffSummary?.targetUrl, '/staff/search');
+
+      // 5. Completing the PIN challenge redirects properly to /staff/search
+      const pinResult = await completeStaffTwoStepLoginAction({ pin: '2008' });
+      assert.equal(pinResult.success, true);
+      assert.equal(pinResult.redirectTo, '/staff/search');
+
+      // 6. fetchStaffShiftAction reflects the updated role
+      const shiftResult = await fetchStaffShiftAction(reneId);
+      assert.equal(shiftResult.success, true);
+      assert.equal(shiftResult.profile?.role, 'inventory_clerk');
+      assert.equal(shiftResult.profile?.roleDisplay, 'Inventory Clerk');
     });
   });
 });

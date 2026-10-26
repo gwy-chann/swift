@@ -1,8 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import type { PunchLog } from '../types/logs.ts';
-import { mapStaffShiftRow, type DbStaffShift } from '../types/logs.ts';
+import { mapStaffShiftRow, type DbStaffShift, type PunchLog } from '../types/logs.ts';
 import { MOCK_PUNCH_LOGS } from '../mock-data/index.ts';
 import { MOCK_STAFF_PROFILES } from '../mock-data/users.ts';
 import type { StaffPermissions } from '../types/auth.ts';
@@ -10,7 +9,6 @@ import { DEFAULT_ROLE_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } from '../types/au
 import { ShiftRpcError, SHIFT_RPC_ERROR_CODES, formatDurationToHoursMinutes } from '../contracts/punch-clock-rpcs.ts';
 import {
   SWIFT_STORAGE_KEYS,
-  type OfflinePunchActionType,
   type QueuedPunchAction,
   type ActiveShiftCacheItem,
   type StoredStaffShiftState,
@@ -19,12 +17,12 @@ import {
 
 export {
   SWIFT_STORAGE_KEYS,
-  type OfflinePunchActionType,
   type QueuedPunchAction,
   type ActiveShiftCacheItem,
   type StoredStaffShiftState,
   type OfflineSyncResult,
 };
+export type { OfflinePunchActionType } from '../contracts/offline-shift-sync.ts';
 
 export interface PunchStoreError {
   code: string;
@@ -45,6 +43,14 @@ export interface StaffMemberShiftState {
   role?: string;
   permissions?: StaffPermissions;
   clockInTime?: string;
+}
+
+interface ComputedRehydrationShift {
+  currentStaff: string;
+  activeShiftId: string | null;
+  isShiftActive: boolean;
+  shiftStatus: ShiftStateStatus;
+  shiftSeconds: number;
 }
 
 export interface PunchStoreState {
@@ -253,11 +259,7 @@ export class PunchStore {
 
     try {
       const parsed = JSON.parse(legacyJson);
-      if (
-        !parsed ||
-        !parsed.clockIn ||
-        (parsed.status !== 'on_shift' && parsed.status !== 'break')
-      ) {
+      if (!parsed?.clockIn || (parsed.status !== 'on_shift' && parsed.status !== 'break')) {
         return null;
       }
       const now = Date.now();
@@ -497,59 +499,80 @@ export class PunchStore {
     name: string;
     role?: string;
     permissions?: StaffPermissions;
+    startOffShift?: boolean;
   }): void => {
     const role = resolveStaffRole(profile.id, profile.role);
     const permissions = resolveStaffPermissions(profile.id, profile.permissions, role);
     const existing = this.state.staffSessions[profile.id];
-    if (existing) {
-      this.state = {
-        ...this.state,
-        currentStaff: profile.name,
-        currentProfileId: profile.id,
-        currentStaffRole: role,
-        currentPermissions: permissions,
-        isShiftActive: existing.isShiftActive,
-        activeShiftId: existing.activeShiftId || null,
-        shiftStatus: existing.shiftStatus,
-        shiftSeconds: existing.shiftSeconds,
-        lastError: null,
-        staffSessions: {
-          ...this.state.staffSessions,
-          [profile.id]: {
-            ...existing,
-            role,
-            permissions,
-          },
-        },
-      };
-    } else {
-      const newSession: StaffMemberShiftState = {
+
+    const isShiftActive = profile.startOffShift ? false : Boolean(existing?.isShiftActive);
+    const activeShiftId = profile.startOffShift ? null : (existing?.activeShiftId || null);
+    const shiftStatus: ShiftStateStatus = profile.startOffShift ? 'idle' : (existing?.shiftStatus || 'idle');
+    const shiftSeconds = profile.startOffShift ? 0 : (existing?.shiftSeconds || 0);
+
+    const updatedSession: StaffMemberShiftState = {
+      isShiftActive,
+      activeShiftId,
+      shiftStatus,
+      shiftSeconds,
+      staffName: profile.name,
+      profileId: profile.id,
+      role,
+      permissions,
+    };
+
+    if (profile.startOffShift) {
+      this.clearActiveShiftFromStorage();
+    }
+
+    this.state = {
+      ...this.state,
+      currentStaff: profile.name,
+      currentProfileId: profile.id,
+      currentStaffRole: role,
+      currentPermissions: permissions,
+      isShiftActive,
+      activeShiftId,
+      shiftStatus,
+      shiftSeconds,
+      lastError: null,
+      staffSessions: {
+        ...this.state.staffSessions,
+        [profile.id]: updatedSession,
+      },
+    };
+    this.persistFullStateToStorage();
+    this.notify();
+  };
+
+  public resetShiftOnLogout = (profileId?: string): void => {
+    const targetId = profileId || this.state.currentProfileId;
+    const currentSession = this.state.staffSessions[targetId];
+    const updatedSessions = { ...this.state.staffSessions };
+
+    if (currentSession) {
+      updatedSessions[targetId] = {
+        ...currentSession,
         isShiftActive: false,
         activeShiftId: null,
         shiftStatus: 'idle',
         shiftSeconds: 0,
-        staffName: profile.name,
-        profileId: profile.id,
-        role,
-        permissions,
-      };
-      this.state = {
-        ...this.state,
-        currentStaff: profile.name,
-        currentProfileId: profile.id,
-        currentStaffRole: role,
-        currentPermissions: permissions,
-        isShiftActive: false,
-        activeShiftId: null,
-        shiftStatus: 'idle',
-        shiftSeconds: 0,
-        lastError: null,
-        staffSessions: {
-          ...this.state.staffSessions,
-          [profile.id]: newSession,
-        },
       };
     }
+
+    const isCurrent = targetId === this.state.currentProfileId;
+
+    this.state = {
+      ...this.state,
+      isShiftActive: isCurrent ? false : this.state.isShiftActive,
+      activeShiftId: isCurrent ? null : this.state.activeShiftId,
+      shiftStatus: isCurrent ? 'idle' : this.state.shiftStatus,
+      shiftSeconds: isCurrent ? 0 : this.state.shiftSeconds,
+      staffSessions: updatedSessions,
+      lastError: null,
+    };
+
+    this.clearActiveShiftFromStorage();
     this.persistFullStateToStorage();
     this.notify();
   };
@@ -573,6 +596,61 @@ export class PunchStore {
       ...this.state,
       ...(isCurrent ? { currentPermissions: permissions } : {}),
       staffSessions: updatedSessions,
+    };
+    this.persistFullStateToStorage();
+    this.notify();
+  };
+
+  public syncStaffRole = (
+    profileId: string,
+    role: string,
+    permissions?: StaffPermissions
+  ): void => {
+    const normalizedRole = role.toLowerCase();
+    const existing = this.state.staffSessions[profileId];
+
+    const isCurrent = profileId === this.state.currentProfileId;
+    if (
+      isCurrent &&
+      this.state.currentStaffRole === normalizedRole &&
+      (!permissions || JSON.stringify(this.state.currentPermissions) === JSON.stringify(permissions)) &&
+      existing?.role === normalizedRole
+    ) {
+      return;
+    }
+
+    const resolvedPerms =
+      permissions || resolveStaffPermissions(profileId, existing?.permissions, normalizedRole);
+
+    const updatedSession: StaffMemberShiftState = existing
+      ? {
+          ...existing,
+          role: normalizedRole,
+          permissions: resolvedPerms,
+        }
+      : {
+          isShiftActive: false,
+          activeShiftId: null,
+          shiftStatus: 'idle',
+          shiftSeconds: 0,
+          staffName: isCurrent ? this.state.currentStaff : 'Staff Member',
+          profileId,
+          role: normalizedRole,
+          permissions: resolvedPerms,
+        };
+
+    this.state = {
+      ...this.state,
+      ...(isCurrent
+        ? {
+            currentStaffRole: normalizedRole,
+            currentPermissions: resolvedPerms,
+          }
+        : {}),
+      staffSessions: {
+        ...this.state.staffSessions,
+        [profileId]: updatedSession,
+      },
     };
     this.persistFullStateToStorage();
     this.notify();
@@ -664,29 +742,42 @@ export class PunchStore {
 
   private applyStoredStateRehydration(parsed: StoredStaffShiftState): void {
     const now = Date.now();
-    const delta = this.computeActiveShiftDelta(parsed.activeShift, now);
-    const profileId = parsed.currentProfileId || this.state.currentProfileId;
-    const staffName = parsed.currentStaff || this.state.currentStaff;
-    const currentStaffRole = parsed.currentStaffRole || resolveStaffRole(profileId);
+    const currentPid = this.state.currentProfileId;
+    const targetSession = parsed.staffSessions?.[currentPid];
+    const activeShiftForTarget = parsed.activeShift?.profileId === currentPid ? parsed.activeShift : null;
+    const delta = this.computeActiveShiftDelta(activeShiftForTarget, now);
 
-    const isShiftActive = parsed.activeShift ? delta.isShiftActive : Boolean(parsed.isShiftActive);
-    const shiftStatus = parsed.activeShift ? delta.shiftStatus : parsed.shiftStatus || 'idle';
-    const shiftSeconds = parsed.activeShift ? delta.shiftSeconds : parsed.shiftSeconds || 0;
-    const activeShiftId = parsed.activeShift ? delta.activeShiftId : parsed.activeShiftId || null;
+    const isShiftActive = activeShiftForTarget
+      ? delta.isShiftActive
+      : Boolean(targetSession?.isShiftActive);
+    const shiftStatus = activeShiftForTarget
+      ? delta.shiftStatus
+      : targetSession?.shiftStatus || 'idle';
+    const shiftSeconds = activeShiftForTarget
+      ? delta.shiftSeconds
+      : targetSession?.shiftSeconds || 0;
+    const activeShiftId = activeShiftForTarget
+      ? delta.activeShiftId
+      : targetSession?.activeShiftId || null;
 
-    const updatedSessions = { ...this.state.staffSessions, ...(parsed.staffSessions as unknown as Record<string, StaffMemberShiftState> || {}) };
-    if (isShiftActive) {
-      updatedSessions[profileId] = {
-        ...(updatedSessions[profileId] || {}),
-        isShiftActive: true,
-        activeShiftId,
-        shiftStatus,
-        shiftSeconds,
-        staffName,
-        profileId,
-        role: currentStaffRole,
-      };
-    }
+    const profileId = currentPid;
+    const staffName = this.state.currentStaff || targetSession?.staffName || parsed.currentStaff;
+    const currentStaffRole = this.state.currentStaffRole || resolveStaffRole(profileId);
+
+    const updatedSessions = {
+      ...this.state.staffSessions,
+      ...(parsed.staffSessions as unknown as Record<string, StaffMemberShiftState>),
+    };
+    updatedSessions[profileId] = {
+      ...updatedSessions[profileId],
+      isShiftActive,
+      activeShiftId,
+      shiftStatus,
+      shiftSeconds,
+      staffName,
+      profileId,
+      role: currentStaffRole,
+    };
 
     const logs =
       Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
@@ -717,11 +808,16 @@ export class PunchStore {
     shiftId?: string;
     durationSeconds?: number;
   }): void {
+    const currentPid = this.state.currentProfileId;
+    if (parsed.profileId && parsed.profileId !== currentPid) {
+      return;
+    }
+
     const now = Date.now();
     const clockInMs = new Date(parsed.clockIn).getTime();
     const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
     const status: ShiftStateStatus = parsed.status;
-    const profileId = parsed.profileId || this.state.currentProfileId;
+    const profileId = parsed.profileId || currentPid;
     const staffName = parsed.staffName || this.state.currentStaff;
     const staffRole = resolveStaffRole(profileId);
     const shiftId = parsed.shiftId || this.state.activeShiftId;
@@ -876,7 +972,9 @@ export class PunchStore {
 
     const remainingQueue: QueuedPunchAction[] = [];
 
-    for (const item of queue) {
+    const processNext = async (index: number): Promise<void> => {
+      if (index >= queue.length) return;
+      const item = queue[index];
       const outcome = await this.processSyncItem(item, activeDispatcher);
       if (outcome.success) {
         result.synced += 1;
@@ -893,7 +991,10 @@ export class PunchStore {
         }
         remainingQueue.push(item);
       }
-    }
+      await processNext(index + 1);
+    };
+
+    await processNext(0);
 
     const storage = getStorage();
     if (storage) {
@@ -987,6 +1088,7 @@ export class PunchStore {
 
     const newLog: PunchLog = {
       id: shiftId,
+      profileId: targetProfileId,
       date: dateStr,
       staff: targetStaff,
       timeIn: timeStr,
@@ -1193,6 +1295,7 @@ export class PunchStore {
         matched = true;
         return {
           ...log,
+          profileId: log.profileId || targetProfileId,
           staff: staffName,
           timeOut: timeStr,
           duration: durationStr,
@@ -1213,6 +1316,7 @@ export class PunchStore {
         ) {
           updatedLogs[i] = {
             ...log,
+            profileId: log.profileId || targetProfileId,
             staff: staffName,
             timeOut: timeStr,
             duration: durationStr,
@@ -1264,7 +1368,24 @@ export class PunchStore {
 
   private mergeRecentLogs(current: PunchLog[], recent?: PunchLog[]): PunchLog[] {
     if (!recent || recent.length === 0) return current;
-    const seenIds = new Set(current.map((l) => l.id).filter(Boolean));
+    const recentMap = new Map(recent.filter((l) => l.id).map((l) => [l.id, l]));
+
+    // Update existing matching items in current with fresh recent log data
+    const updatedCurrent = current.map((currLog) => {
+      if (!currLog.id || !recentMap.has(currLog.id)) return currLog;
+      const fresh = recentMap.get(currLog.id)!;
+      const preserveLocalTimeOut =
+        currLog.timeOut &&
+        currLog.timeOut !== '-- Active Shift --' &&
+        currLog.timeOut !== '—' &&
+        (!fresh.timeOut || fresh.timeOut === '-- Active Shift --' || fresh.timeOut === '—');
+      return {
+        ...fresh,
+        ...(preserveLocalTimeOut ? { timeOut: currLog.timeOut, duration: currLog.duration, status: currLog.status } : {}),
+      };
+    });
+
+    const seenIds = new Set(updatedCurrent.map((l) => l.id).filter(Boolean));
     const newLogsToPrepend: PunchLog[] = [];
     for (const log of recent) {
       if (!log.id || !seenIds.has(log.id)) {
@@ -1274,7 +1395,41 @@ export class PunchStore {
         }
       }
     }
-    return [...newLogsToPrepend, ...current];
+    return [...newLogsToPrepend, ...updatedCurrent];
+  }
+
+  private computeActiveShiftRehydration(
+    activeShift: DbStaffShift,
+    now: number
+  ): ComputedRehydrationShift {
+    const clockInMs = new Date(activeShift.clock_in).getTime();
+    const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
+
+    if (activeShift.status === 'break') {
+      return {
+        currentStaff: activeShift.staff_name,
+        activeShiftId: activeShift.id,
+        isShiftActive: true,
+        shiftStatus: 'break',
+        shiftSeconds: activeShift.duration_seconds ?? elapsed,
+      };
+    }
+    if (activeShift.status === 'on_shift') {
+      return {
+        currentStaff: activeShift.staff_name,
+        activeShiftId: activeShift.id,
+        isShiftActive: true,
+        shiftStatus: 'on_shift',
+        shiftSeconds: elapsed,
+      };
+    }
+    return {
+      currentStaff: activeShift.staff_name,
+      activeShiftId: null,
+      isShiftActive: false,
+      shiftStatus: 'completed',
+      shiftSeconds: activeShift.duration_seconds ?? 0,
+    };
   }
 
   public rehydrateShift = (
@@ -1284,33 +1439,25 @@ export class PunchStore {
     profileId?: string
   ): void => {
     const now = nowTimestamp ?? Date.now();
-    let isShiftActive = this.state.isShiftActive;
-    let activeShiftId = this.state.activeShiftId;
-    let shiftStatus: ShiftStateStatus = this.state.shiftStatus;
-    let shiftSeconds = this.state.shiftSeconds;
-    let currentStaff = this.state.currentStaff;
     const targetProfileId = activeShift?.profile_id || profileId || this.state.currentProfileId;
+    const isTargetCurrent =
+      targetProfileId === this.state.currentProfileId ||
+      Boolean(activeShift?.staff_name === this.state.currentStaff);
+    const existingSession = this.state.staffSessions[targetProfileId];
+
+    let isShiftActive = existingSession?.isShiftActive ?? false;
+    let activeShiftId = existingSession?.activeShiftId ?? null;
+    let shiftStatus: ShiftStateStatus = existingSession?.shiftStatus ?? 'idle';
+    let shiftSeconds = existingSession?.shiftSeconds ?? 0;
+    let currentStaff = isTargetCurrent ? this.state.currentStaff : existingSession?.staffName || this.state.currentStaff;
 
     if (activeShift) {
-      currentStaff = activeShift.staff_name;
-      activeShiftId = activeShift.id;
-      const clockInMs = new Date(activeShift.clock_in).getTime();
-      const elapsed = Math.max(0, Math.floor((now - clockInMs) / 1000));
-
-      if (activeShift.status === 'break') {
-        isShiftActive = true;
-        shiftStatus = 'break';
-        shiftSeconds = activeShift.duration_seconds ?? elapsed;
-      } else if (activeShift.status === 'on_shift') {
-        isShiftActive = true;
-        shiftStatus = 'on_shift';
-        shiftSeconds = elapsed;
-      } else {
-        isShiftActive = false;
-        activeShiftId = null;
-        shiftStatus = 'completed';
-        shiftSeconds = activeShift.duration_seconds ?? 0;
-      }
+      const computed = this.computeActiveShiftRehydration(activeShift, now);
+      currentStaff = computed.currentStaff;
+      activeShiftId = computed.activeShiftId;
+      isShiftActive = computed.isShiftActive;
+      shiftStatus = computed.shiftStatus;
+      shiftSeconds = computed.shiftSeconds;
 
       this.persistActiveShiftToStorage({
         shiftId: activeShift.id,
@@ -1318,17 +1465,16 @@ export class PunchStore {
         profileId: targetProfileId,
         clockIn: activeShift.clock_in,
         status: activeShift.status,
-        durationSeconds: activeShift.duration_seconds ?? elapsed,
+        durationSeconds: computed.shiftSeconds,
       });
-    } else {
+    } else if (!existingSession?.isShiftActive) {
       // Non-destructive guard:
-      // If we already have a locally active shift, do NOT wipe to idle!
-      if (!this.state.isShiftActive) {
-        isShiftActive = false;
-        activeShiftId = null;
-        shiftStatus = 'idle';
-        shiftSeconds = 0;
-      }
+      // Only preserve active shift if THIS target employee has an ongoing local shift in this session.
+      // If this employee was not active locally, do NOT inherit another employee's active state!
+      isShiftActive = false;
+      activeShiftId = null;
+      shiftStatus = 'idle';
+      shiftSeconds = 0;
     }
 
     const mergedLogs = this.mergeRecentLogs(this.state.punchLogs, recentLogs);
@@ -1350,14 +1496,17 @@ export class PunchStore {
       clockInTime: activeShift?.clock_in || currentSession.clockInTime,
     };
 
+    const resolvedActiveShiftId = isShiftActive ? activeShiftId : null;
+    const nextActiveShiftId = isTargetCurrent ? resolvedActiveShiftId : this.state.activeShiftId;
+
     this.state = {
       ...this.state,
-      isShiftActive,
-      activeShiftId: isShiftActive ? activeShiftId : null,
-      shiftStatus,
-      shiftSeconds,
-      currentStaff,
-      currentProfileId: targetProfileId,
+      isShiftActive: isTargetCurrent ? isShiftActive : this.state.isShiftActive,
+      activeShiftId: nextActiveShiftId,
+      shiftStatus: isTargetCurrent ? shiftStatus : this.state.shiftStatus,
+      shiftSeconds: isTargetCurrent ? shiftSeconds : this.state.shiftSeconds,
+      currentStaff: isTargetCurrent ? currentStaff : this.state.currentStaff,
+      currentProfileId: this.state.currentProfileId,
       punchLogs: mergedLogs,
       activeStaffCount: this.calculateActiveStaffCount(mergedLogs),
       staffSessions: updatedSessions,
@@ -1480,6 +1629,8 @@ export function usePunchStore(): PunchStoreState & {
   clearOfflineQueue: typeof punchStore.clearOfflineQueue;
   syncOfflineQueue: typeof punchStore.syncOfflineQueue;
   updateStaffPermissions: typeof punchStore.updateStaffPermissions;
+  syncStaffRole: typeof punchStore.syncStaffRole;
+  resetShiftOnLogout: typeof punchStore.resetShiftOnLogout;
 } {
   const state = useSyncExternalStore(
     punchStore.subscribe,
@@ -1495,6 +1646,7 @@ export function usePunchStore(): PunchStoreState & {
     clockOut: punchStore.clockOut,
     toggleBreak: punchStore.toggleBreak,
     resetTimer: punchStore.resetTimer,
+    resetShiftOnLogout: punchStore.resetShiftOnLogout,
     clearError: punchStore.clearError,
     rehydrateShift: punchStore.rehydrateShift,
     rehydrateFromStorage: punchStore.rehydrateFromStorage,
@@ -1504,6 +1656,7 @@ export function usePunchStore(): PunchStoreState & {
     getActiveStaffCount: punchStore.getActiveStaffCount,
     switchStaff: punchStore.switchStaff,
     updateStaffPermissions: punchStore.updateStaffPermissions,
+    syncStaffRole: punchStore.syncStaffRole,
     getStaffSession: punchStore.getStaffSession,
     getOfflineQueue: punchStore.getOfflineQueue,
     enqueueOfflinePunch: punchStore.enqueueOfflinePunch,

@@ -61,6 +61,22 @@ describe('Staff Terminal Server Actions & Elevation Engine (SIAA-64)', () => {
       assert.ok(Array.isArray(res.logs));
       assert.ok(res.logs.length > 0);
     });
+
+    it('getStaffAttendanceHistoryAction isolates logs to specific employee profile when profileId is supplied', async () => {
+      // Profile for Mike Morales (00000000-0000-0000-0000-000000000002)
+      const mikeRes = await getStaffAttendanceHistoryAction(10, '00000000-0000-0000-0000-000000000002');
+      assert.equal(mikeRes.success, true);
+      for (const log of mikeRes.logs) {
+        assert.equal(log.staff.toLowerCase(), 'mike morales');
+      }
+
+      // Profile for Dante Reyes (00000000-0000-0000-0000-000000000003)
+      const danteRes = await getStaffAttendanceHistoryAction(10, '00000000-0000-0000-0000-000000000003');
+      assert.equal(danteRes.success, true);
+      for (const log of danteRes.logs) {
+        assert.equal(log.staff.toLowerCase(), 'dante reyes');
+      }
+    });
   });
 
   describe('Instant SKU / Barcode Price Checker (<200ms)', () => {

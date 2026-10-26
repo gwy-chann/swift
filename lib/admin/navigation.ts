@@ -97,7 +97,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     id: "settings",
-    label: "Settings & Audit Logs",
+    label: "Audit Logs",
     href: "/admin/logs",
     category: "Administration",
     icon: ShieldCheck,

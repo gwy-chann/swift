@@ -24,6 +24,7 @@ export interface StaffNavItem {
 }
 
 export interface StaffUserProfile {
+  id?: string;
   name: string;
   role: string;
   avatarInitials: string;
