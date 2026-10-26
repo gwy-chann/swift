@@ -457,12 +457,12 @@ VALUES
         'NC-88412',
         'SRV-CVT-01',
         'Full CVT Overhaul',
-        'd0000000-0000-0000-0000-000000000004',
+        'd0000000-0000-0000-0000-000000000003',
         'IN PROGRESS',
         45,
         timezone('utc'::text, now() - INTERVAL '20 minutes'),
         NULL,
-        'Mechanic: Alex Lim (~25 mins left)'
+        'Mechanic: Dante Reyes (~25 mins left)'
     ),
     (
         'f0000000-0000-0000-0000-000000000003',

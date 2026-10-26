@@ -30,6 +30,7 @@ model Profile {
   id          String    @id @db.Uuid
   email       String    @unique
   fullName    String?   @map("full_name")
+  employeeId  String?   @map("employee_id")
   role        UserRole  @default(staff)
   permissions Json      @default("{\"can_adjust_stock\": false, \"can_override_discount\": false, \"can_manage_pricing\": false, \"can_view_reports\": false}")
   status      String    @default("Active")
