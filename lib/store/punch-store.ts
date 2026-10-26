@@ -115,17 +115,25 @@ export function resolveStaffPermissions(
   explicitPermissions?: StaffPermissions,
   role?: string
 ): StaffPermissions {
+  const resolvedRole = (role || resolveStaffRole(profileId) || 'cashier').toLowerCase() as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+  const isInventoryClerkOrAdmin = resolvedRole === 'inventory_clerk' || resolvedRole === 'admin';
+
+  let perms: StaffPermissions = DEFAULT_ROLE_PERMISSIONS[resolvedRole] || DEFAULT_STAFF_PERMISSIONS;
+
   if (explicitPermissions) {
-    return { ...DEFAULT_STAFF_PERMISSIONS, ...explicitPermissions };
-  }
-  if (profileId) {
+    perms = { ...DEFAULT_STAFF_PERMISSIONS, ...explicitPermissions };
+  } else if (profileId) {
     const found = MOCK_STAFF_PROFILES.find((p) => p.id === profileId);
     if (found?.permissions) {
-      return { ...DEFAULT_STAFF_PERMISSIONS, ...found.permissions };
+      perms = { ...DEFAULT_STAFF_PERMISSIONS, ...found.permissions };
     }
   }
-  const resolvedRole = (role || 'cashier').toLowerCase() as keyof typeof DEFAULT_ROLE_PERMISSIONS;
-  return DEFAULT_ROLE_PERMISSIONS[resolvedRole] || DEFAULT_STAFF_PERMISSIONS;
+
+  if (isInventoryClerkOrAdmin) {
+    perms = { ...perms, can_adjust_stock: true };
+  }
+
+  return perms;
 }
 
 export class PunchStore {
@@ -202,17 +210,23 @@ export class PunchStore {
       const shiftSeconds = parsed.activeShift ? delta.shiftSeconds : parsed.shiftSeconds || 0;
       const activeShiftId = parsed.activeShift ? delta.activeShiftId : parsed.activeShiftId || null;
 
-      const staff = parsed.currentStaff || defaultStaff;
+      const staff =
+        parsed.currentStaff === 'SWIFT Fast-Lane Cashier'
+          ? 'Mike Morales'
+          : (parsed.currentStaff || defaultStaff);
       const profileId = parsed.currentProfileId || defaultProfileId;
       const staffRole = parsed.currentStaffRole || resolveStaffRole(profileId);
       const storedPerms = (
         parsed as StoredStaffShiftState & { currentPermissions?: StaffPermissions }
       ).currentPermissions;
       const staffPermissions = resolveStaffPermissions(profileId, storedPerms, staffRole);
-      const logs =
+      const rawLogs =
         Array.isArray(parsed.punchLogs) && parsed.punchLogs.length > 0
           ? parsed.punchLogs
           : initialLogs;
+      const logs = rawLogs.map((l) =>
+        l.staff === 'SWIFT Fast-Lane Cashier' ? { ...l, staff: 'Mike Morales' } : l
+      );
       const sessions =
         parsed.staffSessions && typeof parsed.staffSessions === 'object'
           ? (parsed.staffSessions as unknown as Record<string, StaffMemberShiftState>)
@@ -619,8 +633,10 @@ export class PunchStore {
       return;
     }
 
-    const resolvedPerms =
-      permissions || resolveStaffPermissions(profileId, existing?.permissions, normalizedRole);
+    const resolvedPerms = {
+      ...(permissions || resolveStaffPermissions(profileId, existing?.permissions, normalizedRole)),
+      ...(normalizedRole === 'inventory_clerk' || normalizedRole === 'admin' ? { can_adjust_stock: true } : {}),
+    };
 
     const updatedSession: StaffMemberShiftState = existing
       ? {
@@ -747,18 +763,10 @@ export class PunchStore {
     const activeShiftForTarget = parsed.activeShift?.profileId === currentPid ? parsed.activeShift : null;
     const delta = this.computeActiveShiftDelta(activeShiftForTarget, now);
 
-    const isShiftActive = activeShiftForTarget
-      ? delta.isShiftActive
-      : Boolean(targetSession?.isShiftActive);
-    const shiftStatus = activeShiftForTarget
-      ? delta.shiftStatus
-      : targetSession?.shiftStatus || 'idle';
-    const shiftSeconds = activeShiftForTarget
-      ? delta.shiftSeconds
-      : targetSession?.shiftSeconds || 0;
-    const activeShiftId = activeShiftForTarget
-      ? delta.activeShiftId
-      : targetSession?.activeShiftId || null;
+    const isShiftActive = activeShiftForTarget ? delta.isShiftActive : false;
+    const shiftStatus = activeShiftForTarget ? delta.shiftStatus : 'idle';
+    const shiftSeconds = activeShiftForTarget ? delta.shiftSeconds : 0;
+    const activeShiftId = activeShiftForTarget ? delta.activeShiftId : null;
 
     const profileId = currentPid;
     const staffName = this.state.currentStaff || targetSession?.staffName || parsed.currentStaff;
@@ -1367,11 +1375,19 @@ export class PunchStore {
   };
 
   private mergeRecentLogs(current: PunchLog[], recent?: PunchLog[]): PunchLog[] {
-    if (!recent || recent.length === 0) return current;
-    const recentMap = new Map(recent.filter((l) => l.id).map((l) => [l.id, l]));
+    const sanitizeLog = (l: PunchLog): PunchLog => {
+      if (l.staff === 'SWIFT Fast-Lane Cashier') {
+        return { ...l, staff: 'Mike Morales' };
+      }
+      return l;
+    };
+    const sanitizedCurrent = current.map(sanitizeLog);
+    if (!recent || recent.length === 0) return sanitizedCurrent;
+    const sanitizedRecent = recent.map(sanitizeLog);
+    const recentMap = new Map(sanitizedRecent.filter((l) => l.id).map((l) => [l.id, l]));
 
-    // Update existing matching items in current with fresh recent log data
-    const updatedCurrent = current.map((currLog) => {
+    // Update existing matching items in sanitizedCurrent with fresh recent log data
+    const updatedCurrent = sanitizedCurrent.map((currLog) => {
       if (!currLog.id || !recentMap.has(currLog.id)) return currLog;
       const fresh = recentMap.get(currLog.id)!;
       const preserveLocalTimeOut =
@@ -1387,7 +1403,7 @@ export class PunchStore {
 
     const seenIds = new Set(updatedCurrent.map((l) => l.id).filter(Boolean));
     const newLogsToPrepend: PunchLog[] = [];
-    for (const log of recent) {
+    for (const log of sanitizedRecent) {
       if (!log.id || !seenIds.has(log.id)) {
         newLogsToPrepend.push(log);
         if (log.id) {

@@ -30,6 +30,8 @@ export type AuthErrorCode =
   | "ACCOUNT_INACTIVE"
   | "INVALID_PIN"
   | "CHALLENGE_EXPIRED"
+  | "ADMIN_STAFF_PORTAL_FORBIDDEN"
+  | "STAFF_ADMIN_PORTAL_FORBIDDEN"
   | "UNKNOWN_ERROR";
 
 export interface PendingStaffAuthChallenge {

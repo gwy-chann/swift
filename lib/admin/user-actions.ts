@@ -129,6 +129,10 @@ function mapProfileToSummary(profile: MockStaffUserProfile | Record<string, any>
     };
   }
 
+  if (role === 'inventory_clerk' || role === 'admin') {
+    permissions.can_adjust_stock = true;
+  }
+
   const nameVal = p.full_name || p.fullName || p.name || splitEmail(p.email);
   const employeeId = p.employee_id || p.employeeId || undefined;
 

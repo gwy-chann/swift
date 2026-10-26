@@ -85,11 +85,21 @@ function formatShiftDuration(seconds: number | null): string {
 export function mapStaffShiftRow(row: DbStaffShift): PunchLog {
   const hasClockedOut = row.clock_out !== null && row.clock_out !== undefined;
 
+  let resolvedStaff = row.staff_name;
+  if (
+    resolvedStaff === 'SWIFT Fast-Lane Cashier' ||
+    ((row.profile_id === 'c0000000-0000-0000-0000-000000000002' ||
+      row.profile_id === '00000000-0000-0000-0000-000000000002') &&
+      (!resolvedStaff || resolvedStaff === 'Staff Member' || resolvedStaff === 'SWIFT Fast-Lane Cashier'))
+  ) {
+    resolvedStaff = 'Mike Morales';
+  }
+
   return {
     id: row.id,
     profileId: row.profile_id,
     date: formatShiftDate(row.clock_in),
-    staff: row.staff_name,
+    staff: resolvedStaff,
     timeIn: formatClockTime(row.clock_in),
     timeOut: hasClockedOut ? formatClockTime(row.clock_out as string) : ACTIVE_PLACEHOLDER,
     duration: formatShiftDuration(row.duration_seconds),

@@ -144,6 +144,24 @@ export function resolveSession(
     pendingStaffRole,
   } = parsePendingChallenge(cookies?.get("swift-pending-staff-auth")?.value);
 
+  const isAdminSession = validCookieRole === "admin" || isElevated;
+
+  // If a PIN challenge is active, staff is strictly unauthenticated until Step 2 is finalized
+  if (hasPendingPinChallenge && !isAdminSession) {
+    return {
+      isAuthenticated: false,
+      role: null,
+      userId: userIdCookie || supabaseUser?.id,
+      userName: userNameCookie || pendingStaffName || (supabaseUser?.user_metadata?.full_name as string),
+      staffRole: pendingStaffRole || staffRoleCookie,
+      source: supabaseUser ? "supabase" : "demo",
+      hasPendingPinChallenge: true,
+      pendingStaffEmail,
+      pendingStaffName,
+      pendingStaffRole,
+    };
+  }
+
   if (supabaseUser) {
     const metaRole =
       (supabaseUser.user_metadata?.role as string)?.toLowerCase() ||
@@ -154,6 +172,23 @@ export function resolveSession(
       metaRole === "cashier" ||
       metaRole === "mechanic" ||
       metaRole === "inventory_clerk";
+
+    // Staff members strictly require two-step PIN verification before gaining authenticated status.
+    // If cookies exist, staff must have validCookieRole === "staff" (or admin elevation).
+    if (isStaffRole && !isElevated && cookies && validCookieRole !== "staff") {
+      return {
+        isAuthenticated: false,
+        role: null,
+        userId: supabaseUser.id,
+        userName: userNameCookie,
+        staffRole: metaRole || staffRoleCookie,
+        source: "supabase",
+        hasPendingPinChallenge: false,
+        pendingStaffEmail,
+        pendingStaffName,
+        pendingStaffRole,
+      };
+    }
 
     const baseRole = determineBaseRole(metaRole, isStaffRole, validCookieRole);
     const role: PortalRole = isElevated ? "admin" : baseRole;
@@ -169,7 +204,7 @@ export function resolveSession(
       userName: resolvedFullName,
       staffRole: metaRole || staffRoleCookie,
       source: "supabase",
-      hasPendingPinChallenge,
+      hasPendingPinChallenge: false,
       pendingStaffEmail,
       pendingStaffName,
       pendingStaffRole,
@@ -222,14 +257,15 @@ function evaluatePortalAccess(
   normalized: string,
   session: ResolvedSession
 ): GuardDecision {
+  if (session.hasPendingPinChallenge) {
+    return {
+      action: "REDIRECT",
+      destination: "/login?notice=pin_challenge_pending",
+      statusCode: 307,
+    };
+  }
+
   if (!session.isAuthenticated) {
-    if (session.hasPendingPinChallenge) {
-      return {
-        action: "REDIRECT",
-        destination: "/login?notice=pin_challenge_pending",
-        statusCode: 307,
-      };
-    }
     return {
       action: "REDIRECT",
       destination: "/",
@@ -242,6 +278,14 @@ function evaluatePortalAccess(
     return {
       action: "REDIRECT",
       destination: "/staff/pos",
+      statusCode: 307,
+    };
+  }
+
+  if (classification === "STAFF_PORTAL" && session.role === "admin") {
+    return {
+      action: "REDIRECT",
+      destination: "/admin",
       statusCode: 307,
     };
   }
@@ -276,6 +320,9 @@ export function evaluateRouteAccess(
   const normalized = normalizePathname(pathname);
 
   if (classification === "AUTH_HUB") {
+    if (session.hasPendingPinChallenge) {
+      return { action: "ALLOW" };
+    }
     if (session.isAuthenticated && session.role) {
       const destination = session.role === "admin" ? "/admin" : "/staff/pos";
       return {

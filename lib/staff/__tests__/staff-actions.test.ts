@@ -18,12 +18,18 @@ describe('Staff Terminal Server Actions & Elevation Engine (SIAA-64)', () => {
       assert.equal(res.status, 'on_shift');
       assert.ok(res.clockIn);
       assert.equal(res.terminalId, 'Terminal #01');
+      if (res.shiftId) {
+        await clockOutShiftAction(res.shiftId, 'End of test shift');
+      }
     });
 
     it('clockInShiftAction defaults terminalId when omitted', async () => {
       const res = await clockInShiftAction();
       assert.equal(res.success, true);
       assert.equal(res.terminalId, 'Terminal #01');
+      if (res.shiftId) {
+        await clockOutShiftAction(res.shiftId, 'End of test shift');
+      }
     });
 
     it('clockOutShiftAction fails when shiftId is missing', async () => {

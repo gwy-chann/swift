@@ -90,6 +90,40 @@ describe('Staff Two-Step Login Sequence (SIAA-106)', () => {
       assert.equal(__getTestCookie('swift-session-role'), 'admin');
       assert.equal(__getTestCookie('swift-pending-staff-auth'), undefined);
     });
+
+    it('rejects admin accounts attempting to log in on the staff portal', async () => {
+      const result = await authenticateUserAction({
+        email: 'admin@swift.local',
+        password: 'admin-password',
+        selectedRole: 'staff',
+        rememberTerminal: true,
+      });
+
+      assert.equal(result.success, false);
+      if (!result.success) {
+        assert.equal(result.code, 'ADMIN_STAFF_PORTAL_FORBIDDEN');
+        assert.match(result.error, /Admin accounts cannot log in to the Staff Portal/);
+      }
+      assert.equal(__getTestCookie('swift-session-role'), undefined);
+      assert.equal(__getTestCookie('swift-pending-staff-auth'), undefined);
+    });
+
+    it('rejects staff accounts attempting to log in on the admin portal', async () => {
+      const result = await authenticateUserAction({
+        email: 'cashier@swift.local',
+        password: 'any-password',
+        selectedRole: 'admin',
+        rememberTerminal: true,
+      });
+
+      assert.equal(result.success, false);
+      if (!result.success) {
+        assert.equal(result.code, 'STAFF_ADMIN_PORTAL_FORBIDDEN');
+        assert.match(result.error, /Staff accounts cannot log in to the Admin Portal/);
+      }
+      assert.equal(__getTestCookie('swift-session-role'), undefined);
+      assert.equal(__getTestCookie('swift-pending-staff-auth'), undefined);
+    });
   });
 
   describe('Step 2: PIN Verification & Session Finalization', () => {
@@ -256,6 +290,51 @@ describe('Staff Two-Step Login Sequence (SIAA-106)', () => {
 
       const decision = evaluateRouteAccess('/staff/pos', session);
       assert.equal(decision.action, 'ALLOW');
+    });
+
+    it('strictly denies authenticated status to live Supabase staff users (like Ding Dong Dantes) while PIN challenge is pending', () => {
+      const mockCookies = {
+        get: (name: string) => {
+          if (name === 'swift-pending-staff-auth') {
+            return {
+              value: encodeURIComponent(
+                JSON.stringify({
+                  userId: '93302a25-c0d2-4705-bf4f-7b1325abaa0d',
+                  email: 'mechanic@swift.local',
+                  name: 'Ding Dong Dantes',
+                  role: 'mechanic',
+                  portalRole: 'staff',
+                })
+              ),
+            };
+          }
+          return undefined;
+        },
+      };
+
+      const mockSupabaseUser = {
+        id: '93302a25-c0d2-4705-bf4f-7b1325abaa0d',
+        email: 'mechanic@swift.local',
+        user_metadata: {
+          name: 'Ding Dong Dantes',
+          full_name: 'Ding Dong Dantes',
+          role: 'mechanic',
+        },
+      };
+
+      const session = resolveSession(mockCookies, mockSupabaseUser);
+      assert.equal(session.isAuthenticated, false, 'Session must NOT be authenticated during pending PIN challenge');
+      assert.equal(session.hasPendingPinChallenge, true);
+      assert.equal(session.pendingStaffEmail, 'mechanic@swift.local');
+
+      // Login hub MUST be allowed so the user can see and enter the PIN keypad
+      const rootDecision = evaluateRouteAccess('/', session);
+      assert.equal(rootDecision.action, 'ALLOW', 'Must allow root login hub during pending challenge without redirect');
+
+      // Direct bypass to /staff/work-orders must be rejected and redirected to PIN challenge
+      const workOrdersDecision = evaluateRouteAccess('/staff/work-orders', session);
+      assert.equal(workOrdersDecision.action, 'REDIRECT');
+      assert.equal(workOrdersDecision.destination, '/login?notice=pin_challenge_pending');
     });
   });
 });

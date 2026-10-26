@@ -30,8 +30,8 @@ async function resolveServiceBay(
 
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const { createClient } = await import('../supabase/server.ts');
-      const supabase = await createClient();
+      const { createAdminClient } = await import('../supabase/server.ts');
+      const supabase = createAdminClient();
 
       // Look up bay by exact name or case-insensitive match
       const { data: bays } = await supabase
@@ -136,10 +136,10 @@ export async function autoProvisionWorkOrdersFromCheckout(
     // 1. Database Persistence (Supabase PostgreSQL)
     try {
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const { createClient } = await import('../supabase/server.ts');
-        const supabase = await createClient();
+        const { createAdminClient } = await import('../supabase/server.ts');
+        const supabase = createAdminClient();
 
-        await supabase.from('work_orders').insert({
+        const { error: insertError } = await supabase.from('work_orders').insert({
           id: newWorkOrder.id,
           order_number: newWorkOrder.orderNumber,
           bay_id: newWorkOrder.bayId,
@@ -153,9 +153,14 @@ export async function autoProvisionWorkOrdersFromCheckout(
           status: 'QUEUED',
           estimated_duration_minutes: newWorkOrder.estimatedDurationMinutes,
           notes: newWorkOrder.notes,
+          customer_complaints: payload.notes || payload.technicianNotes || newWorkOrder.notes,
           created_at: now,
           updated_at: now,
         });
+
+        if (insertError) {
+          console.error('[WorkOrderBridge] Supabase work order insert error:', insertError);
+        }
 
         // Scenario 2: Supabase Realtime broadcast on 'operational-intelligence'
         try {

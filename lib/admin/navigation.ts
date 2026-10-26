@@ -27,21 +27,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    id: "repairs",
-    label: "Workshop Repairs",
-    href: "/admin/repairs",
-    category: "Store Intelligence",
-    icon: Wrench,
-  },
-  {
     id: "inventory",
     label: "Inventory & Stock",
     href: "/admin/inventory",
     category: "Store Intelligence",
-    badge: {
-      text: "3 Low",
-      variant: "danger",
-    },
     icon: Boxes,
   },
   {
@@ -50,6 +39,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/pos",
     category: "Store Intelligence",
     icon: ShoppingCart,
+  },
+  {
+    id: "repairs",
+    label: "Workshop Repairs",
+    href: "/admin/repairs",
+    category: "Store Intelligence",
+    icon: Wrench,
   },
   {
     id: "history",
@@ -76,7 +72,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // Administration
   {
     id: "users",
-    label: "User Management",
+    label: "Staff Management",
     href: "/admin/users",
     category: "Administration",
     icon: Users,

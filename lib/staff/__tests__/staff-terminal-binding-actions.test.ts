@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { clockInShiftAction } from '../actions.ts';
+import { clockInShiftAction, clockOutShiftAction } from '../actions.ts';
 import {
   validateTerminalTokenAction,
   enrollTerminalDeviceAction,
@@ -48,6 +48,9 @@ describe('Terminal Device Binding Server Actions & Enforcement (SIAA-82)', () =>
       assert.ok(res.shiftId);
       assert.equal(res.terminalId, 'Terminal #01');
       assert.equal(res.status, 'on_shift');
+      if (res.shiftId) {
+        await clockOutShiftAction(res.shiftId, 'End of test shift');
+      }
     });
 
     it('Scenario 3: Unauthorized remote phone is blocked with UNAUTHORIZED_TERMINAL_DEVICE', async () => {

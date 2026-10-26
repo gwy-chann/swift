@@ -169,6 +169,7 @@ function buildResolvedPermissions(
   dataPermissions: unknown,
   mockProfile?: MockStaffUserProfile
 ): StaffPermissions {
+  const isInventoryClerkOrAdmin = roleKey === 'inventory_clerk' || roleKey === 'admin';
   const basePermissions = {
     ...(DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS),
     ...(dataPermissions && typeof dataPermissions === 'object' ? (dataPermissions as Record<string, boolean>) : {}),
@@ -176,6 +177,7 @@ function buildResolvedPermissions(
   return {
     ...basePermissions,
     ...(mockProfile && !dataPermissions ? mockProfile.permissions : {}),
+    ...(isInventoryClerkOrAdmin ? { can_adjust_stock: true } : {}),
   };
 }
 
@@ -354,67 +356,76 @@ export async function verifyStaffPinAction(
  * Server Action: Fetch Staff Shift & Fresh Permissions JSONB (SIAA-86)
  * Retrieves active shift for terminal/profile and the profile's full permissions JSONB.
  */
+async function fetchStaffShiftFromSupabase(
+  targetId: string,
+  profileId: string
+): Promise<FetchStaffShiftResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { createAdminClient } = await import('../supabase/server.ts');
+    const supabase = createAdminClient();
+
+    const [profileRes, shiftRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, full_name, email, role, permissions')
+        .eq('id', targetId)
+        .maybeSingle(),
+      supabase
+        .from('staff_shifts')
+        .select('*')
+        .eq('profile_id', targetId)
+        .order('clock_in', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (!profileRes.data) return null;
+
+    const p = profileRes.data;
+    const mockProfile = MOCK_STAFF_PROFILES.find((m) => m.id === profileId);
+    const resolvedRole = (p.role || mockProfile?.role || 'cashier').toLowerCase();
+    const roleKey = resolvedRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+    const resolvedPermissions = buildResolvedPermissions(roleKey, p.permissions, mockProfile);
+
+    const latestShift = (shiftRes.data as DbStaffShift) || null;
+    const activeShift =
+      latestShift && (latestShift.status === 'on_shift' || latestShift.status === 'break')
+        ? latestShift
+        : null;
+    const resolvedName = p.full_name || mockProfile?.name || 'Staff Member';
+
+    return {
+      success: true,
+      shift: activeShift,
+      permissions: resolvedPermissions,
+      profile: {
+        id: profileId,
+        name: resolvedName,
+        email: p.email || mockProfile?.email || '',
+        role: resolvedRole as 'admin' | 'cashier' | 'mechanic' | 'inventory_clerk' | 'staff',
+        roleDisplay: formatRoleDisplay(resolvedRole),
+        avatarInitials: formatAvatarInitials(resolvedName),
+        permissions: resolvedPermissions,
+      },
+    };
+  } catch (err) {
+    console.warn('[fetchStaffShiftAction] Supabase query error, using fallback:', err);
+    return null;
+  }
+}
+
 export async function fetchStaffShiftAction(
   profileId: string = '00000000-0000-0000-0000-000000000002'
 ): Promise<FetchStaffShiftResult> {
   const targetId = normalizeProfileId(profileId) || profileId;
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    try {
-      const { createAdminClient } = await import('../supabase/server.ts');
-      const supabase = createAdminClient();
-
-      const [profileRes, shiftRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, full_name, email, role, permissions')
-          .eq('id', targetId)
-          .maybeSingle(),
-        supabase
-          .from('staff_shifts')
-          .select('*')
-          .eq('profile_id', targetId)
-          .in('status', ['on_shift', 'break'])
-          .order('clock_in', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-
-      if (profileRes.data) {
-        const p = profileRes.data;
-        const mockProfile = MOCK_STAFF_PROFILES.find((m) => m.id === profileId);
-        const resolvedRole = (p.role || mockProfile?.role || 'cashier').toLowerCase();
-        const roleKey = resolvedRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
-        const basePermissions = {
-          ...(DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS),
-          ...(p.permissions && typeof p.permissions === 'object' ? p.permissions : {}),
-        };
-        const resolvedPermissions: StaffPermissions = {
-          ...basePermissions,
-          ...(mockProfile && !p.permissions ? mockProfile.permissions : {}),
-        };
-
-        const activeShift = (shiftRes.data as DbStaffShift) || null;
-        const resolvedName = p.full_name || mockProfile?.name || 'Staff Member';
-
-        return {
-          success: true,
-          shift: activeShift,
-          permissions: resolvedPermissions,
-          profile: {
-            id: profileId,
-            name: resolvedName,
-            email: p.email || mockProfile?.email || '',
-            role: resolvedRole as 'admin' | 'cashier' | 'mechanic' | 'inventory_clerk' | 'staff',
-            roleDisplay: formatRoleDisplay(resolvedRole),
-            avatarInitials: formatAvatarInitials(resolvedName),
-            permissions: resolvedPermissions,
-          },
-        };
-      }
-    } catch (err) {
-      console.warn('[fetchStaffShiftAction] Supabase query error, using fallback:', err);
-    }
+  const supabaseResult = await fetchStaffShiftFromSupabase(targetId, profileId);
+  if (supabaseResult) {
+    return supabaseResult;
   }
 
   const { getStaffUserRole } = await import('../admin/user-actions.ts');
@@ -425,7 +436,11 @@ export async function fetchStaffShiftAction(
     MOCK_STAFF_PROFILES[1];
   const effectiveRole = (liveRole || mockProfile.role || 'cashier').toLowerCase();
   const roleKey = effectiveRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
-  const effectivePermissions = mockProfile.permissions || DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS;
+  const isInventoryClerkOrAdmin = roleKey === 'inventory_clerk' || roleKey === 'admin';
+  const effectivePermissions = {
+    ...(mockProfile.permissions || DEFAULT_ROLE_PERMISSIONS[roleKey] || DEFAULT_STAFF_PERMISSIONS),
+    ...(isInventoryClerkOrAdmin ? { can_adjust_stock: true } : {}),
+  };
 
   return {
     success: true,
@@ -781,6 +796,61 @@ function buildAttendanceOrFilter(
  * Server Action: Retrieve Staff Attendance Timesheet History
  * Queries public.staff_shifts ordered by clock_in descending and identifies active shift.
  */
+async function fetchStaffAttendanceFromSupabase(
+  normalizedId?: string,
+  profileId?: string,
+  targetStaffName?: string,
+  limit: number = 20
+): Promise<AttendanceHistoryResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { createAdminClient } = await import('../supabase/server.ts');
+    const supabase = createAdminClient();
+
+    let query = supabase
+      .from('staff_shifts')
+      .select('*')
+      .order('clock_in', { ascending: false });
+
+    const orFilter = buildAttendanceOrFilter(normalizedId, profileId, targetStaffName);
+    if (orFilter) {
+      query = query.or(orFilter);
+    }
+
+    const { data, error } = await query.limit(limit);
+    if (!error && data) {
+      const rows = data as DbStaffShift[];
+      const mappedLogs: PunchLog[] = rows.map(mapStaffShiftRow);
+
+      const profileRows = rows.filter((r) =>
+        matchesShiftProfile(r, normalizedId, profileId, targetStaffName)
+      );
+      const latestProfileShift = profileRows[0];
+      const activeShift =
+        latestProfileShift &&
+        (latestProfileShift.status === 'on_shift' || latestProfileShift.status === 'break')
+          ? latestProfileShift
+          : null;
+
+      return {
+        success: true,
+        logs: mappedLogs,
+        activeShift,
+      };
+    }
+  } catch (err) {
+    console.warn(
+      '[getStaffAttendanceHistoryAction] Supabase query issue, using mock baseline:',
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+
+  return null;
+}
+
 export async function getStaffAttendanceHistoryAction(
   limit: number = 20,
   profileId?: string
@@ -791,44 +861,14 @@ export async function getStaffAttendanceHistoryAction(
   );
   const targetStaffName = matchedProfile?.name;
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    try {
-      const { createAdminClient } = await import('../supabase/server.ts');
-      const supabase = createAdminClient();
-
-      let query = supabase
-        .from('staff_shifts')
-        .select('*')
-        .order('clock_in', { ascending: false });
-
-      const orFilter = buildAttendanceOrFilter(normalizedId, profileId, targetStaffName);
-      if (orFilter) {
-        query = query.or(orFilter);
-      }
-
-      const { data, error } = await query.limit(limit);
-
-      if (!error && data) {
-        const rows = data as DbStaffShift[];
-        const mappedLogs: PunchLog[] = rows.map(mapStaffShiftRow);
-        const activeShift = rows.find(
-          (r) =>
-            (r.status === 'on_shift' || r.status === 'break') &&
-            matchesShiftProfile(r, normalizedId, profileId, targetStaffName)
-        ) || null;
-
-        return {
-          success: true,
-          logs: mappedLogs,
-          activeShift,
-        };
-      }
-    } catch (err) {
-      console.warn(
-        '[getStaffAttendanceHistoryAction] Supabase query issue, using mock baseline:',
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+  const supabaseResult = await fetchStaffAttendanceFromSupabase(
+    normalizedId,
+    profileId,
+    targetStaffName,
+    limit
+  );
+  if (supabaseResult) {
+    return supabaseResult;
   }
 
   // Mock Fallback

@@ -11,7 +11,7 @@ import { verifyStaffPinAction } from '../../staff/actions.ts';
 
 describe('Demo Staff Accounts & Punch Clock PIN Authorization Matrix', () => {
   it('exports all demo staff and admin accounts with complete credentials and PINs', () => {
-    assert.equal(ALL_DEMO_ACCOUNTS.length, 4);
+    assert.equal(ALL_DEMO_ACCOUNTS.length, 5);
 
     const admin = ALL_DEMO_ACCOUNTS.find((a) => a.role === 'admin');
     assert.ok(admin);

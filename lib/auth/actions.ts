@@ -1,6 +1,7 @@
 "use server";
 
 import type {
+  AuthErrorCode,
   AuthResult,
   LoginCredentials,
   UserSession,
@@ -104,7 +105,9 @@ function setSessionCookies(
       maxAge,
     });
   }
-  if (role !== "admin") {
+  if (role === "admin") {
+    clearPendingStaffChallengeCookie(cookieStore);
+  } else {
     cookieStore.delete("swift_admin_elevated");
   }
 }
@@ -173,6 +176,22 @@ async function handleDemoAuthentication(
     (await getStaffUserRole(demoAccount.id)) ||
     demoAccount.staffRole ||
     "cashier";
+
+  if (selectedRole === "staff" && (liveRole === "admin" || demoAccount.role === "admin")) {
+    return {
+      success: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN",
+    };
+  }
+
+  if (selectedRole === "admin" && liveRole !== "admin" && demoAccount.role !== "admin") {
+    return {
+      success: false,
+      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
+      code: "STAFF_ADMIN_PORTAL_FORBIDDEN",
+    };
+  }
 
   const isStaff = selectedRole === "staff" || demoAccount.role === "staff" || (liveRole !== "admin");
   if (isStaff && liveRole !== "admin") {
@@ -300,6 +319,42 @@ export async function authenticateUserAction(
       metaRole ||
       "cashier";
 
+type PortalRoleValidation =
+  | { isValid: true }
+  | { isValid: false; error: string; code: AuthErrorCode };
+
+function validatePortalRole(
+  selectedRole: "admin" | "staff",
+  liveRole: string,
+  metaRole?: string
+): PortalRoleValidation {
+  if (selectedRole === "staff" && (liveRole === "admin" || metaRole === "admin")) {
+    return {
+      isValid: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  if (selectedRole === "admin" && liveRole !== "admin" && metaRole !== "admin") {
+    return {
+      isValid: false,
+      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
+      code: "STAFF_ADMIN_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  return { isValid: true };
+}
+
+    const portalCheck = validatePortalRole(selectedRole, liveRole, metaRole);
+    if (!portalCheck.isValid) {
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: portalCheck.error,
+        code: portalCheck.code,
+      };
+    }
+
     const isStaff =
       selectedRole === "staff" ||
       liveRole === "staff" ||
@@ -388,6 +443,47 @@ export async function authenticateUserAction(
   }
 }
 
+async function lookupProfilePinFromDatabase(userId: string, email: string): Promise<string | null> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return null;
+  }
+
+  try {
+    const { createAdminClient, createClient } = await import("../supabase/server.ts");
+    let supabase;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    if (userId) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("pin_code")
+        .eq("id", userId)
+        .maybeSingle();
+      if (data?.pin_code) return data.pin_code;
+    }
+
+    if (email) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("pin_code")
+        .eq("email", email.toLowerCase().trim())
+        .maybeSingle();
+      if (data?.pin_code) return data.pin_code;
+    }
+  } catch {
+    // Fallback
+  }
+
+  return null;
+}
+
 async function resolveExpectedStaffPin(userId: string, email: string): Promise<string> {
   const demo = ALL_DEMO_ACCOUNTS.find(
     (a) =>
@@ -407,30 +503,23 @@ async function resolveExpectedStaffPin(userId: string, email: string): Promise<s
     // Fallback
   }
 
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    try {
-      const { createAdminClient, createClient } = await import("../supabase/server.ts");
-      let supabase;
-      try {
-        supabase = createAdminClient();
-      } catch {
-        supabase = await createClient();
-      }
-      const { data } = await supabase
-        .from("profiles")
-        .select("pin_code")
-        .eq("id", userId)
-        .maybeSingle();
+  const dbPin = await lookupProfilePinFromDatabase(userId, email);
+  if (dbPin) {
+    return dbPin;
+  }
 
-      if (data?.pin_code) {
-        return data.pin_code;
-      }
-    } catch {
-      // Fallback
+  try {
+    const { MOCK_STAFF_PROFILES } = await import("../mock-data/users.ts");
+    const found = MOCK_STAFF_PROFILES.find(
+      (p) =>
+        (userId && p.id === userId) ||
+        (email && p.email.toLowerCase() === email.toLowerCase().trim())
+    );
+    if (found?.pinCode) {
+      return found.pinCode;
     }
+  } catch {
+    // Fallback
   }
 
   return "1234";
@@ -511,6 +600,15 @@ export async function completeStaffTwoStepLoginAction(payload: {
     (await getStaffUserRole(challenge.email)) ||
     challenge.role;
 
+  if (liveRole === "admin" || challenge.role === "admin") {
+    clearPendingStaffChallengeCookie(cookieStore);
+    return {
+      success: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN",
+    };
+  }
+
   setSessionCookies(
     cookieStore,
     "staff",
@@ -553,6 +651,12 @@ export async function completeStaffTwoStepLoginAction(payload: {
 export async function cancelStaffPinChallengeAction(): Promise<{ success: boolean }> {
   const cookieStore = await getSafeCookieStore();
   clearPendingStaffChallengeCookie(cookieStore);
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Suppress
+  }
   return { success: true };
 }
 

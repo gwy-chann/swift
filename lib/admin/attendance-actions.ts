@@ -80,7 +80,7 @@ function mapDbRowToAdminShift(row: DbStaffShift): AdminStaffShift {
   const matchedMeta = row.profile_id ? STAFF_METADATA_BY_PROFILE[row.profile_id] : undefined;
   let resolvedName = row.staff_name || matchedMeta?.name || 'Staff Member';
   if (resolvedName === 'Maria Santos' || resolvedName === 'SWIFT Fast-Lane Cashier') {
-    resolvedName = matchedMeta?.name || resolvedName;
+    resolvedName = matchedMeta?.name || (resolvedName === 'SWIFT Fast-Lane Cashier' ? 'Mike Morales' : resolvedName);
   }
   const resolvedRole = matchedMeta?.role || 'Staff';
 
