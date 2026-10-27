@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal, Lock } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { usePunchStore } from "@/lib/store/punch-store";
-import { getProductsAction } from "@/lib/admin/product-actions";
+import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
 import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { StockAdjustmentModal } from "@/components/admin/inventory/stock-adjustment-modal";
 import { ManagerOverrideModal } from "@/components/pos/manager-override-modal";
@@ -17,6 +17,16 @@ function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean): s
   return isMechanic
     ? "Mechanics are not allowed to adjust stock count"
     : "Cashiers are not allowed to adjust stock count";
+}
+
+function getToastClasses(type: "success" | "error" | "warning"): string {
+  if (type === "success") {
+    return "bg-success/10 text-success border-success/30";
+  }
+  if (type === "error") {
+    return "bg-danger/10 text-danger border-danger/30";
+  }
+  return "bg-warning/10 text-warning border-warning/30";
 }
 
 export default function StaffSearchPage() {
@@ -46,23 +56,35 @@ export default function StaffSearchPage() {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isRestrictedModalOpen, setIsRestrictedModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
-  const [toastMessage, setToastMessage] = useState<string | null>(() => {
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error" | "warning";
+    text: string;
+  } | null>(null);
+
+  // Read stored redirect toast after mount to preserve SSR hydration match
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
     try {
       if (typeof window !== "undefined") {
         const storedToast = sessionStorage.getItem("swift_staff_redirect_toast");
         if (storedToast) {
           sessionStorage.removeItem("swift_staff_redirect_toast");
-          return storedToast;
+          timer = setTimeout(() => {
+            setToastMessage({ type: "warning", text: storedToast });
+          }, 0);
         }
       }
     } catch {}
-    return null;
-  });
-  const { products, hydrateProducts, adjustStock } = useInventoryStore();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+  const { products, hydrateProducts, adjustStock, rollbackStock } = useInventoryStore();
 
   // Real-time synchronization with Supabase products table
   useInventoryRealtime();
@@ -77,11 +99,15 @@ export default function StaffSearchPage() {
 
   useEffect(() => {
     let isMounted = true;
-    getProductsAction().then((fetched) => {
-      if (isMounted && fetched.length > 0) {
-        hydrateProducts(fetched);
-      }
-    });
+    void getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch products:", err);
+      });
     return () => {
       isMounted = false;
     };
@@ -104,8 +130,8 @@ export default function StaffSearchPage() {
         !q ||
         item.name.toLowerCase().includes(q) ||
         item.sku.toLowerCase().includes(q) ||
-        (item.model && item.model.toLowerCase().includes(q)) ||
-        (item.location && item.location.toLowerCase().includes(q));
+        Boolean(item.model?.toLowerCase().includes(q)) ||
+        Boolean(item.location?.toLowerCase().includes(q));
       return matchCat && matchSearch;
     });
   }, [products, category, searchTerm]);
@@ -139,7 +165,7 @@ export default function StaffSearchPage() {
     setIsAdjustmentModalOpen(true);
   };
 
-  const handleAdjustmentSubmit = (params: {
+  const handleAdjustmentSubmit = async (params: {
     sku: string;
     type: AdjustmentType;
     delta: number;
@@ -152,25 +178,77 @@ export default function StaffSearchPage() {
       return;
     }
 
-    adjustStock({
+    const clerkName = punchState.currentStaff || "Inventory Clerk";
+
+    // 1. Instant Optimistic State Update (<16ms)
+    const snapshot = adjustStock({
       sku: params.sku,
       type: params.type,
       units: params.delta,
       reason: params.reason,
-      user: punchState.currentStaff || "Staff Member",
+      user: clerkName,
     });
-    setIsAdjustmentModalOpen(false);
-    setSelectedProduct(null);
+
+    setIsAdjustSubmitting(true);
+
+    try {
+      // 2. Persist to PostgreSQL database & immutable audit logs via Server Action
+      const result = await adjustProductStockAction({
+        sku: params.sku,
+        type: params.type,
+        delta: params.delta,
+        reason: params.reason,
+        userName: clerkName,
+      });
+
+      if (result.success) {
+        setToastMessage({
+          type: "success",
+          text: `Stock adjusted successfully for part ${params.sku} (${params.delta > 0 ? "+" : ""}${params.delta} units). New on-hand: ${result.newStock}.`,
+        });
+        setIsAdjustmentModalOpen(false);
+        setSelectedProduct(null);
+      } else {
+        // Rollback on rejection (e.g. INSUFFICIENT_STOCK)
+        rollbackStock({
+          sku: params.sku,
+          previousStock: snapshot.previousStock,
+          logId: snapshot.logId,
+        });
+        setToastMessage({
+          type: "error",
+          text: `Failed to adjust stock: ${result.error || "Unknown database error"}`,
+        });
+      }
+    } catch (err) {
+      rollbackStock({
+        sku: params.sku,
+        previousStock: snapshot.previousStock,
+        logId: snapshot.logId,
+      });
+      setToastMessage({
+        type: "error",
+        text: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setIsAdjustSubmitting(false);
+    }
   };
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Toast Notification Banner (Redirect only) */}
+      {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md bg-warning/10 text-warning border-warning/30 shrink-0">
+        <div
+          role="status"
+          aria-live="polite"
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md shrink-0 ${getToastClasses(
+            toastMessage.type
+          )}`}
+        >
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{toastMessage}</span>
+            <span>{toastMessage.text}</span>
           </div>
           <button
             type="button"
@@ -286,6 +364,7 @@ export default function StaffSearchPage() {
       <StockAdjustmentModal
         isOpen={isAdjustmentModalOpen}
         product={selectedProduct}
+        isSubmitting={isAdjustSubmitting}
         onClose={() => {
           setIsAdjustmentModalOpen(false);
           setSelectedProduct(null);
@@ -295,11 +374,15 @@ export default function StaffSearchPage() {
 
       {/* Role Restriction Validation Modal */}
       {isRestrictedModalOpen && (
-        <div
-          role="dialog"
+        <dialog
+          open
           aria-modal="true"
           aria-labelledby="role-restriction-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in"
+          onCancel={(e) => {
+            e.preventDefault();
+            setIsRestrictedModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-in fade-in"
         >
           <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-4 border-b border-border bg-bg-card flex items-center justify-between">
@@ -335,7 +418,7 @@ export default function StaffSearchPage() {
               </div>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
 
       {/* Manager Elevation Override only for non-restricted roles */}
