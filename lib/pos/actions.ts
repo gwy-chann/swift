@@ -149,6 +149,7 @@ async function triggerCheckoutRevalidation(): Promise<void> {
     }
     if (typeof nextCache.revalidatePath === 'function') {
       nextCache.revalidatePath('/admin');
+      nextCache.revalidatePath('/staff/work-orders');
     }
   } catch {
     // Graceful fallback when executed outside Next.js server request context (e.g. test runner)

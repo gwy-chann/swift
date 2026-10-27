@@ -226,14 +226,20 @@ describe('Session Route Guards & Access Matrix Engine (SIAA-71)', () => {
       assert.equal(staffLocatorDecision.action, 'ALLOW');
     });
 
-    it('redirects /staff to /staff/pos for authenticated users', () => {
+    it('redirects /staff to /staff/pos for authenticated staff users', () => {
       const staffRootDecision = evaluateRouteAccess('/staff', staffSession);
       assert.equal(staffRootDecision.action, 'REDIRECT');
       assert.equal(staffRootDecision.destination, '/staff/pos');
+    });
 
+    it('redirects administrator accessing /staff/* back to /admin', () => {
       const adminStaffRootDecision = evaluateRouteAccess('/staff', adminSession);
       assert.equal(adminStaffRootDecision.action, 'REDIRECT');
-      assert.equal(adminStaffRootDecision.destination, '/staff/pos');
+      assert.equal(adminStaffRootDecision.destination, '/admin');
+
+      const adminStaffPosDecision = evaluateRouteAccess('/staff/pos', adminSession);
+      assert.equal(adminStaffPosDecision.action, 'REDIRECT');
+      assert.equal(adminStaffPosDecision.destination, '/admin');
     });
 
     it('allows public assets through without redirection', () => {

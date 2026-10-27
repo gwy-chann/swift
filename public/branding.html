@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWIFT - Brand Identity & Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ==========================================================================
+       Light Mode Design Tokens (Default)
+       ========================================================================== */
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+
+      --secondary: #475569;
+      --secondary-hover: #334155;
+
+      --accent: #d97706;
+      --accent-light: #fffbeb;
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --info: #0284c7;
+      --info-light: #f0f9ff;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+
+      /* Surfaces */
+      --bg-base: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-sidebar: #0f172a;
+      --border-color: #e2e8f0;
+
+      /* Typography */
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-light: #f8fafc;
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    }
+
+    /* ==========================================================================
+       Dark Mode Design Tokens (Deep Obsidian & Slate)
+       ========================================================================== */
+    .dark, [data-theme="dark"] {
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: rgba(59, 130, 246, 0.15);
+      --primary-border: rgba(59, 130, 246, 0.35);
+
+      --secondary: #94a3b8;
+      --secondary-hover: #cbd5e1;
+
+      --accent: #f59e0b;
+      --accent-light: rgba(245, 158, 11, 0.15);
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.15);
+      --info: #38bdf8;
+      --info-light: rgba(56, 189, 248, 0.15);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+
+      /* Deep Obsidian Surfaces */
+      --bg-base: #0b0f19;
+      --bg-surface: #111827;
+      --bg-card: #151f32;
+      --bg-sidebar: #070b14;
+      --border-color: #1e293b;
+
+      /* Dark Typography */
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-light: #ffffff;
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    /* Top Controls Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Brand Hero Header */
+    .brand-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      border-radius: var(--radius-xl);
+      padding: 3rem 2.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-hero::after {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand-top {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .brand-logo {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge-primary {
+      background: rgba(37, 99, 235, 0.25);
+      color: #93c5fd;
+      border: 1px solid rgba(147, 197, 253, 0.35);
+    }
+
+    .badge-theme {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      border: 1px solid rgba(110, 231, 183, 0.4);
+    }
+
+    .brand-tagline {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 0.5rem;
+    }
+
+    .brand-description {
+      color: #94a3b8;
+      font-size: 1rem;
+      max-width: 720px;
+    }
+
+    /* Section Styles */
+    .section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Color Grid */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .color-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s ease;
+    }
+
+    .color-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .color-swatch {
+      height: 96px;
+      display: flex;
+      align-items: flex-end;
+      padding: 0.75rem 1rem;
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .color-info {
+      padding: 1rem;
+    }
+
+    .color-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .color-role {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      min-height: 2.4em;
+    }
+
+    .color-hex {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    /* Comparison Tabs / Mode Display */
+    .modes-comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .modes-comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mode-preview-box {
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .mode-preview-box.light-mode {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .mode-preview-box.dark-mode {
+      background: #0b0f19;
+      color: #f8fafc;
+      border-color: #1e293b;
+    }
+
+    .mode-title {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Sub-brands Grid */
+    .subbrands-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .subbrand-card {
+      padding: 1.35rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+    }
+
+    .subbrand-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(37, 99, 235, 0.15);
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .subbrand-card h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .subbrand-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Identity Table */
+    .identity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .identity-table th, .identity-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .identity-table th {
+      background-color: var(--bg-base);
+      color: var(--text-secondary);
+      font-weight: 700;
+      width: 28%;
+    }
+
+    .identity-table td {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Utility Bar with Real-Time Dark Mode Switcher -->
+    <div class="top-bar">
+      <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">SWIFT Brand Guidelines v1.0</span>
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+        <span id="themeLabel">Switch to Dark Mode</span>
+      </button>
+    </div>
+
+    <!-- Brand Header -->
+    <header class="brand-hero">
+      <div class="brand-top">
+        <span class="brand-logo">SWIFT</span>
+        <span class="badge badge-primary">Admin &amp; Staff Edition</span>
+        <span class="badge badge-theme">Dual Mode: Light &amp; Dark</span>
+      </div>
+      <div class="brand-tagline">Motorcycle Parts &amp; Repair Shop Management System</div>
+      <p class="brand-description">
+        An integrated Point-of-Sale (POS), warehouse inventory tracker, and motorcycle repair bay management platform tailored for high-velocity shop floor and workshop operations.
+      </p>
+    </header>
+
+    <!-- Overview Table -->
+    <section class="section">
+      <h2 class="section-title">1. Brand Identity Overview</h2>
+      <p class="section-desc">Core naming conventions, position statements, and operational scope.</p>
+
+      <table class="identity-table">
+        <tbody>
+          <tr>
+            <th>Brand Name</th>
+            <td><strong>SWIFT</strong> (stylized in bold uppercase with expanded tracking)</td>
+          </tr>
+          <tr>
+            <th>Official Tagline</th>
+            <td><em>Motorcycle Parts &amp; Repair Shop Management System</em></td>
+          </tr>
+          <tr>
+            <th>Extended Descriptor</th>
+            <td><em>Integrated POS, Inventory &amp; Motorcycle Repair Bay Management System</em></td>
+          </tr>
+          <tr>
+            <th>Supported Color Modes</th>
+            <td><strong>Light Mode</strong> (Clean Slate &amp; Steel Blue) + <strong>Dark Mode</strong> (Deep Obsidian &amp; Vivid Blue)</td>
+          </tr>
+          <tr>
+            <th>Target Portals</th>
+            <td><strong>Admin Portal</strong> (Analytics, Pricing, Users) &amp; <strong>Staff Portal</strong> (Fast-lane POS, Shelf Locator, Punch Clock)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Mode Comparison Section -->
+    <section class="section">
+      <h2 class="section-title">2. Light Mode vs. Dark Mode Architecture</h2>
+      <p class="section-desc">SWIFT is architected with dual-theme design tokens defined in <code>globals.css</code>:</p>
+
+      <div class="modes-comparison-grid">
+        <!-- Light Mode Summary -->
+        <div class="mode-preview-box light-mode">
+          <div class="mode-title">☀️ Light Mode: "Clean Slate &amp; Steel Blue"</div>
+          <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+            Default interface optimized for well-lit retail cashier counters and inventory barcode scanning desks.
+          </p>
+          <ul style="font-size: 0.85rem; color: #334155; padding-left: 1.2rem; line-height: 1.7;">
+            <li><strong>Canvas:</strong> Soft Cool Slate (<code>#f1f5f9</code>)</li>
+            <li><strong>Cards:</strong> Pure White (<code>#ffffff</code>)</li>
+            <li><strong>Primary:</strong> Steel Blue (<code>#2563eb</code>)</li>
+            <li><strong>Sidebar:</strong> Deep Slate Navy (<code>#0f172a</code>)</li>
+          </ul>
+        </div>
+
+        <!-- Dark Mode Summary -->
+        <div class="mode-preview-box dark-mode">
+          <div class="mode-title">🌙 Dark Mode: "Deep Obsidian &amp; Vivid Blue"</div>
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem;">
+            Tailored for motorcycle repair bay grease-pits, mechanical workshops, and reduced glare.
+          </p>
+          <ul style="font-size: 0.85rem; color: #cbd5e1; padding-left: 1.2rem; line-height: 1.7;">
+            <li><strong>Canvas:</strong> Deep Obsidian (<code>#0b0f19</code>)</li>
+            <li><strong>Cards:</strong> Charcoal Slate (<code>#151f32</code>)</li>
+            <li><strong>Primary:</strong> Vivid Sky/Neon Blue (<code>#3b82f6</code>)</li>
+            <li><strong>Sidebar:</strong> Pitch Black Navy (<code>#070b14</code>)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Active Color System (Dynamically responds to theme toggle) -->
+    <section class="section">
+      <h2 class="section-title">3. Active Design Tokens (Live Theme Reactive)</h2>
+      <p class="section-desc">These swatch tokens update automatically when you toggle between Light and Dark mode using the button at the top.</p>
+
+      <div class="color-grid">
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--primary); color: #ffffff;">Brand Primary</div>
+          <div class="color-info">
+            <div class="color-name">Primary Blue</div>
+            <div class="color-role">Main action buttons, active navigation, focus rings</div>
+            <div class="color-hex">var(--primary)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--bg-sidebar); color: #ffffff;">Sidebar Navy</div>
+          <div class="color-info">
+            <div class="color-name">Sidebar Contrast</div>
+            <div class="color-role">Main navigation rail, high structural contrast</div>
+            <div class="color-hex">var(--bg-sidebar)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--secondary); color: #ffffff;">Secondary</div>
+          <div class="color-info">
+            <div class="color-name">Muted Tool Slate</div>
+            <div class="color-role">Secondary buttons, table header borders, meta text</div>
+            <div class="color-hex">var(--secondary)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--success); color: #ffffff;">Success</div>
+          <div class="color-info">
+            <div class="color-name">Calm Emerald Green</div>
+            <div class="color-role">Completed repair bay tickets, clocked-in, paid status</div>
+            <div class="color-hex">var(--success)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--accent); color: #ffffff;">Warning / Accent</div>
+          <div class="color-info">
+            <div class="color-name">Amber Warning</div>
+            <div class="color-role">Low stock threshold notifications, pending queue</div>
+            <div class="color-hex">var(--accent)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--info); color: #ffffff;">OEM Info</div>
+          <div class="color-info">
+            <div class="color-name">Sky / OEM Blue</div>
+            <div class="color-role">OEM compatible part indicators, informational badges</div>
+            <div class="color-hex">var(--info)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--danger); color: #ffffff;">Danger</div>
+          <div class="color-info">
+            <div class="color-name">Alert Red</div>
+            <div class="color-role">Out-of-stock items, voids, destructive actions</div>
+            <div class="color-hex">var(--danger)</div>
+          </div>
+        </div>
+
+        <div class="color-card">
+          <div class="color-swatch" style="background-color: var(--bg-base); color: var(--text-primary); border-bottom: 1px solid var(--border-color);">Canvas Base</div>
+          <div class="color-info">
+            <div class="color-name">Canvas Surface</div>
+            <div class="color-role">Workspace background canvas</div>
+            <div class="color-hex">var(--bg-base)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sub-brands & Modules -->
+    <section class="section">
+      <h2 class="section-title">4. Sub-Brands &amp; Modules</h2>
+      <p class="section-desc">Identifiable feature brands integrated into the SWIFT ecosystem.</p>
+
+      <div class="subbrands-grid">
+        <div class="subbrand-card">
+          <span class="subbrand-badge">Compatibility Engine</span>
+          <h4>Smart MotoMatcher</h4>
+          <p>Motorcycle fitment matrix matching models (Yamaha, Honda, Suzuki) with OEM standard and performance aftermarket replacement parts.</p>
+        </div>
+
+        <div class="subbrand-card">
+          <span class="subbrand-badge">Service Bay</span>
+          <h4>Swift Workshop</h4>
+          <p>Repair bay service tracking and flat-rate labor services (CVT cleaning, oil change, tire mounting, electrical repair).</p>
+        </div>
+
+        <div class="subbrand-card">
+          <span class="subbrand-badge">Checkout</span>
+          <h4>Fast-Lane POS</h4>
+          <p>Rapid cashier terminal supporting dual retail/wholesale pricing, discounts, and printable receipt generation.</p>
+        </div>
+
+        <div class="subbrand-card">
+          <span class="subbrand-badge">Warehouse</span>
+          <h4>Rack &amp; Shelf Locator</h4>
+          <p>Physical warehouse mapping format (e.g. <code>Rack A-01 / Shelf 2</code>) for rapid item retrieval and fulfillment.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      html.setAttribute('data-theme', newTheme);
+      if (newTheme === 'dark') {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+
+      const icon = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if (newTheme === 'dark') {
+        icon.textContent = '☀️';
+        label.textContent = 'Switch to Light Mode';
+      } else {
+        icon.textContent = '🌙';
+        label.textContent = 'Switch to Dark Mode';
+      }
+    }
+  </script>
+</body>
+</html>

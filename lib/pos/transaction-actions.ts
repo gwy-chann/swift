@@ -71,15 +71,31 @@ interface PrismaTransactionRecord {
  * Server action to retrieve recent transactions with their itemized lines.
  * Queries Supabase, falls back to Prisma, then MOCK_TRANSACTIONS.
  */
-export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]> {
+export async function getTransactionsAction(
+  limit = 250,
+  options?: { filterTestRecords?: boolean }
+): Promise<DbTransaction[]> {
+  const shouldFilterTests = options?.filterTestRecords ?? true;
   try {
     const { createClient } = await import('../supabase/server.ts');
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('transactions')
       .select('*, items:transaction_items(*)')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    if (shouldFilterTests) {
+      query = query
+        .not('receipt_number', 'like', 'TX-TEST%')
+        .not('receipt_number', 'like', 'TX-CLAIM%')
+        .not('receipt_number', 'like', 'TX-77%')
+        .not('receipt_number', 'like', 'TX-PARTS%')
+        .not('receipt_number', 'like', 'TX-INTAKE%')
+        .not('receipt_number', 'like', 'TX-MULTI%')
+        .not('receipt_number', 'like', 'TX-DEFAULTS%');
+    }
+
+    const { data, error } = await query.limit(limit);
 
     if (!error && data) {
       const rows = data as unknown as SupabaseTransactionRow[];
@@ -125,6 +141,7 @@ export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]
       transaction?: {
         findMany(args: {
           take: number;
+          where?: unknown;
           orderBy: { createdAt: 'desc' };
           include: { items: boolean };
         }): Promise<PrismaTransactionRecord[]>;
@@ -134,6 +151,19 @@ export async function getTransactionsAction(limit = 20): Promise<DbTransaction[]
     if (prisma?.transaction) {
       const records = await prisma.transaction.findMany({
         take: limit,
+        where: shouldFilterTests
+          ? {
+              NOT: [
+                { receiptNumber: { startsWith: 'TX-TEST' } },
+                { receiptNumber: { startsWith: 'TX-CLAIM' } },
+                { receiptNumber: { startsWith: 'TX-77' } },
+                { receiptNumber: { startsWith: 'TX-PARTS' } },
+                { receiptNumber: { startsWith: 'TX-INTAKE' } },
+                { receiptNumber: { startsWith: 'TX-MULTI' } },
+                { receiptNumber: { startsWith: 'TX-DEFAULTS' } },
+              ],
+            }
+          : undefined,
         orderBy: { createdAt: 'desc' },
         include: { items: true },
       });
@@ -230,7 +260,7 @@ export async function getTransactionByReceiptAction(
     console.warn('[getTransactionByReceiptAction] Live query error:', err);
   }
 
-  const all = await getTransactionsAction(100);
+  const all = await getTransactionsAction(250, { filterTestRecords: false });
   const found = all.find((t) => t.receipt_number === receiptNumber);
   if (found) return found;
 

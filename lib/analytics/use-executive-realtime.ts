@@ -143,6 +143,34 @@ export function useExecutiveRealtime(
         );
 
         channel.on(
+          'broadcast',
+          { event: 'WORK_ORDER_CREATED' },
+          (eventPayload: { payload: unknown }) => {
+            if (eventPayload?.payload) {
+              const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
+              if (record?.id) {
+                setLastEventTimestamp(new Date().toISOString());
+                onWorkOrderChangeRef.current?.(record, 'INSERT');
+              }
+            }
+          }
+        );
+
+        channel.on(
+          'broadcast',
+          { event: 'WORK_ORDER_UPDATED' },
+          (eventPayload: { payload: unknown }) => {
+            if (eventPayload?.payload) {
+              const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
+              if (record?.id) {
+                setLastEventTimestamp(new Date().toISOString());
+                onWorkOrderChangeRef.current?.(record, 'UPDATE');
+              }
+            }
+          }
+        );
+
+        channel.on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'service_bays' },
           (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {

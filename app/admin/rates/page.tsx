@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Tags,
   Plus,
   Search,
   Activity,
@@ -175,8 +174,17 @@ export default function AdminRatesPage() {
   };
 
   const handleToggleStatus = async (service: LaborService) => {
-    const nextStatus = service.active === false;
+    const isCurrentlyActive = service.active !== false;
+    const nextStatus = !isCurrentlyActive;
     const idToUse = service.id || service.code;
+
+    // Optimistically update UI so the status badge changes immediately
+    setServices((prev) =>
+      prev.map((s) =>
+        s.code === service.code ? { ...s, active: nextStatus } : s
+      )
+    );
+
     const res = await toggleServiceStatusAction(idToUse, nextStatus);
     if (res.success && res.data) {
       setServices((prev) =>
@@ -184,6 +192,16 @@ export default function AdminRatesPage() {
       );
       showNotification(
         `${nextStatus ? "Restored" : "Archived"} service ${service.name}`
+      );
+    } else {
+      // Revert if error
+      setServices((prev) =>
+        prev.map((s) =>
+          s.code === service.code ? { ...s, active: isCurrentlyActive } : s
+        )
+      );
+      showNotification(
+        `Failed to ${nextStatus ? "restore" : "archive"} service: ${res.error || "Operation failed"}`
       );
     }
   };
@@ -210,22 +228,8 @@ export default function AdminRatesPage() {
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center shadow-xs">
-            <Tags className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-text-primary">
-              Pricing & Labor Rates Matrix
-            </h2>
-            <p className="text-xs text-text-secondary">
-              Standardized flat-rate workshop labor schedules, repair bays, and live POS synchronization.
-            </p>
-          </div>
-        </div>
-
+      {/* Action Toolbar */}
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={() => setIsNewModalOpen(true)}
@@ -394,6 +398,7 @@ export default function AdminRatesPage() {
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
         onCreate={handleCreateService}
+        existingCodes={services.map((s) => s.code)}
       />
     </section>
   );

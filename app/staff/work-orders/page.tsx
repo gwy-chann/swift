@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Live workshop repair queue, technician job progression, parts inventory check and service bay status.",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function StaffWorkOrdersPage() {
   const result = await fetchWorkshopOrdersAction();
   const initialOrders = result.success && result.data ? result.data : INITIAL_MOCK_WORK_ORDERS;

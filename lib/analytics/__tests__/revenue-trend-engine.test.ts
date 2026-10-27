@@ -59,6 +59,23 @@ describe('7-Day Revenue Trend Comparison Engine (SIAA-34)', () => {
       assert.equal(defaultRange, 'Sept 22 - 28, 2026');
     });
 
+    it('formats dynamic date range when dates are provided in days array', () => {
+      const daysWithDates: Partial<DailyRevenueData>[] = [
+        { day: 'Tue', date: '2026-10-20', partsAmount: 100, laborAmount: 50 },
+        { day: 'Wed', date: '2026-10-21', partsAmount: 100, laborAmount: 50 },
+        { day: 'Thu', date: '2026-10-22', partsAmount: 100, laborAmount: 50 },
+        { day: 'Fri', date: '2026-10-23', partsAmount: 100, laborAmount: 50 },
+        { day: 'Sat', date: '2026-10-24', partsAmount: 100, laborAmount: 50 },
+        { day: 'Sun', date: '2026-10-25', partsAmount: 100, laborAmount: 50 },
+        { day: 'Mon', date: '2026-10-26', partsAmount: 100, laborAmount: 50 },
+      ];
+      const dynamicRange = formatDateRangeLabel(undefined, daysWithDates);
+      assert.equal(dynamicRange, 'Oct 20 - 26, 2026');
+
+      const normalized = normalizeRevenueTrend(daysWithDates);
+      assert.equal(normalized.dateRangeLabel, 'Oct 20 - 26, 2026');
+    });
+
     it('filters days and visibility flags correctly based on active legend filter', () => {
       const normalized = normalizeRevenueTrend(INITIAL_WEEKLY_DATA);
       const filteredAll = filterRevenueTrend(normalized.days, 'all');

@@ -125,14 +125,60 @@ export function computeHeightPercent(amount: number, peak: number): number {
   return Math.min(100, Math.max(4, Math.round(ratio)));
 }
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+function formatDateSpan(d1: Date, d2: Date): string {
+  const m1 = MONTH_NAMES[d1.getUTCMonth()];
+  const day1 = d1.getUTCDate();
+  const y1 = d1.getUTCFullYear();
+  const m2 = MONTH_NAMES[d2.getUTCMonth()];
+  const day2 = d2.getUTCDate();
+  const y2 = d2.getUTCFullYear();
+
+  if (y1 !== y2) {
+    return `${m1} ${day1}, ${y1} - ${m2} ${day2}, ${y2}`;
+  }
+  if (m1 === m2) {
+    return `${m1} ${day1} - ${day2}, ${y2}`;
+  }
+  return `${m1} ${day1} - ${m2} ${day2}, ${y2}`;
+}
+
+function extractDateRangeFromDays(days?: Partial<DailyRevenueData>[]): string | null {
+  if (!Array.isArray(days) || days.length === 0) return null;
+  const firstDateStr = days[0]?.date;
+  const lastDateStr = days[days.length - 1]?.date;
+  if (!firstDateStr || !lastDateStr) return null;
+
+  const d1 = new Date(firstDateStr);
+  const d2 = new Date(lastDateStr);
+  if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
+
+  if (d1.getTime() === d2.getTime() && days.length === 7) {
+    d1.setUTCDate(d1.getUTCDate() - 6);
+  }
+  return formatDateSpan(d1, d2);
+}
+
 /**
  * Resolves the date range label for the 7-day period.
+ * If customRange is provided, uses that.
+ * If days contain dates (e.g. from Supabase RPC get_revenue_trend_7d),
+ * dynamically formats the date range, e.g. 'Oct 20 - 26, 2026'.
+ * Otherwise falls back to 'Sept 22 - 28, 2026'.
  */
-export function formatDateRangeLabel(customRange?: string): string {
-  if (customRange && customRange.trim().length > 0) {
-    return customRange.trim();
+export function formatDateRangeLabel(
+  customRange?: string,
+  days?: Partial<DailyRevenueData>[]
+): string {
+  const trimmed = customRange?.trim();
+  if (trimmed) {
+    return trimmed;
   }
-  return 'Sept 22 - 28, 2026';
+  return extractDateRangeFromDays(days) || 'Sept 22 - 28, 2026';
 }
 
 /**
@@ -204,7 +250,7 @@ export function normalizeRevenueTrend(
     totalPartsWeekly,
     totalLaborWeekly,
     totalWeeklyRevenue: totalPartsWeekly + totalLaborWeekly,
-    dateRangeLabel: formatDateRangeLabel(options.dateRangeLabel),
+    dateRangeLabel: formatDateRangeLabel(options.dateRangeLabel, adjustedDays),
   };
 }
 

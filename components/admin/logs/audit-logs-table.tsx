@@ -16,6 +16,7 @@ import {
   getSecurityAuditLogsAction,
   exportSecurityAuditLogsAction,
 } from '@/lib/admin/audit-actions';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 interface AuditLogsTableProps {
   readonly initialLogs: SecurityAuditLog[];
@@ -32,6 +33,8 @@ export function AuditLogsTable({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isPending, startTransition] = useTransition();
   const [exportingFormat, setExportingFormat] = useState<'csv' | 'json' | null>(null);
+
+  const pagination = usePagination(logs, 10);
 
   const handleFilterChange = (severity: AuditLogSeverity | 'all', search: string) => {
     startTransition(async () => {
@@ -223,7 +226,7 @@ export function AuditLogsTable({
                 </td>
               </tr>
             ) : (
-              logs.map((log) => (
+              pagination.paginatedItems.map((log) => (
                 <tr
                   key={log.id}
                   className="hover:bg-bg-hover/60 transition-colors"
@@ -249,6 +252,16 @@ export function AuditLogsTable({
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="audit logs"
+      />
     </div>
   );
 }

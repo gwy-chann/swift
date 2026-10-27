@@ -18,12 +18,18 @@ describe('Staff Terminal Server Actions & Elevation Engine (SIAA-64)', () => {
       assert.equal(res.status, 'on_shift');
       assert.ok(res.clockIn);
       assert.equal(res.terminalId, 'Terminal #01');
+      if (res.shiftId) {
+        await clockOutShiftAction(res.shiftId, 'End of test shift');
+      }
     });
 
     it('clockInShiftAction defaults terminalId when omitted', async () => {
       const res = await clockInShiftAction();
       assert.equal(res.success, true);
       assert.equal(res.terminalId, 'Terminal #01');
+      if (res.shiftId) {
+        await clockOutShiftAction(res.shiftId, 'End of test shift');
+      }
     });
 
     it('clockOutShiftAction fails when shiftId is missing', async () => {
@@ -60,6 +66,22 @@ describe('Staff Terminal Server Actions & Elevation Engine (SIAA-64)', () => {
       assert.equal(res.success, true);
       assert.ok(Array.isArray(res.logs));
       assert.ok(res.logs.length > 0);
+    });
+
+    it('getStaffAttendanceHistoryAction isolates logs to specific employee profile when profileId is supplied', async () => {
+      // Profile for Mike Morales (00000000-0000-0000-0000-000000000002)
+      const mikeRes = await getStaffAttendanceHistoryAction(10, '00000000-0000-0000-0000-000000000002');
+      assert.equal(mikeRes.success, true);
+      for (const log of mikeRes.logs) {
+        assert.equal(log.staff.toLowerCase(), 'mike morales');
+      }
+
+      // Profile for Dante Reyes (00000000-0000-0000-0000-000000000003)
+      const danteRes = await getStaffAttendanceHistoryAction(10, '00000000-0000-0000-0000-000000000003');
+      assert.equal(danteRes.success, true);
+      for (const log of danteRes.logs) {
+        assert.equal(log.staff.toLowerCase(), 'dante reyes');
+      }
     });
   });
 

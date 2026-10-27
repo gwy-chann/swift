@@ -3,6 +3,7 @@
 import React from "react";
 import { Edit2, Power, Trash2, Clock, MapPin, CheckCircle, XCircle } from "lucide-react";
 import type { LaborService } from "@/lib/types/service";
+import { TablePagination, usePagination } from "@/components/common/table-pagination";
 
 interface LaborRatesTableProps {
   readonly services: readonly LaborService[];
@@ -17,6 +18,7 @@ export function LaborRatesTable({
   onToggleStatus,
   onDelete
 }: Readonly<LaborRatesTableProps>) {
+  const pagination = usePagination(services, 10);
   if (services.length === 0) {
     return (
       <div className="p-8 bg-bg-card border border-border rounded-xl text-center">
@@ -44,7 +46,7 @@ export function LaborRatesTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-xs">
-            {services.map((service) => {
+            {pagination.paginatedItems.map((service) => {
               const isActive = service.active !== false;
 
               return (
@@ -150,6 +152,16 @@ export function LaborRatesTable({
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="services"
+      />
     </div>
   );
 }

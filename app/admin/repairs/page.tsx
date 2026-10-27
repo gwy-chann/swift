@@ -41,21 +41,36 @@ export default async function AdminRepairsPage() {
   const mechanicsResult = await fetchOnShiftMechanicsAction();
   const availableMechanics = mechanicsResult.success && mechanicsResult.data
     ? mechanicsResult.data.map((m) => ({ id: m.id, name: m.name, status: m.status }))
-    : [
-        { id: 'd0000000-0000-0000-0000-000000000003', name: 'Dante Reyes', status: 'on_shift' },
-        { id: 'd0000000-0000-0000-0000-000000000004', name: 'Alex Lim', status: 'on_shift' },
-      ];
+    : [];
 
   const baysList = MOCK_SERVICE_BAYS.map((b) => ({ id: b.id, name: b.name }));
 
   // Server action bridge for live re-fetching
   async function refreshRepairs() {
     'use server';
-    const res = await fetchAdminRepairsAction();
+    const [res, mechs] = await Promise.all([
+      fetchAdminRepairsAction(),
+      fetchOnShiftMechanicsAction(),
+    ]);
     if (res.success && res.data) {
-      return res.data;
+      return {
+        items: res.data.items,
+        summary: res.data.summary,
+        mechanics: mechs.success && mechs.data
+          ? mechs.data.map((m) => ({ id: m.id, name: m.name, status: m.status }))
+          : [],
+      };
     }
     return null;
+  }
+
+  // Server action bridge for fetching live on-shift mechanics
+  async function fetchLiveMechanics() {
+    'use server';
+    const mechs = await fetchOnShiftMechanicsAction();
+    return mechs.success && mechs.data
+      ? mechs.data.map((m) => ({ id: m.id, name: m.name, status: m.status }))
+      : [];
   }
 
   // Server action bridge for reassignment
@@ -86,6 +101,7 @@ export default async function AdminRepairsPage() {
       availableMechanics={availableMechanics}
       baysList={baysList}
       onRefresh={refreshRepairs}
+      onFetchOnShiftMechanics={fetchLiveMechanics}
       onReassignMechanic={reassignMechanic}
     />
   );

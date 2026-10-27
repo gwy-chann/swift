@@ -23,7 +23,7 @@ export interface ServiceRateAuditLog {
 }
 
 export interface CreateLaborServicePayload {
-  code: string;
+  code?: string;
   name: string;
   bay: string;
   rate: number;

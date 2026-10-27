@@ -157,9 +157,9 @@ export function RepairMotorCard({ item, onSelect }: Readonly<RepairMotorCardProp
           </div>
           <div>
             <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
-              Technician
+              Mechanic
             </div>
-            <div className="font-semibold text-text-primary truncate max-w-[120px]">
+            <div className="font-semibold text-text-primary truncate max-w-30">
               {item.mechanicName || (
                 <span className="text-amber-600 dark:text-amber-400 font-bold">Unassigned</span>
               )}

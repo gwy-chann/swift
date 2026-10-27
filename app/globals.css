@@ -33,6 +33,9 @@
   --bg-card: #ffffff;         /* Card containers, tables */
   --bg-sidebar: #0f172a;      /* Deep slate-navy sidebar for structured contrast */
   --bg-sidebar-hover: #1e293b;
+  --bg-sidebar-active: rgba(59, 130, 246, 0.12);
+  --border-sidebar-active: rgba(59, 130, 246, 0.24);
+  --text-sidebar-active: #93c5fd;
   --bg-input: #ffffff;        /* Crisp white input background */
   --bg-hover: #f8fafc;        /* Gentle row hover */
   --bg-muted: #f8fafc;
@@ -96,6 +99,9 @@
   --bg-card: #151f32;
   --bg-sidebar: #070b14;
   --bg-sidebar-hover: #162035;
+  --bg-sidebar-active: rgba(59, 130, 246, 0.12);
+  --border-sidebar-active: rgba(59, 130, 246, 0.24);
+  --text-sidebar-active: #93c5fd;
   --bg-input: #0f172a;
   --bg-hover: #1e293b;
   --bg-muted: #182234;
@@ -143,6 +149,9 @@
   --color-bg-card: var(--bg-card);
   --color-bg-sidebar: var(--bg-sidebar);
   --color-bg-sidebar-hover: var(--bg-sidebar-hover);
+  --color-bg-sidebar-active: var(--bg-sidebar-active);
+  --color-border-sidebar-active: var(--border-sidebar-active);
+  --color-text-sidebar-active: var(--text-sidebar-active);
   --color-bg-input: var(--bg-input);
   --color-bg-hover: var(--bg-hover);
   --color-bg-muted: var(--bg-muted);
@@ -220,4 +229,47 @@ body {
   pointer-events: none;
   z-index: 20;
 }
+
+/* ==========================================================================
+   Print Media Isolation for Thermal Receipts (SIAA-22 / SIAA-23)
+   Hides all application UI chrome, navigation, headers, sidebars, and POS
+   panes so that only the pure 80mm thermal receipt prints cleanly.
+   ========================================================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Completely hide all navigation, headers, sidebars, drawers, toolbars, and buttons */
+  header,
+  nav,
+  aside,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Thermal receipt print isolation */
+  .thermal-receipt-paper,
+  #thermal-receipt-print-area {
+    display: block !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+}
+
 

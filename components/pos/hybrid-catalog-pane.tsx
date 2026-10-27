@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Zap, Search, ShieldAlert, AlertTriangle, Wrench } from 'lucide-react';
+import { Zap, Search, AlertTriangle, Wrench } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart-store';
 import { StockBadge } from '@/components/inventory/stock-badge';
 import { resolveBarcodeScanQuery } from '@/lib/pos/barcode-scanner';
@@ -14,6 +14,7 @@ export interface HybridCatalogPaneProps {
   onSelectService: (service: LaborService) => void;
   onScanNotFound?: (query: string) => void;
   title?: string;
+  showTitle?: boolean;
 }
 
 export function HybridCatalogPane({
@@ -22,7 +23,8 @@ export function HybridCatalogPane({
   onSelectProduct,
   onSelectService,
   onScanNotFound,
-  title = 'Fast-Lane Checkout'
+  title = 'Fast-Lane Checkout',
+  showTitle = true
 }: Readonly<HybridCatalogPaneProps>) {
   const { pricingMode } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('ALL');
@@ -102,6 +104,7 @@ export function HybridCatalogPane({
         });
       }
     } else {
+      if (item.stock <= 0) return;
       onSelectProduct(item);
     }
   };
@@ -119,7 +122,8 @@ export function HybridCatalogPane({
         const srv = result.matchedItem as LaborService;
         onSelectService(srv);
       } else if (result.status === 'OUT_OF_STOCK_OVERRIDE' && result.matchedItem) {
-        onSelectProduct(result.matchedItem as Product);
+        const item = result.matchedItem as Product;
+        onScanNotFound?.(`Item ${item.sku} is out of stock.`);
       } else {
         onScanNotFound?.(query);
       }
@@ -137,20 +141,22 @@ export function HybridCatalogPane({
     <div className="flex-1 flex flex-col min-w-0 bg-bg-surface border border-border rounded-xl shadow-xs overflow-hidden">
       {/* Catalog Header */}
       <div className="p-4 border-b border-border bg-bg-surface/50 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            <h3 className="text-base font-bold text-text-primary">{title}</h3>
-            {pricingMode === 'wholesale' && (
-              <span
-                data-testid="catalog-wholesale-indicator"
-                className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 tracking-wide"
-              >
-                Wholesale Tier Active
-              </span>
-            )}
-          </div>
-          <div className="relative sm:w-80">
+        <div className={`flex items-center gap-3 w-full ${showTitle ? 'flex-col sm:flex-row sm:items-center justify-between' : ''}`}>
+          {showTitle && title && (
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              <Zap className="w-5 h-5 text-primary" />
+              <h3 className="text-base font-bold text-text-primary">{title}</h3>
+              {pricingMode === 'wholesale' && (
+                <span
+                  data-testid="catalog-wholesale-indicator"
+                  className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 tracking-wide"
+                >
+                  Wholesale Tier Active
+                </span>
+              )}
+            </div>
+          )}
+          <div className={`relative ${showTitle ? 'sm:w-80 w-full' : 'flex-1 w-full'}`}>
             <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               ref={inputRef}
@@ -161,10 +167,18 @@ export function HybridCatalogPane({
               onKeyDown={handleSearchKeyDown}
               placeholder="Scan Barcode / SKU & hit [ENTER]..."
               aria-label="Scan or search parts and services"
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-text-primary placeholder:text-text-muted outline-hidden transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-bg-input border border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-text-primary placeholder:text-text-muted outline-hidden transition-all"
               autoFocus
             />
           </div>
+          {!showTitle && pricingMode === 'wholesale' && (
+            <span
+              data-testid="catalog-wholesale-indicator"
+              className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 tracking-wide shrink-0 whitespace-nowrap"
+            >
+              Wholesale Tier Active
+            </span>
+          )}
         </div>
 
         {/* Category Filter Tabs */}
@@ -211,12 +225,7 @@ export function HybridCatalogPane({
 
               const renderActionBadge = () => {
                 if (isOutOfStock) {
-                  return (
-                    <span className="text-[11px] font-bold text-danger flex items-center gap-1 group-hover:underline">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>Override</span>
-                    </span>
-                  );
+                  return null;
                 }
                 if (isLowStock) {
                   return (
@@ -237,11 +246,12 @@ export function HybridCatalogPane({
                 <button
                   type="button"
                   key={item.sku}
+                  disabled={isOutOfStock}
                   onClick={() => handleItemClick(item)}
-                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs group cursor-pointer text-left w-full ${
+                  className={`p-3.5 bg-bg-card border rounded-lg flex flex-col justify-between gap-2.5 transition-all shadow-xs text-left w-full ${
                     isOutOfStock
-                      ? 'border-danger/30 hover:border-danger/60 bg-danger-light/10'
-                      : 'border-border hover:border-primary'
+                      ? 'border-border/60 bg-bg-muted/30 opacity-60 cursor-not-allowed'
+                      : 'border-border hover:border-primary cursor-pointer group'
                   }`}
                 >
                   <div>

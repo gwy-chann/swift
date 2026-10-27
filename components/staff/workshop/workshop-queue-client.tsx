@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, UserCheck, Layers } from "lucide-react";
+import Link from "next/link";
+import { Search, UserCheck, Layers, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import type { DetailedWorkOrder, WorkshopQueueSummary } from "@/lib/types/workshop";
 import type { WorkOrderStatus } from "@/lib/types/service";
 import { usePunchStore } from "@/lib/store/punch-store";
@@ -32,6 +33,46 @@ interface WorkshopQueueClientProps {
   isAdmin?: boolean;
 }
 
+function isOrderForMechanic(
+  order: DetailedWorkOrder,
+  currentMechanicId?: string,
+  mechanicName?: string,
+  currentProfileId?: string
+): boolean {
+  if (order.mechanicId && order.mechanicId === currentMechanicId) return true;
+  if (Boolean(order.mechanicName) && Boolean(mechanicName) && order.mechanicName?.toLowerCase().trim() === mechanicName?.toLowerCase().trim()) return true;
+  if (!currentProfileId && Boolean(order.mechanicName?.toLowerCase().includes("dante"))) return true;
+  return false;
+}
+
+function matchesStatus(
+  status: WorkOrderStatus,
+  selectedStatus: string,
+  currentStaffRole: string,
+  isAdmin: boolean,
+  activeTab: string
+): boolean {
+  if (selectedStatus === "ALL") {
+    if (currentStaffRole === "mechanic" || !isAdmin || activeTab === "my-jobs") {
+      return status !== "COMPLETED" && status !== "CANCELLED";
+    }
+    return true;
+  }
+  return status === selectedStatus;
+}
+
+function matchesSearch(order: DetailedWorkOrder, query: string): boolean {
+  if (!query.trim()) return true;
+  const q = query.toLowerCase();
+  return (
+    order.plateNumber.toLowerCase().includes(q) ||
+    order.vehicleModel.toLowerCase().includes(q) ||
+    order.orderNumber.toLowerCase().includes(q) ||
+    order.customerName.toLowerCase().includes(q) ||
+    order.serviceName.toLowerCase().includes(q)
+  );
+}
+
 export function WorkshopQueueClient({
   initialOrders,
   isAdmin: propIsAdmin,
@@ -42,12 +83,13 @@ export function WorkshopQueueClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: "error" | "success" } | null>(null);
 
-  const { currentStaff, currentStaffRole } = usePunchStore();
-  const isAdmin = propIsAdmin !== undefined ? propIsAdmin : currentStaffRole === "admin";
+  const { currentStaff, currentStaffRole, isShiftActive, shiftStatus, currentProfileId } = usePunchStore();
+  const isAdmin = propIsAdmin ?? (currentStaffRole === "admin");
+  const isTimedIn = Boolean(isAdmin || (isShiftActive && shiftStatus === "on_shift"));
   const mechanicName = currentStaff || "Dante Reyes";
-  const currentMechanicId = DANTE_REYES_PROFILE_ID;
+  const currentMechanicId = currentProfileId || DANTE_REYES_PROFILE_ID;
 
   const selectedOrder = useMemo(() => {
     if (!selectedOrderId) return null;
@@ -56,7 +98,6 @@ export function WorkshopQueueClient({
 
   // Refresh Queue from Server
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
     try {
       const res = await fetchWorkshopOrdersAction();
       if (res.success && res.data) {
@@ -64,8 +105,6 @@ export function WorkshopQueueClient({
       }
     } catch (err) {
       console.error("[Workshop Queue] Failed to refresh queue:", err);
-    } finally {
-      setIsRefreshing(false);
     }
   }, []);
 
@@ -74,15 +113,28 @@ export function WorkshopQueueClient({
     if (typeof window === "undefined") return;
 
     const handlePosCheckout = () => {
-      handleRefresh();
+      void handleRefresh();
     };
 
     window.addEventListener("swift:pos:checkout", handlePosCheckout);
     window.addEventListener("swift:pos:workorder-created", handlePosCheckout);
 
+    // Refresh when user returns to this tab
+    const handleFocus = () => {
+      void handleRefresh();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    // Periodic heartbeat to guarantee multi-tab synchronization
+    const interval = setInterval(() => {
+      void handleRefresh();
+    }, 10000);
+
     return () => {
       window.removeEventListener("swift:pos:checkout", handlePosCheckout);
       window.removeEventListener("swift:pos:workorder-created", handlePosCheckout);
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(interval);
     };
   }, [handleRefresh]);
 
@@ -156,7 +208,12 @@ export function WorkshopQueueClient({
   // Calculate Summary KPIs
   const summary: WorkshopQueueSummary = useMemo(() => {
     const activeJobs = orders.filter((o) => o.status === "IN PROGRESS" || o.status === "QUEUED" || o.status === "PENDING_PARTS");
-    const myJobs = activeJobs.filter((o) => o.mechanicId === currentMechanicId || (!o.mechanicId && activeTab === "all-bays"));
+    const myJobs = activeJobs.filter(
+      (o) =>
+        (o.mechanicId && o.mechanicId === currentMechanicId) ||
+        (Boolean(o.mechanicName) && Boolean(mechanicName) && o.mechanicName?.toLowerCase().trim() === mechanicName.toLowerCase().trim()) ||
+        (!currentProfileId && Boolean(o.mechanicName?.toLowerCase().includes("dante")))
+    );
     const pendingParts = orders.filter((o) => o.status === "PENDING_PARTS");
     const completedToday = orders.filter((o) => o.status === "COMPLETED");
     const activeBays = orders.filter((o) => o.status === "IN PROGRESS" || o.status === "PENDING_PARTS");
@@ -169,43 +226,31 @@ export function WorkshopQueueClient({
       activeBaysCount: Math.min(4, activeBays.length),
       totalBaysCount: 4,
     };
-  }, [orders, currentMechanicId, activeTab]);
+  }, [orders, currentMechanicId, mechanicName, currentProfileId]);
 
   // Filter Orders based on Tab, Status, and Search Query
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // 1. Tab Segmentation
-      if (activeTab === "my-jobs") {
-        // Display orders assigned to current mechanic
-        const isMine = order.mechanicId === currentMechanicId || order.mechanicName?.toLowerCase().includes("dante");
-        if (!isMine) return false;
-      }
-
-      // 2. Status Filter
-      if (selectedStatus !== "ALL" && order.status !== selectedStatus) {
+      if (activeTab === "my-jobs" && !isOrderForMechanic(order, currentMechanicId, mechanicName, currentProfileId)) {
         return false;
       }
-
-      // 3. Search Query Filter
-      if (searchQuery.trim().length > 0) {
-        const q = searchQuery.toLowerCase();
-        const matchesPlate = order.plateNumber.toLowerCase().includes(q);
-        const matchesModel = order.vehicleModel.toLowerCase().includes(q);
-        const matchesOrder = order.orderNumber.toLowerCase().includes(q);
-        const matchesCustomer = order.customerName.toLowerCase().includes(q);
-        const matchesService = order.serviceName.toLowerCase().includes(q);
-
-        if (!matchesPlate && !matchesModel && !matchesOrder && !matchesCustomer && !matchesService) {
-          return false;
-        }
+      if (!matchesStatus(order.status, selectedStatus, currentStaffRole, isAdmin, activeTab)) {
+        return false;
       }
-
-      return true;
+      return matchesSearch(order, searchQuery);
     });
-  }, [orders, activeTab, selectedStatus, searchQuery, currentMechanicId]);
+  }, [orders, activeTab, selectedStatus, searchQuery, currentMechanicId, currentProfileId, mechanicName, currentStaffRole, isAdmin]);
 
   // Atomic Status Transition Handler
   async function handleStatusChange(orderId: string, newStatus: WorkOrderStatus) {
+    if (newStatus === "COMPLETED" && !isTimedIn) {
+      setToastMessage({
+        text: "You must be timed in (on shift) to complete a job. Please clock in on the punch clock.",
+        type: "error",
+      });
+      return;
+    }
+
     setIsUpdating(true);
     const prevOrders = [...orders];
     const now = new Date().toISOString();
@@ -213,7 +258,7 @@ export function WorkshopQueueClient({
     // Optimistic UI Update
     setOrders((prev) =>
       prev.map((ord) => {
-        if (ord.id === orderId) {
+        if (ord.id === orderId || ord.orderNumber === orderId) {
           return {
             ...ord,
             status: newStatus,
@@ -231,10 +276,24 @@ export function WorkshopQueueClient({
       if (!res.success) {
         console.warn("[Workshop Queue] Status update rejected, reverting:", res.error);
         setOrders(prevOrders);
+        setToastMessage({
+          text: res.error || "Failed to update work order status.",
+          type: "error",
+        });
+      } else {
+        const label = STATUS_FILTER_LABELS[newStatus] || newStatus;
+        setToastMessage({
+          text: `Status updated to "${label}".`,
+          type: "success",
+        });
       }
     } catch (err) {
       console.error("[Workshop Queue] Status update failed:", err);
       setOrders(prevOrders);
+      setToastMessage({
+        text: "Network error updating status.",
+        type: "error",
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -262,16 +321,67 @@ export function WorkshopQueueClient({
 
   // Claim Job Handler
   async function handleClaimJob(orderId: string) {
+    if (!isTimedIn) {
+      setToastMessage({
+        text: "You must be timed in (on shift) to claim a job. Please clock in on the punch clock.",
+        type: "error",
+      });
+      return;
+    }
+
     setIsUpdating(true);
+    const prevOrders = [...orders];
+    const now = new Date().toISOString();
+
+    // Optimistic UI update: immediately assign to current mechanic & set status to IN PROGRESS
+    setOrders((prev) =>
+      prev.map((ord) => {
+        if (ord.id === orderId || ord.orderNumber === orderId) {
+          return {
+            ...ord,
+            mechanicId: currentMechanicId,
+            mechanicName: mechanicName,
+            status: "IN PROGRESS",
+            startedAt: ord.startedAt || now,
+            updatedAt: now,
+          };
+        }
+        return ord;
+      })
+    );
+
     try {
       const res = await claimWorkOrderAction(orderId, currentMechanicId, mechanicName, true);
       if (res.success && res.data) {
         setOrders((prev) =>
-          prev.map((ord) => (ord.id === orderId ? (res.data as DetailedWorkOrder) : ord))
+          prev.map((ord) =>
+            ord.id === orderId ||
+            ord.orderNumber === orderId ||
+            ord.id === res.data!.id ||
+            ord.orderNumber === res.data!.orderNumber
+              ? (res.data as DetailedWorkOrder)
+              : ord
+          )
         );
+        setToastMessage({
+          text: `Job ${res.data.orderNumber} successfully claimed! You can now view it under "My Active Jobs".`,
+          type: "success",
+        });
+      } else {
+        console.warn("[Workshop Queue] Claim job rejected, reverting:", res.error);
+        setOrders(prevOrders);
+        setToastMessage({
+          text: res.error || "Failed to claim job. Please try again.",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("[Workshop Queue] Claim job failed:", err);
+      setOrders(prevOrders);
+      setToastMessage({
+        text: "Network error claiming job. Please try again.",
+        type: "error",
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -279,18 +389,68 @@ export function WorkshopQueueClient({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      {/* Top Header & Metric Bar */}
-      <WorkshopQueueHeader
-        summary={summary}
-        mechanicName={mechanicName}
-        isRefreshing={isRefreshing}
-        onRefresh={handleRefresh}
-      />
+      {/* Off-Shift Attendance Guard Banner */}
+      {!isTimedIn && (
+        <div className="mb-4 p-3 sm:px-4 bg-danger-light border border-danger/30 text-danger rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            <span>
+              <strong>Shift Inactive:</strong> You are currently timed out. You must <strong>time in</strong> on the Punch Clock before claiming or completing work orders.
+            </span>
+          </div>
+          <Link
+            href="/staff/clock"
+            className="px-3 py-1.5 rounded-lg bg-bg-surface hover:bg-danger hover:text-white text-danger border border-danger/30 font-semibold text-xs shadow-xs transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            Go to Punch Clock
+          </Link>
+        </div>
+      )}
 
-      {/* Segmented View Tabs & Quick Filters Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
-        {/* Segment Tabs: My Active Jobs vs Workshop Bay Queue */}
-        <div className="flex items-center gap-1.5 p-1 bg-bg-surface border border-border rounded-lg shadow-xs self-start">
+      {/* Action Toast Alert Notification */}
+      {toastMessage && (
+        <div
+          className={`mb-4 p-3 rounded-xl shadow-xs flex items-center justify-between text-xs animate-in fade-in ${
+            toastMessage.type === "success"
+              ? "bg-success-light border border-success/30 text-success"
+              : "bg-danger-light border border-danger/30 text-danger"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {toastMessage.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity cursor-pointer ml-2"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Controls Bar: Search (Left, Flex-1) & View Tabs (Right) Inside Card - Matches Pic 1 */}
+      <div className="p-3 sm:p-4 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 mb-5">
+        {/* Search Bar - Stretches across available space */}
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search plate, vehicle, or job #..."
+            className="w-full pl-9 pr-3 py-2 text-xs bg-bg-input border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg text-text-primary placeholder:text-text-muted outline-hidden transition-colors"
+          />
+        </div>
+
+        {/* Segment Tabs: My Active Jobs vs Workshop Bay Queue - Right Side */}
+        <div className="flex items-center gap-1.5 p-1 bg-bg-surface border border-border rounded-lg shadow-xs shrink-0 self-stretch sm:self-auto justify-center">
           <button
             type="button"
             onClick={() => setActiveTab("my-jobs")}
@@ -327,23 +487,14 @@ export function WorkshopQueueClient({
                 activeTab === "all-bays" ? "bg-white/20 text-white" : "bg-bg-base text-text-muted"
               }`}
             >
-              {orders.length}
+              {currentStaffRole === "mechanic" || !isAdmin ? summary.activeJobsCount : orders.length}
             </span>
           </button>
         </div>
-
-        {/* Search Bar */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search plate, vehicle, or job #..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-border-focus transition-colors shadow-xs"
-          />
-        </div>
       </div>
+
+      {/* KPI Cards Bar */}
+      <WorkshopQueueHeader summary={summary} />
 
       {/* Status Filter Pills Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-5 text-xs">
@@ -377,6 +528,7 @@ export function WorkshopQueueClient({
               onStatusChange={handleStatusChange}
               onClaimJob={handleClaimJob}
               isUpdating={isUpdating}
+              isTimedIn={isTimedIn}
             />
           ))}
         </div>
@@ -403,6 +555,7 @@ export function WorkshopQueueClient({
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
         isAdmin={isAdmin}
+        isTimedIn={isTimedIn}
         onAssignMechanic={handleAssignMechanic}
       />
     </div>

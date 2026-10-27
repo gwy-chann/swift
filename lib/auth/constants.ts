@@ -54,6 +54,18 @@ export const DEMO_STAFF_ACCOUNTS: DemoAccount[] = [
     defaultPassword: "staff123••••••••",
     pin: "3333",
   },
+  {
+    id: "c9e4d1e8-ac08-4215-852c-e5d8a01ff57c",
+    name: "Rene Baterbonia",
+    label: "Cashier",
+    email: "cashier1@swift.local",
+    role: "staff",
+    staffRole: "cashier",
+    targetUrl: "/staff/pos",
+    buttonLabel: "Use Cashier",
+    defaultPassword: "staff123••••••••",
+    pin: "2008",
+  },
 ];
 
 export const ALL_DEMO_ACCOUNTS: DemoAccount[] = [
@@ -65,6 +77,7 @@ export const DEMO_ACCOUNTS: Record<PortalRole, DemoAccount> = {
   admin: DEMO_ADMIN_ACCOUNT,
   staff: DEMO_STAFF_ACCOUNTS[0],
 };
+
 
 /**
  * Portal configuration metadata
@@ -85,3 +98,9 @@ export const PORTAL_CONFIG = {
 } as const;
 
 export const TERMINAL_ROLE_STORAGE_KEY = "swift_terminal_role";
+
+export const INACTIVE_ACCOUNT_ERROR =
+  "Account is inactive. Please contact your workshop administrator.";
+
+export const PIN_ERROR_INVALID = "Invalid PIN. Please try again.";
+export const PIN_VALIDATION_ERROR_MSG = "PIN must consist of 4 to 6 numeric digits.";

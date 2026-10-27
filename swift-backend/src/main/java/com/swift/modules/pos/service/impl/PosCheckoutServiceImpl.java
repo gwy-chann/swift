@@ -29,6 +29,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PosCheckoutServiceImpl implements PosCheckoutService {
@@ -59,76 +60,45 @@ public class PosCheckoutServiceImpl implements PosCheckoutService {
     @Override
     @Transactional
     public PosCheckoutResponse processCheckout(PosCheckoutRequest request) {
-        // 1. Cash Tender Validation & Exact Change Calculation
+        BigDecimal changeDue = validateAndCalculateChangeDue(request);
+        String receiptNumber = resolveReceiptNumber(request.receiptNumber());
+
+        Optional<PosCheckoutResponse> spResult = tryStoredProcedureCheckout(request, receiptNumber, changeDue);
+        if (spResult.isPresent()) {
+            return spResult.get();
+        }
+
+        return executeJpaFallback(request, receiptNumber, changeDue);
+    }
+
+    private BigDecimal validateAndCalculateChangeDue(PosCheckoutRequest request) {
         if (request.cashTendered() == null || request.cashTendered().compareTo(request.totalDue()) < 0) {
             throw new InsufficientCashException(request.totalDue(), request.cashTendered() != null ? request.cashTendered() : BigDecimal.ZERO);
         }
+        return request.cashTendered().subtract(request.totalDue()).setScale(2, RoundingMode.HALF_UP);
+    }
 
-        BigDecimal changeDue = request.cashTendered().subtract(request.totalDue()).setScale(2, RoundingMode.HALF_UP);
-
-        // 2. Resolve or generate canonical receipt number
-        String receiptNumber = request.receiptNumber();
-        if (receiptNumber == null || receiptNumber.trim().isEmpty()) {
-            String datePart = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now());
-            int randomSuffix = (int) (Math.random() * 9000) + 1000;
-            receiptNumber = String.format("REC-%s-%04d", datePart, randomSuffix);
+    private String resolveReceiptNumber(String receiptNumber) {
+        if (receiptNumber != null && !receiptNumber.trim().isEmpty()) {
+            return receiptNumber;
         }
+        String datePart = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now(ZoneOffset.UTC));
+        int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 10000);
+        return String.format("REC-%s-%04d", datePart, randomSuffix);
+    }
 
-        // 3. Try Stored Procedure Execution
+    private Optional<PosCheckoutResponse> tryStoredProcedureCheckout(
+            PosCheckoutRequest request, String receiptNumber, BigDecimal changeDue) {
         try {
-            Map<String, Object> txPayload = new HashMap<>();
-            txPayload.put("receipt_number", receiptNumber);
-            txPayload.put("cashier_id", request.cashierId());
-            txPayload.put("cashier_name", request.cashierName());
-            txPayload.put("pricing_mode", request.pricingMode() != null ? request.pricingMode() : "retail");
-            txPayload.put("subtotal", request.subtotal());
-            txPayload.put("discount_type", request.discountType());
-            txPayload.put("discount_rate", request.discountRate() != null ? request.discountRate() : BigDecimal.ZERO);
-            txPayload.put("discount_amount", request.discountAmount() != null ? request.discountAmount() : BigDecimal.ZERO);
-            txPayload.put("total_due", request.totalDue());
-            txPayload.put("cash_tendered", request.cashTendered());
-            txPayload.put("change_due", changeDue);
-            txPayload.put("payment_method", request.paymentMethod() != null ? request.paymentMethod() : "Cash");
-
-            List<Map<String, Object>> itemsPayload = new ArrayList<>();
-            for (PosCheckoutItemDto item : request.items()) {
-                Map<String, Object> itemMap = new HashMap<>();
-                itemMap.put("item_type", item.itemType());
-                itemMap.put("item_sku_or_code", item.itemSkuOrCode());
-                itemMap.put("item_name", item.itemName());
-                itemMap.put("unit_price", item.unitPrice());
-                itemMap.put("quantity", item.quantity());
-                itemMap.put("subtotal", item.subtotal());
-                itemMap.put("shelf_location", item.shelfLocation());
-                itemMap.put("bay", item.bay());
-                itemsPayload.add(itemMap);
-            }
+            Map<String, Object> txPayload = buildTransactionPayload(request, receiptNumber, changeDue);
+            List<Map<String, Object>> itemsPayload = buildItemsPayload(request.items());
 
             String txJson = objectMapper.writeValueAsString(txPayload);
             String itemsJson = objectMapper.writeValueAsString(itemsPayload);
 
             Optional<JsonNode> spResult = storedProcedureWrapper.callProcessPosCheckout(txJson, itemsJson);
             if (spResult.isPresent()) {
-                JsonNode res = spResult.get();
-                UUID txId = UUID.fromString(res.path("transaction_id").asText());
-                String resReceipt = res.path("receipt_number").asText(receiptNumber);
-                int itemsCount = res.path("items_count").asInt(request.items().size());
-                int partsDecremented = res.path("parts_decremented").asInt();
-                String createdAt = res.path("created_at").asText(OffsetDateTime.now(ZoneOffset.UTC).toString());
-
-                return new PosCheckoutResponse(
-                    true,
-                    txId,
-                    resReceipt,
-                    itemsCount,
-                    partsDecremented,
-                    request.subtotal(),
-                    request.discountAmount() != null ? request.discountAmount() : BigDecimal.ZERO,
-                    request.totalDue(),
-                    request.cashTendered(),
-                    changeDue,
-                    createdAt
-                );
+                return Optional.of(parseStoredProcedureResponse(spResult.get(), request, receiptNumber, changeDue));
             }
         } catch (Exception ex) {
             String msg = ex.getMessage();
@@ -137,60 +107,85 @@ public class PosCheckoutServiceImpl implements PosCheckoutService {
             }
             log.debug("Falling back to transactional JPA execution: {}", ex.getMessage());
         }
+        return Optional.empty();
+    }
 
-        // 4. Transactional JPA Fallback with Pessimistic Row Locking
-        // Sort items deterministically by SKU/code to prevent deadlocks
-        List<PosCheckoutItemDto> sortedItems = new ArrayList<>(request.items());
-        sortedItems.sort(Comparator.comparing(PosCheckoutItemDto::itemSkuOrCode));
+    private Map<String, Object> buildTransactionPayload(
+            PosCheckoutRequest request, String receiptNumber, BigDecimal changeDue) {
+        Map<String, Object> txPayload = new HashMap<>();
+        txPayload.put("receipt_number", receiptNumber);
+        txPayload.put("cashier_id", request.cashierId());
+        txPayload.put("cashier_name", request.cashierName());
+        txPayload.put("pricing_mode", request.pricingMode() != null ? request.pricingMode() : "retail");
+        txPayload.put("subtotal", request.subtotal());
+        txPayload.put("discount_type", request.discountType());
+        txPayload.put("discount_rate", request.discountRate() != null ? request.discountRate() : BigDecimal.ZERO);
+        txPayload.put("discount_amount", request.discountAmount() != null ? request.discountAmount() : BigDecimal.ZERO);
+        txPayload.put("total_due", request.totalDue());
+        txPayload.put("cash_tendered", request.cashTendered());
+        txPayload.put("change_due", changeDue);
+        txPayload.put("payment_method", request.paymentMethod() != null ? request.paymentMethod() : "Cash");
+        return txPayload;
+    }
 
-        int partsDecremented = 0;
-        for (PosCheckoutItemDto item : sortedItems) {
-            if ("part".equalsIgnoreCase(item.itemType())) {
-                Product product = productRepository.findWithPessimisticLockBySku(item.itemSkuOrCode())
-                    .orElseThrow(() -> new IllegalArgumentException("Product not found with SKU: " + item.itemSkuOrCode()));
-
-                int currentStock = product.getStock() != null ? product.getStock() : 0;
-                int requestedQty = item.quantity() != null ? item.quantity() : 1;
-
-                if (currentStock < requestedQty) {
-                    throw new InsufficientStockException(item.itemSkuOrCode(), currentStock, requestedQty);
-                }
-
-                int newStock = currentStock - requestedQty;
-                product.setStock(newStock);
-                productRepository.save(product);
-
-                StockAdjustmentLog auditLog = new StockAdjustmentLog(
-                    null,
-                    item.itemSkuOrCode(),
-                    "POS Sale",
-                    -requestedQty,
-                    currentStock,
-                    newStock,
-                    "POS Sale Receipt: " + receiptNumber,
-                    request.cashierId(),
-                    request.cashierName(),
-                    OffsetDateTime.now(ZoneOffset.UTC)
-                );
-                stockAdjustmentLogRepository.save(auditLog);
-                partsDecremented++;
-            }
+    private List<Map<String, Object>> buildItemsPayload(List<PosCheckoutItemDto> items) {
+        List<Map<String, Object>> itemsPayload = new ArrayList<>();
+        for (PosCheckoutItemDto item : items) {
+            Map<String, Object> itemMap = new HashMap<>();
+            itemMap.put("item_type", item.itemType());
+            itemMap.put("item_sku_or_code", item.itemSkuOrCode());
+            itemMap.put("item_name", item.itemName());
+            itemMap.put("unit_price", item.unitPrice());
+            itemMap.put("quantity", item.quantity());
+            itemMap.put("subtotal", item.subtotal());
+            itemMap.put("shelf_location", item.shelfLocation());
+            itemMap.put("bay", item.bay());
+            itemsPayload.add(itemMap);
         }
+        return itemsPayload;
+    }
 
-        Transaction transaction = new Transaction(
-            receiptNumber,
-            request.cashierId(),
-            request.cashierName(),
-            request.pricingMode(),
+    private PosCheckoutResponse parseStoredProcedureResponse(
+            JsonNode res, PosCheckoutRequest request, String receiptNumber, BigDecimal changeDue) {
+        UUID txId = UUID.fromString(res.path("transaction_id").asText());
+        String resReceipt = res.path("receipt_number").asText(receiptNumber);
+        int itemsCount = res.path("items_count").asInt(request.items().size());
+        int partsDecremented = res.path("parts_decremented").asInt();
+        String createdAt = res.path("created_at").asText(OffsetDateTime.now(ZoneOffset.UTC).toString());
+
+        return new PosCheckoutResponse(
+            true,
+            txId,
+            resReceipt,
+            itemsCount,
+            partsDecremented,
             request.subtotal(),
-            request.discountType(),
-            request.discountRate(),
-            request.discountAmount(),
+            request.discountAmount() != null ? request.discountAmount() : BigDecimal.ZERO,
             request.totalDue(),
             request.cashTendered(),
             changeDue,
-            request.paymentMethod()
+            createdAt
         );
+    }
+
+    private PosCheckoutResponse executeJpaFallback(
+            PosCheckoutRequest request, String receiptNumber, BigDecimal changeDue) {
+        int partsDecremented = decrementInventoryForItems(request, receiptNumber);
+
+        Transaction transaction = Transaction.builder()
+            .receiptNumber(receiptNumber)
+            .cashierId(request.cashierId())
+            .cashierName(request.cashierName())
+            .pricingMode(request.pricingMode())
+            .subtotal(request.subtotal())
+            .discountType(request.discountType())
+            .discountRate(request.discountRate())
+            .discountAmount(request.discountAmount())
+            .totalDue(request.totalDue())
+            .cashTendered(request.cashTendered())
+            .changeDue(changeDue)
+            .paymentMethod(request.paymentMethod())
+            .build();
 
         for (PosCheckoutItemDto item : request.items()) {
             TransactionItem lineItem = new TransactionItem(
@@ -221,6 +216,50 @@ public class PosCheckoutServiceImpl implements PosCheckoutService {
             savedTx.getChangeDue(),
             savedTx.getCreatedAt().toString()
         );
+    }
+
+    private int decrementInventoryForItems(PosCheckoutRequest request, String receiptNumber) {
+        List<PosCheckoutItemDto> sortedItems = new ArrayList<>(request.items());
+        sortedItems.sort(Comparator.comparing(PosCheckoutItemDto::itemSkuOrCode));
+
+        int partsDecremented = 0;
+        for (PosCheckoutItemDto item : sortedItems) {
+            if ("part".equalsIgnoreCase(item.itemType())) {
+                decrementPartStock(item, request, receiptNumber);
+                partsDecremented++;
+            }
+        }
+        return partsDecremented;
+    }
+
+    private void decrementPartStock(PosCheckoutItemDto item, PosCheckoutRequest request, String receiptNumber) {
+        Product product = productRepository.findWithPessimisticLockBySku(item.itemSkuOrCode())
+            .orElseThrow(() -> new IllegalArgumentException("Product not found with SKU: " + item.itemSkuOrCode()));
+
+        int currentStock = product.getStock() != null ? product.getStock() : 0;
+        int requestedQty = item.quantity() != null ? item.quantity() : 1;
+
+        if (currentStock < requestedQty) {
+            throw new InsufficientStockException(item.itemSkuOrCode(), currentStock, requestedQty);
+        }
+
+        int newStock = currentStock - requestedQty;
+        product.setStock(newStock);
+        productRepository.save(product);
+
+        StockAdjustmentLog auditLog = new StockAdjustmentLog(
+            null,
+            item.itemSkuOrCode(),
+            "POS Sale",
+            -requestedQty,
+            currentStock,
+            newStock,
+            "POS Sale Receipt: " + receiptNumber,
+            request.cashierId(),
+            request.cashierName(),
+            OffsetDateTime.now(ZoneOffset.UTC)
+        );
+        stockAdjustmentLogRepository.save(auditLog);
     }
 
     @Override

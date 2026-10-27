@@ -28,8 +28,8 @@ export interface RepairsDashboardKpiSummary {
 export interface RepairsFilterState {
   searchQuery: string;
   statusFilter: 'ALL' | WorkOrderStatus;
-  mechanicFilter: 'ALL' | string;
-  bayFilter: 'ALL' | string;
+  mechanicFilter: 'ALL' | (string & {});
+  bayFilter: 'ALL' | (string & {});
   viewMode: 'grid' | 'table';
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Download, BarChart3, Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { FinancialSummaryCards } from './financial-summary-cards';
 import { CategoryPnlTable } from './category-pnl-table';
 import {
@@ -68,23 +68,8 @@ export function ReportsViewClient({
 
   return (
     <section id="view-reports" className="space-y-6 animate-fadeIn">
-      {/* Header & Controls Toolbar (Hidden during print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-light text-primary flex items-center justify-center shadow-xs">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-text-primary">
-              Reports & Profit Analytics
-            </h1>
-            <p className="text-xs text-text-secondary">
-              Contrasting Gross Revenue against wholesale COGS and workshop labor yield.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Controls Toolbar (Hidden during print) */}
+      <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
           {/* Multi-Period Filter Buttons */}
           <fieldset
             className="flex bg-bg-muted p-1 rounded-lg border border-border m-0"
@@ -158,7 +143,6 @@ export function ReportsViewClient({
             </button>
           </div>
         </div>
-      </div>
 
       {/* Print-Only Header */}
       <div className="hidden print:block mb-6 border-b border-neutral-300 pb-4">

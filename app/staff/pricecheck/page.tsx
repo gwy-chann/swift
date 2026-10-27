@@ -1,14 +1,38 @@
 'use client';
 
 import React, { useState, useEffect, useTransition, useCallback } from 'react';
-import { Barcode, SearchX, Search, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { SearchX, AlertCircle } from 'lucide-react';
 import { lookupProductPriceAction } from '@/lib/staff/actions';
 import type { ProductPriceCheckResult } from '@/lib/staff/types';
 import { PriceScanCard } from '@/components/staff/pricecheck/price-scan-card';
 import { MarginSimulator } from '@/components/staff/pricecheck/margin-simulator';
 import { PriceScheduleTable } from '@/components/staff/pricecheck/price-schedule-table';
+import { usePunchStore } from '@/lib/store/punch-store';
+import { getRolePrimaryRoute } from '@/lib/staff/navigation';
 
 export default function StaffPriceCheckPage() {
+  const router = useRouter();
+  const { currentStaffRole, currentPermissions } = usePunchStore();
+  const isAdmin = currentStaffRole?.toLowerCase() === 'admin' || Boolean(currentPermissions?.can_manage_pricing);
+  const isUnauthorizedRole = Boolean(
+    currentStaffRole && currentStaffRole !== 'inventory_clerk' && currentStaffRole !== 'admin'
+  );
+
+  useEffect(() => {
+    if (isUnauthorizedRole) {
+      const { targetPath } = getRolePrimaryRoute(currentStaffRole);
+      const notificationMessage =
+        'Redirected: Item Code Price Check is restricted to inventory clerks and administrators.';
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('swift_staff_redirect_toast', notificationMessage);
+        }
+      } catch {}
+      router.replace(targetPath);
+    }
+  }, [isUnauthorizedRole, currentStaffRole, router]);
+
   const [query, setQuery] = useState('YAM-NMAX-BL01');
   const [lookupResult, setLookupResult] = useState<ProductPriceCheckResult | null>(null);
   const [isSearching, startTransition] = useTransition();
@@ -60,44 +84,36 @@ export default function StaffPriceCheckPage() {
   const matchedProduct = hasQuery && lookupResult?.success ? lookupResult.product : null;
   const showEmptyState = hasQuery && lookupResult && !lookupResult.success;
 
+  if (isUnauthorizedRole) {
+    const { targetPath } = getRolePrimaryRoute(currentStaffRole);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-in fade-in">
+        <div className="p-4 rounded-full bg-secondary/10 text-secondary mb-4">
+          <AlertCircle className="w-8 h-8 animate-pulse" />
+        </div>
+        <h2 className="text-lg font-bold text-text-primary mb-2">Redirecting to Authorized Tool</h2>
+        <p className="text-sm text-text-muted max-w-md mb-4">
+          Item Code Price Check is restricted to inventory clerks and administrators.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.replace(targetPath)}
+          className="px-4 py-2 rounded-md bg-secondary text-white font-medium text-xs hover:bg-secondary-hover cursor-pointer"
+        >
+          Proceed to Workspace
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       id="view-staff-pricecheck"
       className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200"
     >
       {/* 1. Barcode & SKU Lookup Scanner Box (mockup/staff.html lines 226-238) */}
-      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Barcode className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-text-primary">
-                Instant Barcode &amp; Price Lookup Scanner
-              </h3>
-              <p className="text-xs text-text-muted">
-                Type SKU or scan barcode to view wholesale vs. retail breakdown, margin, and shelf location.
-              </p>
-            </div>
-          </div>
-
-          {hasQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('');
-                setLookupResult(null);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors self-start sm:self-auto cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Clear</span>
-            </button>
-          )}
-        </div>
-
-        {/* Input Bar with Instant Button */}
+      <div className="p-6 bg-bg-surface border border-border rounded-xl shadow-xs">
+        {/* Input Bar with Instant Buttons */}
         <div className="flex gap-2.5">
           <div className="relative flex-1">
             <input
@@ -126,10 +142,20 @@ export default function StaffPriceCheckPage() {
           <button
             type="button"
             onClick={() => executeLookup(query)}
-            className="px-5 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-xs"
+            className="px-5 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm transition-colors cursor-pointer shrink-0 shadow-xs"
           >
-            <Search className="w-4 h-4" />
-            <span>Check Price</span>
+            Check Price
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              setLookupResult(null);
+            }}
+            disabled={!hasQuery}
+            className="px-5 py-3 rounded-xl bg-bg-base border border-border text-text-muted hover:text-text-primary hover:bg-bg-hover font-bold text-sm transition-colors cursor-pointer shrink-0 shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Clear
           </button>
         </div>
       </div>
@@ -138,8 +164,8 @@ export default function StaffPriceCheckPage() {
       {matchedProduct && (
         <div className="space-y-4">
           <PriceScanCard product={matchedProduct} />
-          {/* Interactive Margin Simulator */}
-          <MarginSimulator product={matchedProduct} />
+          {/* Interactive Margin Simulator (Admin Only) */}
+          {isAdmin && <MarginSimulator product={matchedProduct} />}
         </div>
       )}
 

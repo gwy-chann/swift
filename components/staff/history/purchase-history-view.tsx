@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -9,18 +9,20 @@ import {
   ChevronRight,
   ShieldCheck,
   Calendar,
-  CreditCard,
   User,
   ShoppingBag,
   RotateCcw,
   Wrench,
-  Package
+  Package,
+  Receipt
 } from 'lucide-react';
+import { PesoIcon } from '@/components/icons/peso-icon';
 import type { DbTransaction, ThermalReceiptData } from '@/lib/types/transaction';
 import { mapDbTransactionToThermalReceipt } from '@/lib/pos/contracts';
 import { calculateWarrantyStatus, STORE_WARRANTY_DAYS } from '@/lib/staff/warranty';
 import { WarrantyBadge } from './warranty-badge';
 import { ThermalReceiptModal } from '@/components/pos/thermal-receipt-modal';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export type DateFilterOption = 'all' | 'warranty_eligible' | 'today' | 'last_30_days';
 
@@ -31,7 +33,6 @@ interface PurchaseHistoryViewProps {
 export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilterOption>('all');
-  const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [activeReceiptForPrint, setActiveReceiptForPrint] = useState<ThermalReceiptData | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
@@ -58,7 +59,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
 
   const [now] = useState(() => new Date());
 
-  // Filter transactions based on search query, date filter, and payment method
+  // Filter transactions based on search query and date filter (all client transactions are cash)
   const filteredTransactions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const nowTime = now.getTime();
@@ -80,11 +81,6 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
         return false;
       }
 
-      // Payment method filter
-      if (paymentFilter !== 'all' && tx.payment_method?.toLowerCase() !== paymentFilter.toLowerCase()) {
-        return false;
-      }
-
       // Search query (receipt number, cashier name, item sku, or item name)
       if (q) {
         const matchesReceipt = tx.receipt_number?.toLowerCase().includes(q);
@@ -102,7 +98,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
 
       return true;
     });
-  }, [initialTransactions, searchQuery, dateFilter, paymentFilter, now]);
+  }, [initialTransactions, searchQuery, dateFilter, now]);
 
   // Aggregate summary statistics
   const summary = useMemo(() => {
@@ -122,95 +118,41 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
     };
   }, [filteredTransactions, now]);
 
+  const pagination = usePagination(filteredTransactions, 10);
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [searchQuery, dateFilter, resetPage]);
+
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-            Purchase &amp; Sales History
-          </h1>
-          <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-            Search customer transactions, verify 7-day part warranties, and reprint thermal receipts.
-          </p>
-        </div>
-
-        {/* Quick Stats Badges */}
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-lg bg-bg-surface border border-border shadow-xs">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-              Matching Sales
-            </div>
-            <div className="text-sm font-extrabold text-text-primary">
-              {summary.totalCount}
-            </div>
-          </div>
-
-          <div className="px-3 py-1.5 rounded-lg bg-bg-surface border border-border shadow-xs">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-              Total Volume
-            </div>
-            <div className="text-sm font-extrabold text-primary">
-              ₱{summary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </div>
-
-          <div className="px-3 py-1.5 rounded-lg bg-bg-surface border border-border shadow-xs">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-              In Warranty
-            </div>
-            <div className="text-sm font-extrabold text-success">
-              {summary.warrantyEligibleCount}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters Bar */}
-      <div className="bg-bg-surface border border-border rounded-xl p-4 shadow-xs space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Receipt # (e.g. TX-1041), Cashier, or SKU..."
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-border-focus"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-xs cursor-pointer"
-                aria-label="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Payment Method Dropdown */}
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-text-muted shrink-0 hidden sm:block" />
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-bg-input border border-border rounded-lg text-text-primary focus:outline-hidden focus:border-border-focus cursor-pointer"
-              aria-label="Filter by payment method"
+    <div className="space-y-4">
+      {/* Search and Filters Bar (Filters placed beside search bar to save vertical space) */}
+      <div className="bg-bg-surface border border-border rounded-xl p-3 sm:p-4 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center gap-3 justify-between">
+        {/* Search Box */}
+        <div className="relative flex-1 min-w-70">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by Receipt # (e.g. TX-1041), Cashier, or SKU..."
+            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-bg-input border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-border-focus"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-xs cursor-pointer"
+              aria-label="Clear search"
             >
-              <option value="all">All Payment Methods</option>
-              <option value="Cash">Cash</option>
-              <option value="GCash">GCash</option>
-              <option value="Card">Card</option>
-              <option value="Maya">Maya</option>
-            </select>
-          </div>
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* Date / Warranty Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border-subtle text-xs">
+        {/* Date / Warranty Filter Pills Beside Search Bar */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs shrink-0">
           <span className="text-text-muted flex items-center gap-1 font-semibold mr-1">
             <Filter className="w-3.5 h-3.5" />
             Filter:
@@ -219,7 +161,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
           <button
             type="button"
             onClick={() => setDateFilter('all')}
-            className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
               dateFilter === 'all'
                 ? 'bg-primary text-text-light shadow-xs'
                 : 'bg-bg-base text-text-secondary hover:text-text-primary border border-border'
@@ -231,7 +173,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
           <button
             type="button"
             onClick={() => setDateFilter('warranty_eligible')}
-            className={`flex items-center gap-1 px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
               dateFilter === 'warranty_eligible'
                 ? 'bg-success text-text-light shadow-xs'
                 : 'bg-bg-base text-text-secondary hover:text-text-primary border border-border'
@@ -244,7 +186,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
           <button
             type="button"
             onClick={() => setDateFilter('today')}
-            className={`flex items-center gap-1 px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
               dateFilter === 'today'
                 ? 'bg-primary text-text-light shadow-xs'
                 : 'bg-bg-base text-text-secondary hover:text-text-primary border border-border'
@@ -257,7 +199,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
           <button
             type="button"
             onClick={() => setDateFilter('last_30_days')}
-            className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
               dateFilter === 'last_30_days'
                 ? 'bg-primary text-text-light shadow-xs'
                 : 'bg-bg-base text-text-secondary hover:text-text-primary border border-border'
@@ -266,20 +208,92 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
             Past 30 Days
           </button>
 
-          {(searchQuery || dateFilter !== 'all' || paymentFilter !== 'all') && (
+          {(searchQuery || dateFilter !== 'all') && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery('');
                 setDateFilter('all');
-                setPaymentFilter('all');
               }}
-              className="ml-auto text-xs text-text-muted hover:text-danger flex items-center gap-1 cursor-pointer"
+              className="ml-1 text-xs text-text-muted hover:text-danger flex items-center gap-1 cursor-pointer font-medium"
+              title="Reset all filters"
             >
               <RotateCcw className="w-3 h-3" />
-              Reset Filters
+              Reset
             </button>
           )}
+        </div>
+      </div>
+
+      {/* KPI Stats Cards (Wider and bigger, positioned below search bar) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Matching Sales */}
+        <div className="p-5 rounded-xl bg-bg-surface border border-border shadow-xs hover:border-primary/40 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Matching Sales
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-bg-muted text-text-secondary border border-border-subtle">
+              Transactions
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
+              {summary.totalCount.toLocaleString()}
+            </div>
+            <div className="text-xs font-semibold text-text-secondary mt-1 flex items-center gap-1">
+              <span>{dateFilter === 'all' && !searchQuery ? 'Total recorded sales' : 'Matching filtered sales'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Volume */}
+        <div className="p-5 rounded-xl bg-bg-surface border border-border shadow-xs hover:border-primary/40 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <PesoIcon className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Total Volume
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+              Cash Sales
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-primary">
+              ₱{summary.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs font-semibold text-text-secondary mt-1 flex items-center gap-1">
+              <span>Cumulative cash revenue</span>
+            </div>
+          </div>
+        </div>
+
+        {/* In Warranty */}
+        <div className="p-5 rounded-xl bg-bg-surface border border-border shadow-xs hover:border-primary/40 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-success shrink-0" />
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                In Warranty
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-success/10 text-success border border-success/20">
+              ≤ 7 Days
+            </span>
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-success">
+              {summary.warrantyEligibleCount.toLocaleString()}
+            </div>
+            <div className="text-xs font-semibold text-text-secondary mt-1 flex items-center gap-1">
+              <span>Eligible for warranty claim</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -302,7 +316,7 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
-                {filteredTransactions.map((tx) => {
+                {pagination.paginatedItems.map((tx) => {
                   const txId = tx.id || tx.receipt_number;
                   const isExpanded = expandedRows.has(txId);
                   const warranty = calculateWarrantyStatus(tx.created_at || '', now);
@@ -502,17 +516,16 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
             <ShoppingBag className="w-12 h-12 text-text-muted/40 mb-3" />
             <h3 className="text-base font-bold text-text-primary">No transactions found</h3>
             <p className="text-xs sm:text-sm text-text-secondary max-w-sm mt-1">
-              {searchQuery || dateFilter !== 'all' || paymentFilter !== 'all'
+              {searchQuery || dateFilter !== 'all'
                 ? 'No transactions matched your current search filters. Try adjusting your query or resetting filters.'
                 : 'No sales transactions recorded yet. Sales completed at the Fast-Lane POS terminal will appear here.'}
             </p>
-            {(searchQuery || dateFilter !== 'all' || paymentFilter !== 'all') && (
+            {(searchQuery || dateFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchQuery('');
                   setDateFilter('all');
-                  setPaymentFilter('all');
                 }}
                 className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold bg-secondary text-text-primary hover:bg-secondary-hover transition-colors cursor-pointer"
               >
@@ -521,6 +534,16 @@ export function PurchaseHistoryView({ initialTransactions }: PurchaseHistoryView
             )}
           </div>
         )}
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="transactions"
+        />
       </div>
 
       {/* Printable Thermal Receipt Modal for Reprinting */}

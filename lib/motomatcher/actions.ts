@@ -28,17 +28,30 @@ async function fetchMotorcycleModelsDirect(): Promise<MotorcycleModelRecord[]> {
       .order('model', { ascending: true });
 
     if (!error && dbModels && dbModels.length > 0) {
-      return dbModels.map((m: Record<string, unknown>) => ({
-        id: String(m.id),
-        make: String(m.make),
-        model: String(m.model),
-        displacement_cc: Number(m.displacement_cc),
-        year_start: Number(m.year_start),
+      type RawMotorcycleRow = {
+        id?: string | number | null;
+        make?: string | null;
+        model?: string | null;
+        displacement_cc?: number | string | null;
+        year_start?: number | string | null;
+        year_end?: number | string | null;
+        category?: string | null;
+        image_url?: string | null;
+        created_at?: string | Date | null;
+        updated_at?: string | Date | null;
+      };
+
+      return (dbModels as RawMotorcycleRow[]).map((m) => ({
+        id: String(m.id ?? ''),
+        make: String(m.make ?? ''),
+        model: String(m.model ?? ''),
+        displacement_cc: Number(m.displacement_cc ?? 0),
+        year_start: Number(m.year_start ?? 0),
         year_end: m.year_end !== null && m.year_end !== undefined ? Number(m.year_end) : null,
-        category: String(m.category),
+        category: String(m.category ?? ''),
         image_url: typeof m.image_url === 'string' ? m.image_url : null,
-        created_at: m.created_at as string | Date | undefined,
-        updated_at: m.updated_at as string | Date | undefined,
+        created_at: m.created_at ?? undefined,
+        updated_at: m.updated_at ?? undefined,
       }));
     }
   } catch (error) {

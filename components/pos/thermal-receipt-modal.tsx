@@ -12,6 +12,7 @@ export interface ThermalReceiptModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onFinish?: () => void;
+  readonly onProceed?: () => void;
   readonly receiptData?: ThermalReceiptData | null;
   /** Roll width is locked strictly to 80mm standard POS format */
   readonly initialRollWidth?: ThermalRollWidth;
@@ -21,6 +22,7 @@ export function ThermalReceiptModal({
   isOpen,
   onClose,
   onFinish,
+  onProceed,
   receiptData
 }: Readonly<ThermalReceiptModalProps>) {
   const titleId = useId();
@@ -47,6 +49,16 @@ export function ThermalReceiptModal({
     }
   }, []);
 
+  const handleProceed = useCallback(() => {
+    if (onProceed) {
+      onProceed();
+    } else if (onFinish) {
+      onFinish();
+    } else {
+      onClose();
+    }
+  }, [onProceed, onFinish, onClose]);
+
   const handlePrintAndFinish = useCallback(() => {
     handlePrint();
     if (onFinish) {
@@ -66,21 +78,15 @@ export function ThermalReceiptModal({
       open
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-bg-base/80 backdrop-blur-xs animate-fadeIn print:p-0 print:bg-transparent border-0 outline-none w-full h-full max-w-none max-h-none m-0"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-bg-base/80 backdrop-blur-xs animate-fadeIn print:static print:inset-auto print:block print:p-0 print:bg-white print:m-0 print:w-full print:h-auto border-0 outline-none w-full h-full max-w-none max-h-none m-0"
     >
       {/* Modal Container */}
-      <div className="relative flex flex-col w-full max-w-lg max-h-[92vh] bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-auto">
+      <div className="relative flex flex-col w-full max-w-lg max-h-[92vh] bg-bg-surface border border-border rounded-xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-full print:h-auto print:bg-white print:overflow-visible print:block">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-muted/30 print:hidden">
-          <div className="flex items-center gap-2">
-            <Printer className="w-5 h-5 text-primary" />
-            <h3 id={titleId} className="text-base font-bold text-text-primary">
-              Printable Thermal Receipt
-            </h3>
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-primary-light text-primary uppercase tracking-wider">
-              80mm
-            </span>
-          </div>
+          <h3 id={titleId} className="text-base font-bold text-text-primary">
+            Printable Thermal Receipt
+          </h3>
 
           <button
             type="button"
@@ -93,11 +99,11 @@ export function ThermalReceiptModal({
         </div>
 
         {/* Receipt Paper Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-bg-base/50 flex justify-center print:p-0 print:bg-white print:overflow-visible">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-bg-base/50 flex justify-center print:p-0 print:bg-white print:overflow-visible print:block">
           {activeReceipt ? (
             <div
               id="thermal-receipt-print-area"
-              className={`thermal-receipt-paper bg-bg-surface text-text-primary border border-dashed border-border rounded-xs p-4 sm:p-5 font-mono shadow-xs transition-all duration-150 print:border-none print:shadow-none print:p-0 print:w-full print:text-black print:bg-white ${rollDim.containerClass} ${rollDim.fontSizeClass}`}
+              className={`thermal-receipt-paper bg-bg-surface text-text-primary border border-dashed border-border rounded-xs p-4 sm:p-5 font-mono shadow-xs transition-all duration-150 print:border-none print:shadow-none print:p-0 print:m-0 print:mx-auto print:w-full print:text-black print:bg-white ${rollDim.containerClass} ${rollDim.fontSizeClass}`}
             >
               {/* Receipt Header */}
               <div className="text-center space-y-0.5 pb-3">
@@ -253,36 +259,23 @@ export function ThermalReceiptModal({
         </div>
 
         {/* Modal Footer Controls */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-bg-muted/30 print:hidden">
+        <div className="flex items-center gap-3 px-4 py-3 border-t border-border bg-bg-muted/30 print:hidden w-full">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-secondary text-text-primary hover:bg-secondary-hover transition-colors cursor-pointer"
+            onClick={handleProceed}
+            className="flex-1 flex items-center justify-center px-4 py-2.5 text-xs font-semibold rounded-lg bg-bg-surface border border-border text-text-primary hover:bg-bg-hover transition-colors cursor-pointer text-center"
           >
-            Close
+            Proceed (without printing)
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handlePrint}
-              disabled={!activeReceipt}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-bg-surface border border-border text-text-primary hover:bg-bg-hover disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-text-secondary" />
-              <span>Print Only</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrintAndFinish}
-              disabled={!activeReceipt}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-primary text-text-light hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Receipt &amp; Finish</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handlePrintAndFinish}
+            disabled={!activeReceipt}
+            className="flex-1 flex items-center justify-center px-4 py-2.5 text-xs font-bold rounded-lg bg-primary text-text-light hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-xs cursor-pointer text-center"
+          >
+            Print Receipt &amp; Finish
+          </button>
         </div>
       </div>
     </dialog>

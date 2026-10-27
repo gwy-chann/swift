@@ -1,3 +1,10 @@
 {
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "files.watcherExclude": {
+    "**/.worktrees/**": true
+  },
+  "files.exclude": {
+    "**/.worktrees": true
+  },
+  "java.errors.incompleteClasspath.severity": "ignore"
 }

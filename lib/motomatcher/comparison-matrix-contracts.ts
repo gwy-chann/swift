@@ -45,6 +45,7 @@ export interface ComparisonMatrixProps {
   touchOptimized?: boolean;
   activeMobileTab?: ComparisonMatrixTab;
   onMobileTabChange?: (tab: ComparisonMatrixTab) => void;
+  canAddToCart?: boolean;
 }
 
 /**

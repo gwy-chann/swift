@@ -19,9 +19,9 @@ export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableP
             <th className="px-4 py-3.5">Part Name & Compatibility</th>
             <th className="px-4 py-3.5">Category</th>
             <th className="px-4 py-3.5">Shelf Locator</th>
-            <th className="px-4 py-3.5">Stock Status</th>
-            <th className="px-4 py-3.5 text-right">Retail Price</th>
-            <th className="px-4 py-3.5 text-center">Action</th>
+            <th className="px-4 py-3.5 whitespace-nowrap">Stock Status</th>
+            <th className="px-4 py-3.5 text-right whitespace-nowrap">Retail Price</th>
+            <th className="px-4 py-3.5 text-center whitespace-nowrap">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border-subtle">
@@ -76,7 +76,7 @@ export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableP
                 </td>
 
                 {/* Stock Level & Badge */}
-                <td className="px-4 py-3.5 align-middle">
+                <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                   <StockBadge stock={product.stock} minThreshold={product.minThreshold} />
                 </td>
 

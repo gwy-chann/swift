@@ -11,14 +11,24 @@ export const metadata: Metadata = {
 
 export default async function StaffRootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const session = await getServerSession();
   const decision = evaluateRouteAccess("/staff/pos", session);
   if (decision.action === "REDIRECT" && decision.destination) {
     redirect(decision.destination);
   }
 
-  return <StaffLayoutShell>{children}</StaffLayoutShell>;
+  return (
+    <StaffLayoutShell
+      sessionUser={{
+        id: session?.userId,
+        name: session?.userName,
+        role: session?.staffRole || (session?.role === "admin" ? "admin" : undefined),
+      }}
+    >
+      {children}
+    </StaffLayoutShell>
+  );
 }

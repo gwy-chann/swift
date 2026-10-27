@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertCircle, Boxes, Plus } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useInventoryStore } from '@/lib/store/inventory-store';
 import {
   filterCatalogProducts,
@@ -14,6 +14,7 @@ import { InventoryStatsCards } from './inventory-stats-cards';
 import { CatalogFilterBar } from './catalog-filter-bar';
 import { CatalogTable } from './catalog-table';
 import { CatalogEmptyState } from './catalog-empty-state';
+import { CatalogPagination } from './catalog-pagination';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
 import {
@@ -35,7 +36,6 @@ export interface InventoryCatalogProps {
 export function InventoryCatalog({
   initialProducts,
   initialPricingRules,
-  showHeader = false,
   initialStockFilter = 'all',
   initialLowStockOnly = false
 }: InventoryCatalogProps = {}) {
@@ -76,6 +76,8 @@ export function InventoryCatalog({
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [toastMessage, setToastMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -112,7 +114,26 @@ export function InventoryCatalog({
     setSelectedCategory('All');
     setStockFilter('all');
     setLowStockOnly(false);
+    setSelectedCategory('All');
+    setStockFilter('all');
+    setLowStockOnly(false);
+    setCurrentPage(1);
   };
+
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${searchQuery}|${selectedCategory}|${stockFilter}|${lowStockOnly}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setCurrentPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const effectivePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (effectivePage - 1) * pageSize;
+    return filteredProducts.slice(startIndex, startIndex + pageSize);
+  }, [filteredProducts, effectivePage, pageSize]);
 
   const handleAdjustStock = (sku: string) => {
     const target = products.find((p) => p.sku === sku);
@@ -260,34 +281,6 @@ export function InventoryCatalog({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Top Header with Add Part Action */}
-      {showHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
-              <Boxes className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-                Inventory & Warehouse Stock
-              </h2>
-              <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-                Master parts catalog, warehouse shelf locator mapping, and stock adjustments.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsAddProductModalOpen(true)}
-            aria-label="Add new part to catalog"
-            className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-bold rounded-lg bg-primary hover:bg-primary-hover text-text-light shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Part</span>
-          </button>
-        </div>
-      )}
-
       {/* Toast Notification Banner */}
       {toastMessage && (
         <output
@@ -316,10 +309,7 @@ export function InventoryCatalog({
         </output>
       )}
 
-      {/* 4 Summary KPI Cards */}
-      <InventoryStatsCards stats={stats} />
-
-      {/* Real-time Multi-attribute Search & Filtering Toolbar */}
+      {/* Real-time Multi-attribute Search, Filters & Add Part Action Toolbar */}
       <CatalogFilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -337,12 +327,28 @@ export function InventoryCatalog({
         onAddPart={() => setIsAddProductModalOpen(true)}
       />
 
-      {/* Catalog Grid Table or Empty State */}
+      {/* 4 Summary KPI Cards */}
+      <InventoryStatsCards stats={stats} />
+
+      {/* Catalog Grid Table with Pagination or Empty State */}
       {filteredProducts.length > 0 ? (
-        <CatalogTable
-          products={filteredProducts}
-          onAdjustStock={handleAdjustStock}
-        />
+        <div className="space-y-4">
+          <CatalogTable
+            products={paginatedProducts}
+            onAdjustStock={handleAdjustStock}
+          />
+          <CatalogPagination
+            currentPage={effectivePage}
+            totalPages={totalPages}
+            totalItems={filteredProducts.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
       ) : (
         <CatalogEmptyState
           onResetFilters={handleResetFilters}

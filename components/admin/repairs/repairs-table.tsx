@@ -3,6 +3,7 @@
 import React from 'react';
 import { Clock, ChevronRight } from 'lucide-react';
 import type { AdminMotorRepairItem, RepairStageBadge } from '@/lib/repairs/repairs-contracts';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 interface RepairsTableProps {
   items: AdminMotorRepairItem[];
@@ -24,6 +25,7 @@ function getBadgePill(badge: RepairStageBadge) {
 }
 
 export function RepairsTable({ items, onSelect }: Readonly<RepairsTableProps>) {
+  const pagination = usePagination(items, 10);
   if (items.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-xl p-12 text-center text-text-muted">
@@ -48,7 +50,7 @@ export function RepairsTable({ items, onSelect }: Readonly<RepairsTableProps>) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle/60">
-            {items.map((item) => (
+            {pagination.paginatedItems.map((item) => (
               <tr
                 key={item.id}
                 onClick={() => onSelect(item)}
@@ -133,6 +135,16 @@ export function RepairsTable({ items, onSelect }: Readonly<RepairsTableProps>) {
           </tbody>
         </table>
       </div>
+
+      <TablePagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.totalItems}
+        pageSize={pagination.pageSize}
+        onPageChange={pagination.onPageChange}
+        onPageSizeChange={pagination.onPageSizeChange}
+        itemName="repairs"
+      />
     </div>
   );
 }

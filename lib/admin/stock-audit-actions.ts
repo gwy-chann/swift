@@ -25,6 +25,7 @@ let forceMemoryStore = false;
  */
 export async function setForceMemoryStockLogs(force: boolean): Promise<void> {
   forceMemoryStore = force;
+  await Promise.resolve();
 }
 
 /**
@@ -35,6 +36,7 @@ export async function resetMemoryStockAdjustmentLogs(): Promise<void> {
   memoryStockAdjustmentLogs = MOCK_STOCK_ADJUSTMENT_LOGS.map((item) => ({
     ...item,
   }));
+  await Promise.resolve();
 }
 
 /**
@@ -44,6 +46,7 @@ export async function appendMemoryStockAdjustmentLog(
   log: StockAdjustmentLogEntry
 ): Promise<void> {
   memoryStockAdjustmentLogs.unshift(log);
+  await Promise.resolve();
 }
 
 interface RawDbAdjustmentRow {

@@ -8,9 +8,9 @@ import {
 } from '../stock-audit-actions.ts';
 
 describe('Supabase Stock Adjustment Audit Trail Ledger & Shrinkage Analytics (SIAA-65)', () => {
-  beforeEach(() => {
-    resetMemoryStockAdjustmentLogs();
-    setForceMemoryStockLogs(true);
+  beforeEach(async () => {
+    await resetMemoryStockAdjustmentLogs();
+    await setForceMemoryStockLogs(true);
   });
 
   describe('Scenario 1: Stock Adjustment Log Querying & Filtering', () => {
@@ -116,7 +116,7 @@ describe('Supabase Stock Adjustment Audit Trail Ledger & Shrinkage Analytics (SI
 
   describe('Scenario 5: Database Connection & Fallback Path', () => {
     it('executes database query when forceMemoryStore is disabled', async () => {
-      setForceMemoryStockLogs(false);
+      await setForceMemoryStockLogs(false);
       let response = await getStockAdjustmentLogsAction({ limit: 5 });
       if (response.success && response.logs.length === 0) {
         try {

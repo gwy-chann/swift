@@ -151,5 +151,35 @@ describe('Terminal Digital Shift Punch Clock & Active Duration Counter (SIAA-29)
         }
       );
     });
+
+    it('ensures staff does not time in automatically when logged in (waits for manual time-in)', () => {
+      store.switchStaff({
+        id: '00000000-0000-0000-0000-000000000003',
+        name: 'Dante Reyes',
+        role: 'mechanic',
+        startOffShift: true,
+      });
+
+      const state = store.getState();
+      assert.equal(state.isShiftActive, false);
+      assert.equal(state.shiftStatus, 'idle');
+      assert.equal(state.shiftSeconds, 0);
+      assert.equal(state.currentStaff, 'Dante Reyes');
+    });
+
+    it('clears active shift state upon logout via resetShiftOnLogout', () => {
+      // Clock in
+      store.clockIn('Mike Morales');
+      assert.equal(store.getState().isShiftActive, true);
+
+      // Perform resetShiftOnLogout
+      store.resetShiftOnLogout();
+
+      const state = store.getState();
+      assert.equal(state.isShiftActive, false);
+      assert.equal(state.shiftStatus, 'idle');
+      assert.equal(state.shiftSeconds, 0);
+      assert.equal(state.activeShiftId, null);
+    });
   });
 });

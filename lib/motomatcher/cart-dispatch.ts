@@ -18,6 +18,8 @@ export interface MotoMatcherCartDispatchRequest {
   quantity?: number;
   /** Override manager stock guard */
   overrideStockGuard?: boolean;
+  /** Role of active staff user attempting insertion */
+  userRole?: string;
 }
 
 export interface MotoMatcherCartDispatchResult {
@@ -137,7 +139,18 @@ function buildFailureResult(
 export function dispatchMotoMatcherCartInsertion(
   request: MotoMatcherCartDispatchRequest
 ): MotoMatcherCartDispatchResult {
-  const { part, quantity = 1, overrideStockGuard = false } = request;
+  const { part, quantity = 1, overrideStockGuard = false, userRole } = request;
+
+  if (userRole && userRole.toLowerCase().trim() === 'mechanic') {
+    return {
+      success: false,
+      status: 'INVALID_PART',
+      message: 'Access restricted: Mechanics cannot add items to the POS cart.',
+      currentCartQty: null,
+      totalCartItemCount: cartStore.getState().totals.itemCount,
+      sku: (part as { sku?: string })?.sku || 'UNKNOWN',
+    };
+  }
 
   let product: Product;
   try {

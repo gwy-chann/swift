@@ -10,7 +10,8 @@ import java.util.UUID;
 public class PricingRules {
 
     @Id
-    private Long id = 1L;
+    @Column(name = "id")
+    private Integer id = 1;
 
     @Column(name = "retail_markup", nullable = false)
     private BigDecimal retailMarkup = new BigDecimal("35.00");
@@ -33,10 +34,10 @@ public class PricingRules {
     public PricingRules() {
     }
 
-    public PricingRules(Long id, BigDecimal retailMarkup, BigDecimal wholesaleMarkup,
+    public PricingRules(Integer id, BigDecimal retailMarkup, BigDecimal wholesaleMarkup,
                         BigDecimal aftermarketMarkup, BigDecimal hourlyLaborRate,
                         OffsetDateTime updatedAt, UUID updatedBy) {
-        this.id = id != null ? id : 1L;
+        this.id = id != null ? id : 1;
         this.retailMarkup = retailMarkup != null ? retailMarkup : new BigDecimal("35.00");
         this.wholesaleMarkup = wholesaleMarkup != null ? wholesaleMarkup : new BigDecimal("18.00");
         this.aftermarketMarkup = aftermarketMarkup != null ? aftermarketMarkup : new BigDecimal("40.00");
@@ -45,11 +46,17 @@ public class PricingRules {
         this.updatedBy = updatedBy;
     }
 
-    public Long getId() {
+    public PricingRules(Long id, BigDecimal retailMarkup, BigDecimal wholesaleMarkup,
+                        BigDecimal aftermarketMarkup, BigDecimal hourlyLaborRate,
+                        OffsetDateTime updatedAt, UUID updatedBy) {
+        this(id != null ? id.intValue() : 1, retailMarkup, wholesaleMarkup, aftermarketMarkup, hourlyLaborRate, updatedAt, updatedBy);
+    }
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

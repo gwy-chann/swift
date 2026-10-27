@@ -1,20 +1,53 @@
 'use client';
- 
+
 import React, { useState, useEffect, useMemo } from "react";
-import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal } from "lucide-react";
+import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal, Lock } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { getProductsAction } from "@/lib/admin/product-actions";
+import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { StockAdjustmentModal } from "@/components/admin/inventory/stock-adjustment-modal";
 import { ManagerOverrideModal } from "@/components/pos/manager-override-modal";
 import type { Product } from "@/lib/types/product";
 import type { AdjustmentType } from "@/lib/inventory/stock-adjustment";
+import { TablePagination, usePagination } from "@/components/common/table-pagination";
+
+function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean): string {
+  if (!isRestrictedRole) return "Adjust physical stock count";
+  return isMechanic
+    ? "Mechanics are not allowed to adjust stock count"
+    : "Cashiers are not allowed to adjust stock count";
+}
 
 export default function StaffSearchPage() {
   const punchState = usePunchStore();
+  const roleLower = (punchState.currentStaffRole || "").toLowerCase().trim();
+  const isInventoryClerk =
+    roleLower === "inventory_clerk" ||
+    roleLower === "inventory clerk" ||
+    roleLower.includes("clerk") ||
+    roleLower.includes("inventory") ||
+    punchState.currentStaff === "Rico Santos";
+  const isAdmin = roleLower === "admin";
+  const isCashier =
+    (roleLower === "cashier" || roleLower.includes("cashier") || punchState.currentStaff === "Mike Morales") &&
+    !isInventoryClerk &&
+    !isAdmin;
+  const isMechanic =
+    (roleLower === "mechanic" || roleLower.includes("mechanic") || punchState.currentStaff === "Dante Reyes") &&
+    !isInventoryClerk &&
+    !isAdmin;
+  const isRestrictedRole = isCashier || isMechanic;
+  const canAdjustStock = Boolean(
+    (isInventoryClerk ||
+    isAdmin ||
+    punchState.currentPermissions?.can_adjust_stock) &&
+    !isRestrictedRole
+  );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [isRestrictedModalOpen, setIsRestrictedModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
   const [toastMessage, setToastMessage] = useState<string | null>(() => {
@@ -31,7 +64,10 @@ export default function StaffSearchPage() {
   });
   const { products, hydrateProducts, adjustStock } = useInventoryStore();
 
-  // SIAA-85: Auto-dismiss redirect toast notification after 5 seconds
+  // Real-time synchronization with Supabase products table
+  useInventoryRealtime();
+
+  // Auto-dismiss redirect toast notification after 5 seconds
   useEffect(() => {
     if (toastMessage) {
       const timer = setTimeout(() => setToastMessage(null), 5000);
@@ -74,9 +110,24 @@ export default function StaffSearchPage() {
     });
   }, [products, category, searchTerm]);
 
+  const pagination = usePagination(filtered, 10);
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [searchTerm, category, resetPage]);
+
   const handleRequestAdjustStock = (item: Product) => {
     setSelectedProduct(item);
-    if (punchState.currentPermissions?.can_adjust_stock) {
+
+    // Cashier and mechanic role restriction: override is disabled; validate that they are not allowed to adjust stock
+    if (isRestrictedRole) {
+      setIsRestrictedModalOpen(true);
+      return;
+    }
+
+    // Inventory clerks (and admins or users with stock adjustment permissions) manipulate stock directly without a master code
+    if (canAdjustStock) {
       setIsAdjustmentModalOpen(true);
     } else {
       setIsOverrideModalOpen(true);
@@ -94,6 +145,13 @@ export default function StaffSearchPage() {
     delta: number;
     reason: string;
   }) => {
+    if (isRestrictedRole || !canAdjustStock) {
+      setIsAdjustmentModalOpen(false);
+      setSelectedProduct(null);
+      setIsRestrictedModalOpen(true);
+      return;
+    }
+
     adjustStock({
       sku: params.sku,
       type: params.type,
@@ -107,7 +165,7 @@ export default function StaffSearchPage() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Toast Notification Banner */}
+      {/* Toast Notification Banner (Redirect only) */}
       {toastMessage && (
         <div className="p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md bg-warning/10 text-warning border-warning/30 shrink-0">
           <div className="flex items-center gap-2">
@@ -176,7 +234,7 @@ export default function StaffSearchPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((item) => (
+              {pagination.paginatedItems.map((item) => (
                 <tr key={item.sku} className="hover:bg-bg-hover transition-colors">
                   <td className="py-3 px-4 font-mono font-bold text-text-primary">{item.sku}</td>
                   <td className="py-3 px-4 font-semibold text-text-primary">{item.name}</td>
@@ -193,10 +251,18 @@ export default function StaffSearchPage() {
                     <button
                       type="button"
                       onClick={() => handleRequestAdjustStock(item)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs"
-                      title="Adjust physical stock count"
+                      className={
+                        isRestrictedRole
+                          ? "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-bg-base text-text-muted border border-border hover:border-danger/40 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer shadow-2xs"
+                          : "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs"
+                      }
+                      title={getAdjustButtonTitle(isRestrictedRole, isMechanic)}
                     >
-                      <SlidersHorizontal className="w-3 h-3" />
+                      {isRestrictedRole ? (
+                        <Lock className="w-3 h-3 text-text-muted" />
+                      ) : (
+                        <SlidersHorizontal className="w-3 h-3" />
+                      )}
                       <span>Adjust Stock</span>
                     </button>
                   </td>
@@ -205,6 +271,16 @@ export default function StaffSearchPage() {
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="items"
+        />
       </div>
 
       <StockAdjustmentModal
@@ -217,14 +293,62 @@ export default function StaffSearchPage() {
         onSubmit={handleAdjustmentSubmit}
       />
 
-      <ManagerOverrideModal
-        isOpen={isOverrideModalOpen}
-        onClose={() => {
-          setIsOverrideModalOpen(false);
-          setSelectedProduct(null);
-        }}
-        onOverrideSuccess={handleOverrideSuccess}
-      />
+      {/* Role Restriction Validation Modal */}
+      {isRestrictedModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="role-restriction-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in"
+        >
+          <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="p-4 border-b border-border bg-bg-card flex items-center justify-between">
+              <div>
+                <h3 id="role-restriction-title" className="text-sm font-extrabold text-text-primary">
+                  Adjustment Not Allowed
+                </h3>
+                <p className="text-[11px] text-text-muted font-medium">
+                  {isMechanic ? "Mechanic" : "Cashier"} Role Permission Restriction
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRestrictedModalOpen(false)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="p-4 rounded-xl bg-danger/10 border border-danger/30 text-xs text-danger font-medium leading-relaxed">
+                {isMechanic ? "Mechanics" : "Cashiers"} are not allowed to adjust stock count. Physical inventory adjustments are strictly reserved for <strong>Inventory Clerks</strong> and <strong>Administrators</strong>.
+              </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRestrictedModalOpen(false)}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-primary text-text-light hover:bg-primary-hover transition-colors cursor-pointer shadow-xs text-center"
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Elevation Override only for non-restricted roles */}
+      {!isRestrictedRole && (
+        <ManagerOverrideModal
+          isOpen={isOverrideModalOpen}
+          onClose={() => {
+            setIsOverrideModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          onOverrideSuccess={handleOverrideSuccess}
+        />
+      )}
     </div>
   );
 }

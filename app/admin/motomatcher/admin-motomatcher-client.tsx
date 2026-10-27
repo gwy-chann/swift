@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Search,
   Bike,
   CheckCircle2,
   AlertTriangle,
@@ -80,36 +79,13 @@ export function AdminMotoMatcherClient({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-light text-primary flex items-center justify-center shrink-0 shadow-xs">
-            <Search className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-text-primary tracking-tight">
-              MotoMatcher Compatibility Search
-            </h2>
-            <p className="text-xs text-text-secondary">
-              Motorcycle make, model, displacement selector and OEM vs aftermarket comparison matrix.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-success bg-success-light px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-success/20">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Live Inventory Verified
-          </span>
-        </div>
-      </div>
-
       {/* Interactive Visual Motorcycle Selector Engine */}
       <MotorcycleSelector
         models={initialModels}
         selectedModelId={selectedModel?.id}
         onSelectModel={handleSelectModel}
         onSelectUniversal={handleSelectUniversal}
+        hideTitle={true}
       />
 
       {/* Subsystem Category & Universal Fitment Filter Bar */}

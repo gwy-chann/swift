@@ -2,7 +2,6 @@
 
 import React, { useState, useTransition } from 'react';
 import {
-  BarChart3,
   Download,
   TrendingUp,
   Package,
@@ -18,6 +17,7 @@ import {
   exportAccountingCsvAction,
   type AnalyticsPeriod,
 } from '@/lib/analytics/export';
+import { TablePagination, usePagination } from '@/components/common/table-pagination';
 
 export interface AdminReportsClientProps {
   initialPnlData: CategoryPnlData;
@@ -45,6 +45,8 @@ export function AdminReportsClient({
   const [pnlData, setPnlData] = useState<CategoryPnlData>(initialPnlData);
   const [isExporting, setIsExporting] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const pagination = usePagination(pnlData.categories, 10);
 
   const handlePeriodChange = (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period || isPending) return;
@@ -141,24 +143,8 @@ export function AdminReportsClient({
 
   return (
     <div id="view-reports" className="space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* Header and Action Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-              Reports & Financial Analytics
-            </h2>
-            <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-              Categorized P&L statements, COGS cost accounting, and multi-period revenue audits.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+      {/* Action Buttons Toolbar */}
+      <div className="flex items-center justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={handlePrint}
@@ -184,7 +170,6 @@ export function AdminReportsClient({
             <span>Export CSV</span>
           </button>
         </div>
-      </div>
 
       {/* Time Period Filter Pills */}
       <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border pb-4">
@@ -308,7 +293,7 @@ export function AdminReportsClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {pnlData.categories.map((cat) => {
+              {pagination.paginatedItems.map((cat) => {
                 const isHighMargin = cat.margin_pct >= 70.0;
                 return (
                   <tr
@@ -371,6 +356,16 @@ export function AdminReportsClient({
             </tfoot>
           </table>
         </div>
+
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          pageSize={pagination.pageSize}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPageSizeChange}
+          itemName="categories"
+        />
       </div>
     </div>
   );

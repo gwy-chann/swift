@@ -2,11 +2,13 @@ import {
   LayoutDashboard,
   Boxes,
   ShoppingCart,
+  History,
   Search,
   BarChart3,
   Users,
   Tags,
   ShieldCheck,
+  Clock,
   Wrench,
 } from "lucide-react";
 import { AdminNavItem, AdminUserMeta } from "./types";
@@ -25,21 +27,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    id: "repairs",
-    label: "Workshop Repairs",
-    href: "/admin/repairs",
-    category: "Store Intelligence",
-    icon: Wrench,
-  },
-  {
     id: "inventory",
     label: "Inventory & Stock",
     href: "/admin/inventory",
     category: "Store Intelligence",
-    badge: {
-      text: "3 Low",
-      variant: "danger",
-    },
     icon: Boxes,
   },
   {
@@ -48,6 +39,20 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/pos",
     category: "Store Intelligence",
     icon: ShoppingCart,
+  },
+  {
+    id: "repairs",
+    label: "Workshop Repairs",
+    href: "/admin/repairs",
+    category: "Store Intelligence",
+    icon: Wrench,
+  },
+  {
+    id: "history",
+    label: "Purchase History",
+    href: "/admin/history",
+    category: "Store Intelligence",
+    icon: History,
   },
   {
     id: "motomatcher",
@@ -67,10 +72,17 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // Administration
   {
     id: "users",
-    label: "User Management",
+    label: "Staff Management",
     href: "/admin/users",
     category: "Administration",
     icon: Users,
+  },
+  {
+    id: "attendance",
+    label: "Staff Attendance",
+    href: "/admin/attendance",
+    category: "Administration",
+    icon: Clock,
   },
   {
     id: "pricing",
@@ -81,7 +93,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     id: "settings",
-    label: "Settings & Audit Logs",
+    label: "Audit Logs",
     href: "/admin/logs",
     category: "Administration",
     icon: ShieldCheck,

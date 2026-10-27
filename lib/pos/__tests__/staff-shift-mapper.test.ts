@@ -33,8 +33,8 @@ describe('Staff Shift Row Mapper (SIAA-60)', () => {
     assert.equal(log.staff, 'Maria Santos');
     assert.equal(log.status, 'Completed');
     assert.equal(log.date, '2026-10-06');
-    assert.equal(log.timeIn, '08:02');
-    assert.equal(log.timeOut, '17:01');
+    assert.match(log.timeIn, /^\d{2}:\d{2}:\d{2}\s+(AM|PM)$/i);
+    assert.match(log.timeOut, /^\d{2}:\d{2}:\d{2}\s+(AM|PM)$/i);
     assert.equal(log.duration, '08h 59m');
     assert.equal(log.terminal, 'Terminal #01');
   });

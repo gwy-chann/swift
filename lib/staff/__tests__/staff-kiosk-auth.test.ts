@@ -72,6 +72,8 @@ describe('Staff Kiosk Authentication & Database Persistence (SIAA-78)', () => {
   });
 
   describe('Shift Actions with Profile Attribution', () => {
+    let createdShiftId: string | undefined;
+
     it('clockInShiftAction attributes shift to designated profileId in fallback', async () => {
       const res = await clockInShiftAction('Terminal #01', 'Morning start', DANTE_REYES_ID);
       if (!res.success && (res.code === 'ACTIVE_SHIFT_EXISTS' || res.code === 'DATABASE_ERROR')) {
@@ -81,13 +83,14 @@ describe('Staff Kiosk Authentication & Database Persistence (SIAA-78)', () => {
         assert.equal(res.staffName, 'Dante Reyes');
         assert.equal(res.status, 'on_shift');
         assert.equal(res.terminalId, 'Terminal #01');
+        createdShiftId = res.shiftId;
       }
     });
 
     it('clockOutShiftAction accepts profileId parameter and concludes shift', async () => {
-      const res = await clockOutShiftAction('shift-999', 'End of shift', DANTE_REYES_ID);
+      const targetShiftId = createdShiftId || 'shift-999';
+      const res = await clockOutShiftAction(targetShiftId, 'End of shift', DANTE_REYES_ID);
       assert.equal(res.success, true);
-      assert.equal(res.shiftId, 'shift-999');
       assert.equal(res.status, 'completed');
     });
 

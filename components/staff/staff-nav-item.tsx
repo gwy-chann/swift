@@ -12,7 +12,7 @@ function getBadgeStyle(variant?: string, isActive?: boolean): string {
   if (variant === "success") return "bg-success text-white";
   if (variant === "danger") return "bg-danger text-white";
   if (variant === "warning") return "bg-accent text-white";
-  if (isActive) return "bg-white text-primary";
+  if (isActive) return "bg-bg-sidebar-active border border-border-sidebar-active text-text-sidebar-active";
   return "bg-primary text-white";
 }
 
@@ -26,15 +26,15 @@ export function StaffNavItemComponent({ item, isActive, onClick }: StaffNavItemP
       onClick={onClick}
       className={`group flex items-center justify-between px-3.5 py-2.5 rounded-md text-xs font-semibold transition-all duration-150 select-none ${
         isActive
-          ? "bg-primary text-white shadow-xs font-bold"
-          : "text-text-light/80 hover:text-white hover:bg-bg-sidebar-hover"
+          ? "bg-bg-sidebar-active border border-border-sidebar-active text-text-sidebar-active font-semibold shadow-none"
+          : "border border-transparent text-text-light/80 hover:text-white hover:bg-bg-sidebar-hover"
       }`}
     >
       <div className="flex items-center gap-2.5 truncate">
         {Icon && (
           <Icon
             className={`w-4 h-4 shrink-0 transition-colors ${
-              isActive ? "text-white" : "text-text-light/60 group-hover:text-white"
+              isActive ? "text-text-sidebar-active" : "text-text-light/60 group-hover:text-white"
             }`}
           />
         )}

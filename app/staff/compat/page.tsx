@@ -14,6 +14,7 @@ import { SubsystemFilterBar } from "@/components/motomatcher/subsystem-filter-ba
 import { getMotoMatcherFilteredSet } from "@/lib/motomatcher/subsystem-filter";
 import type { ComparisonPartItem } from "@/lib/motomatcher/comparison-matrix-contracts";
 import { dispatchMotoMatcherCartInsertion } from "@/lib/motomatcher/cart-dispatch";
+import { usePunchStore } from "@/lib/store/punch-store";
 
 function renderSyncStatus(isConnected: boolean, status: string) {
   if (isConnected) {
@@ -64,6 +65,10 @@ export default function StaffCompatPage() {
     return null;
   });
   const [toastType, setToastType] = useState<"success" | "warning">("warning");
+  const { currentStaffRole } = usePunchStore();
+  const roleLower = (currentStaffRole || "").toLowerCase().trim();
+  const isMechanic = roleLower === "mechanic";
+  const canAddToCart = !isMechanic && (roleLower === "cashier" || roleLower === "admin" || !roleLower);
   const { products, hydrateProducts } = useInventoryStore();
 
   const refreshProducts = useCallback(() => {
@@ -137,7 +142,14 @@ export default function StaffCompatPage() {
   }, [products, selectedModel, isUniversal, systemCategory, includeUniversal]);
 
   const handleAddToCart = (item: ComparisonPartItem) => {
-    const result = dispatchMotoMatcherCartInsertion({ part: item });
+    if (isMechanic || !canAddToCart) {
+      setToastMessage("Access restricted: Mechanics cannot add items to the POS cart.");
+      setToastType("warning");
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+
+    const result = dispatchMotoMatcherCartInsertion({ part: item, userRole: currentStaffRole });
     setToastMessage(result.message);
     if (result.success) {
       setAddedSku(item.sku);
@@ -158,8 +170,7 @@ export default function StaffCompatPage() {
         selectedModelId={selectedModel?.id}
         onSelectModel={handleSelectModel}
         onSelectUniversal={handleSelectUniversal}
-        title="Staff Floor MotoMatcher & Platform Selector"
-        subtitle="Select customer motorcycle platform to filter 100% verified parts from live inventory."
+        hideTitle={true}
       />
 
       {/* Subsystem Category & Universal Fitment Filter Bar */}
@@ -205,6 +216,7 @@ export default function StaffCompatPage() {
         onAddToCart={handleAddToCart}
         addedSku={addedSku}
         touchOptimized={true}
+        canAddToCart={canAddToCart}
         emptyOemMessage="No OEM components found for this model in the selected system category."
         emptyAftermarketMessage="No aftermarket performance parts found for this model in the selected system category."
       />

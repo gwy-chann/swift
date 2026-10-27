@@ -1,40 +1,28 @@
 "use server";
 
 import type {
+  AuthErrorCode,
   AuthResult,
   LoginCredentials,
   UserSession,
   PendingStaffAuthChallenge,
   PendingStaffSummary,
 } from "./types.ts";
-import { ALL_DEMO_ACCOUNTS, PORTAL_CONFIG } from "./constants.ts";
+import {
+  ALL_DEMO_ACCOUNTS,
+  PORTAL_CONFIG,
+  INACTIVE_ACCOUNT_ERROR,
+  PIN_ERROR_INVALID,
+  PIN_VALIDATION_ERROR_MSG,
+} from "./constants.ts";
 import { createClient } from "../supabase/server.ts";
-import { getStaffUserStatus } from "../admin/user-actions.ts";
-
-export const INACTIVE_ACCOUNT_ERROR =
-  "Account is inactive. Please contact your workshop administrator.";
-
-export const PIN_ERROR_INVALID = "Invalid PIN. Please try again.";
-export const PIN_VALIDATION_ERROR_MSG = "PIN must consist of 4 to 6 numeric digits.";
+import { getStaffUserStatus, getStaffUserRole } from "../admin/user-actions.ts";
+import { memoryCookieJar } from "./test-cookie-jar.ts";
 
 interface CookieWriter {
   get(name: string): { value: string } | undefined;
   set(name: string, value: string, options?: Record<string, unknown>): void;
   delete(name: string): void;
-}
-
-const memoryCookieJar = new Map<string, string>();
-
-export function __setTestCookie(name: string, value: string): void {
-  memoryCookieJar.set(name, value);
-}
-
-export function __getTestCookie(name: string): string | undefined {
-  return memoryCookieJar.get(name);
-}
-
-export function __clearTestCookies(): void {
-  memoryCookieJar.clear();
 }
 
 async function getSafeCookieStore(): Promise<CookieWriter> {
@@ -44,7 +32,7 @@ async function getSafeCookieStore(): Promise<CookieWriter> {
     return {
       get: (name: string) => {
         const liveVal = cookieStore.get(name)?.value;
-        const val = liveVal !== undefined ? liveVal : memoryCookieJar.get(name);
+        const val = liveVal ?? memoryCookieJar.get(name);
         return val !== undefined ? { value: val } : undefined;
       },
       set: (name: string, value: string, options?: Record<string, unknown>) => {
@@ -85,7 +73,8 @@ function setSessionCookies(
   role: string,
   name: string,
   rememberTerminal: boolean,
-  userId?: string
+  userId?: string,
+  staffRole?: string
 ) {
   const maxAge = rememberTerminal ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
   cookieStore.set("swift-session-role", role, {
@@ -107,6 +96,19 @@ function setSessionCookies(
       sameSite: "lax",
       maxAge,
     });
+  }
+  if (staffRole) {
+    cookieStore.set("swift-session-staff-role", staffRole, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge,
+    });
+  }
+  if (role === "admin") {
+    clearPendingStaffChallengeCookie(cookieStore);
+  } else {
+    cookieStore.delete("swift_admin_elevated");
   }
 }
 
@@ -147,6 +149,101 @@ function resolveDemoAccount(normalizedEmail: string) {
   return null;
 }
 
+type ResolvedDemoAccount = NonNullable<ReturnType<typeof resolveDemoAccount>>;
+
+async function handleDemoAuthentication(
+  demoAccount: ResolvedDemoAccount,
+  normalizedEmail: string,
+  selectedRole: string,
+  rememberTerminal: boolean,
+  targetRedirect: string,
+  cookieStore: CookieWriter
+): Promise<AuthResult> {
+  const status =
+    (await getStaffUserStatus(normalizedEmail)) ||
+    (await getStaffUserStatus(demoAccount.id));
+
+  if (status === "Inactive" || status === "Suspended") {
+    return {
+      success: false,
+      error: INACTIVE_ACCOUNT_ERROR,
+      code: "ACCOUNT_INACTIVE",
+    };
+  }
+
+  const liveRole =
+    (await getStaffUserRole(normalizedEmail)) ||
+    (await getStaffUserRole(demoAccount.id)) ||
+    demoAccount.staffRole ||
+    "cashier";
+
+  if (selectedRole === "staff" && (liveRole === "admin" || demoAccount.role === "admin")) {
+    return {
+      success: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN",
+    };
+  }
+
+  if (selectedRole === "admin" && liveRole !== "admin" && demoAccount.role !== "admin") {
+    return {
+      success: false,
+      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
+      code: "STAFF_ADMIN_PORTAL_FORBIDDEN",
+    };
+  }
+
+  const isStaff = selectedRole === "staff" || demoAccount.role === "staff" || (liveRole !== "admin");
+  if (isStaff && liveRole !== "admin") {
+    const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
+    const targetRoute =
+      ROLE_ROUTE_CONFIG[liveRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
+
+    const challenge: PendingStaffAuthChallenge = {
+      userId: demoAccount.id,
+      email: normalizedEmail,
+      name: demoAccount.name,
+      role: liveRole,
+      portalRole: "staff",
+      targetUrl: targetRoute,
+      rememberTerminal,
+      challengeIssuedAt: Date.now(),
+    };
+
+    setPendingStaffChallengeCookie(cookieStore, challenge);
+
+    return {
+      success: true,
+      requiresPin: true,
+      step: "ENTER_PIN",
+      staffSummary: {
+        userId: challenge.userId,
+        name: challenge.name,
+        email: challenge.email,
+        role: challenge.role,
+        targetUrl: challenge.targetUrl,
+      },
+    };
+  }
+
+  // Admin direct authentication
+  const session: UserSession = {
+    id: demoAccount.id,
+    email: normalizedEmail,
+    name: demoAccount.name,
+    role: demoAccount.role,
+    expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
+  };
+
+  setSessionCookies(cookieStore, demoAccount.role, demoAccount.name, rememberTerminal, demoAccount.id);
+
+  return {
+    success: true,
+    redirectTo: demoAccount.targetUrl || targetRedirect,
+    session,
+  };
+}
+
 /**
  * Authenticates a user against Supabase Auth with fallback to demo accounts
  * For staff roles, enforces two-step login: verifies credentials then issues a PIN challenge.
@@ -172,64 +269,14 @@ export async function authenticateUserAction(
   // 2. Demo account bypass check
   const demoAccount = resolveDemoAccount(normalizedEmail);
   if (demoAccount) {
-    // Check account status in ledger
-    const status =
-      (await getStaffUserStatus(normalizedEmail)) ||
-      (await getStaffUserStatus(demoAccount.id));
-
-    if (status === "Inactive" || status === "Suspended") {
-      return {
-        success: false,
-        error: INACTIVE_ACCOUNT_ERROR,
-        code: "ACCOUNT_INACTIVE",
-      };
-    }
-
-    const isStaff = selectedRole === "staff" || demoAccount.role === "staff";
-    if (isStaff) {
-      const challenge: PendingStaffAuthChallenge = {
-        userId: demoAccount.id,
-        email: normalizedEmail,
-        name: demoAccount.name,
-        role: demoAccount.staffRole || "cashier",
-        portalRole: "staff",
-        targetUrl: demoAccount.targetUrl || targetRedirect,
-        rememberTerminal,
-        challengeIssuedAt: Date.now(),
-      };
-
-      setPendingStaffChallengeCookie(cookieStore, challenge);
-
-      return {
-        success: true,
-        requiresPin: true,
-        step: "ENTER_PIN",
-        staffSummary: {
-          userId: challenge.userId,
-          name: challenge.name,
-          email: challenge.email,
-          role: challenge.role,
-          targetUrl: challenge.targetUrl,
-        },
-      };
-    }
-
-    // Admin direct authentication
-    const session: UserSession = {
-      id: demoAccount.id,
-      email: normalizedEmail,
-      name: demoAccount.name,
-      role: demoAccount.role,
-      expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
-    };
-
-    setSessionCookies(cookieStore, demoAccount.role, demoAccount.name, rememberTerminal, demoAccount.id);
-
-    return {
-      success: true,
-      redirectTo: demoAccount.targetUrl || targetRedirect,
-      session,
-    };
+    return handleDemoAuthentication(
+      demoAccount,
+      normalizedEmail,
+      selectedRole,
+      Boolean(rememberTerminal),
+      targetRedirect,
+      cookieStore
+    );
   }
 
   // 3. Live Supabase Authentication
@@ -266,23 +313,90 @@ export async function authenticateUserAction(
       (data.user.user_metadata?.role as string)?.toLowerCase() ||
       (data.user.app_metadata?.role as string)?.toLowerCase();
 
+    const liveRole =
+      (await getStaffUserRole(data.user.id)) ||
+      (await getStaffUserRole(normalizedEmail)) ||
+      metaRole ||
+      "cashier";
+
+type PortalRoleValidation =
+  | { isValid: true }
+  | { isValid: false; error: string; code: AuthErrorCode };
+
+function validatePortalRole(
+  selectedRole: "admin" | "staff",
+  liveRole: string,
+  metaRole?: string
+): PortalRoleValidation {
+  if (selectedRole === "staff" && (liveRole === "admin" || metaRole === "admin")) {
+    return {
+      isValid: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  if (selectedRole === "admin" && liveRole !== "admin" && metaRole !== "admin") {
+    return {
+      isValid: false,
+      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
+      code: "STAFF_ADMIN_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  return { isValid: true };
+}
+
+    const portalCheck = validatePortalRole(selectedRole, liveRole, metaRole);
+    if (!portalCheck.isValid) {
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: portalCheck.error,
+        code: portalCheck.code,
+      };
+    }
+
     const isStaff =
       selectedRole === "staff" ||
-      metaRole === "staff" ||
-      metaRole === "cashier" ||
-      metaRole === "mechanic" ||
-      metaRole === "inventory_clerk";
+      liveRole === "staff" ||
+      liveRole === "cashier" ||
+      liveRole === "mechanic" ||
+      liveRole === "inventory_clerk";
 
-    const name = data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User";
+    const fullNameMeta =
+      (data.user.user_metadata?.full_name as string) ||
+      (data.user.user_metadata?.name as string);
 
-    if (isStaff) {
+    let resolvedName = fullNameMeta;
+    if (!resolvedName) {
+      try {
+        const { data: dbProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        if (dbProfile?.full_name) {
+          resolvedName = dbProfile.full_name;
+        }
+      } catch {
+        // Suppress lookup errors
+      }
+    }
+
+    const name = resolvedName || data.user.email?.split("@")[0] || "User";
+
+    if (isStaff && liveRole !== "admin") {
+      const staffRole = liveRole;
+      const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
+      const targetRoute =
+        ROLE_ROUTE_CONFIG[staffRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
+
       const challenge: PendingStaffAuthChallenge = {
         userId: data.user.id,
         email: data.user.email || normalizedEmail,
         name,
-        role: metaRole || "cashier",
+        role: staffRole,
         portalRole: "staff",
-        targetUrl: targetRedirect,
+        targetUrl: targetRoute,
         rememberTerminal,
         challengeIssuedAt: Date.now(),
       };
@@ -312,7 +426,7 @@ export async function authenticateUserAction(
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    setSessionCookies(cookieStore, role, name, rememberTerminal, data.user.id);
+    setSessionCookies(cookieStore, role, name, rememberTerminal, data.user.id, liveRole);
 
     return {
       success: true,
@@ -327,6 +441,47 @@ export async function authenticateUserAction(
       code: "NETWORK_ERROR",
     };
   }
+}
+
+async function lookupProfilePinFromDatabase(userId: string, email: string): Promise<string | null> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return null;
+  }
+
+  try {
+    const { createAdminClient, createClient } = await import("../supabase/server.ts");
+    let supabase;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
+
+    if (userId) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("pin_code")
+        .eq("id", userId)
+        .maybeSingle();
+      if (data?.pin_code) return data.pin_code;
+    }
+
+    if (email) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("pin_code")
+        .eq("email", email.toLowerCase().trim())
+        .maybeSingle();
+      if (data?.pin_code) return data.pin_code;
+    }
+  } catch {
+    // Fallback
+  }
+
+  return null;
 }
 
 async function resolveExpectedStaffPin(userId: string, email: string): Promise<string> {
@@ -348,24 +503,23 @@ async function resolveExpectedStaffPin(userId: string, email: string): Promise<s
     // Fallback
   }
 
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    try {
-      const supabase = await createClient();
-      const { data } = await supabase
-        .from("profiles")
-        .select("pin_code")
-        .eq("id", userId)
-        .maybeSingle();
+  const dbPin = await lookupProfilePinFromDatabase(userId, email);
+  if (dbPin) {
+    return dbPin;
+  }
 
-      if (data?.pin_code) {
-        return data.pin_code;
-      }
-    } catch {
-      // Fallback
+  try {
+    const { MOCK_STAFF_PROFILES } = await import("../mock-data/users.ts");
+    const found = MOCK_STAFF_PROFILES.find(
+      (p) =>
+        (userId && p.id === userId) ||
+        (email && p.email.toLowerCase() === email.toLowerCase().trim())
+    );
+    if (found?.pinCode) {
+      return found.pinCode;
     }
+  } catch {
+    // Fallback
   }
 
   return "1234";
@@ -436,16 +590,32 @@ export async function completeStaffTwoStepLoginAction(payload: {
 
   // PIN verified successfully
   clearPendingStaffChallengeCookie(cookieStore);
+  cookieStore.delete("swift_admin_elevated");
 
   const rememberTerminal =
     payload.rememberTerminal ?? challenge.rememberTerminal ?? true;
+
+  const liveRole =
+    (await getStaffUserRole(challenge.userId)) ||
+    (await getStaffUserRole(challenge.email)) ||
+    challenge.role;
+
+  if (liveRole === "admin" || challenge.role === "admin") {
+    clearPendingStaffChallengeCookie(cookieStore);
+    return {
+      success: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN",
+    };
+  }
 
   setSessionCookies(
     cookieStore,
     "staff",
     challenge.name,
     rememberTerminal,
-    challenge.userId
+    challenge.userId,
+    liveRole
   );
 
   const session: UserSession = {
@@ -458,9 +628,19 @@ export async function completeStaffTwoStepLoginAction(payload: {
       60 * 60 * 24 * (rememberTerminal ? 30 : 1),
   };
 
+  const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
+  const fallbackUrl =
+    ROLE_ROUTE_CONFIG[liveRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
+  let finalRedirect = "/staff/pos";
+  if (fallbackUrl && !fallbackUrl.startsWith("/admin")) {
+    finalRedirect = fallbackUrl;
+  } else if (challenge.targetUrl && !challenge.targetUrl.startsWith("/admin")) {
+    finalRedirect = challenge.targetUrl;
+  }
+
   return {
     success: true,
-    redirectTo: challenge.targetUrl || "/staff/pos",
+    redirectTo: finalRedirect,
     session,
   };
 }
@@ -471,6 +651,12 @@ export async function completeStaffTwoStepLoginAction(payload: {
 export async function cancelStaffPinChallengeAction(): Promise<{ success: boolean }> {
   const cookieStore = await getSafeCookieStore();
   clearPendingStaffChallengeCookie(cookieStore);
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Suppress
+  }
   return { success: true };
 }
 
@@ -501,6 +687,9 @@ export async function getPendingStaffChallengeAction(): Promise<PendingStaffSumm
  * Terminates user session, clears cookies, and returns login redirect target
  */
 export async function logoutAction(): Promise<{ success: boolean; redirectTo: string }> {
+  const cookieStore = await getSafeCookieStore();
+  const userId = cookieStore.get("swift-session-user-id")?.value;
+
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
@@ -508,8 +697,44 @@ export async function logoutAction(): Promise<{ success: boolean; redirectTo: st
     // Graceful fallback if Supabase is offline
   }
 
-  const cookieStore = await getSafeCookieStore();
+  // Authoritatively clock-out any active database shift for this staff user
+  if (userId && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    try {
+      const { createAdminClient } = await import("../supabase/server.ts");
+      const adminClient = createAdminClient();
+      const { normalizeProfileId } = await import("../staff/constants.ts");
+      const normalizedId = normalizeProfileId(userId) || userId;
+
+      const { data: activeShifts } = await adminClient
+        .from("staff_shifts")
+        .select("id, clock_in")
+        .eq("profile_id", normalizedId)
+        .in("status", ["on_shift", "break"]);
+
+      if (activeShifts && activeShifts.length > 0) {
+        const now = new Date();
+        const updatePromises = activeShifts.map((shift) => {
+          const clockInTime = new Date(shift.clock_in).getTime();
+          const durationSeconds = Math.max(0, Math.floor((now.getTime() - clockInTime) / 1000));
+          return adminClient
+            .from("staff_shifts")
+            .update({
+              status: "completed",
+              clock_out: now.toISOString(),
+              duration_seconds: durationSeconds,
+              notes: "Automatic clock-out on user logout",
+            })
+            .eq("id", shift.id);
+        });
+        await Promise.all(updatePromises);
+      }
+    } catch (err) {
+      console.warn("[logoutAction] Auto clock-out database cleanup error:", err);
+    }
+  }
+
   cookieStore.delete("swift-session-role");
+  cookieStore.delete("swift-session-staff-role");
   cookieStore.delete("swift-user-name");
   cookieStore.delete("swift-session-user-id");
   cookieStore.delete("swift_admin_elevated");

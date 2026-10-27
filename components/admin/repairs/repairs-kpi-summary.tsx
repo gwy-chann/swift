@@ -10,7 +10,7 @@ interface RepairsKpiSummaryProps {
 
 export function RepairsKpiSummary({ summary }: Readonly<RepairsKpiSummaryProps>) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Metric 1: Active Motors Under Repair */}
       <div className="rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-xs hover:border-primary/40 transition-colors">
         <div className="flex items-center justify-between mb-2">
@@ -47,7 +47,7 @@ export function RepairsKpiSummary({ summary }: Readonly<RepairsKpiSummaryProps>)
           <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
             {summary.inProgressCount}
           </span>
-          <span className="text-xs text-text-muted">on technician lift</span>
+          <span className="text-xs text-text-muted">on mechanic lift</span>
         </div>
         <div className="mt-2 text-[11px] text-text-secondary">
           Mechanics actively turning wrenches

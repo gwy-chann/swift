@@ -7,7 +7,7 @@ import { ADMIN_NAV_ITEMS, DEFAULT_ADMIN_USER } from "@/lib/admin/navigation";
 import { NavCategory } from "@/lib/admin/types";
 import { NavMenuItem } from "./nav-menu-item";
 import { logoutAction } from "@/lib/auth/actions";
-import { Wrench, LogOut, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 
 interface AdminSidebarProps {
   onItemClick?: () => void;
@@ -46,10 +46,7 @@ export function AdminSidebar({ onItemClick, className = "" }: Readonly<AdminSide
       {/* Brand Header */}
       <div>
         <div className="p-5 flex items-center justify-between border-b border-white/10">
-          <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white shadow-xs">
-              <Wrench className="w-4 h-4" />
-            </div>
+          <Link href="/admin" className="flex items-center">
             <span className="text-lg font-black tracking-wider text-white">SWIFT</span>
           </Link>
           <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-primary/20 text-primary-border border border-primary/30 uppercase tracking-widest">

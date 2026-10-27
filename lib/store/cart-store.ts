@@ -85,26 +85,121 @@ function convertPartCartItemToProduct(item: PartCartItem): Product {
   };
 }
 
-class CartStore {
+export const SWIFT_POS_CART_STORAGE_KEY = 'swift_pos_cart_state';
+
+interface PersistedCartPayload {
+  items: CartItem[];
+  pricingMode: PricingMode;
+  discountRate: number;
+  discountType: DiscountTierId;
+}
+
+function getStorage(): Storage | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  if (typeof globalThis !== 'undefined' && (globalThis as { localStorage?: Storage }).localStorage) {
+    return (globalThis as { localStorage?: Storage }).localStorage || null;
+  }
+  return null;
+}
+
+function loadPersistedCart(): PersistedCartPayload | null {
+  try {
+    const storage = getStorage();
+    if (!storage) return null;
+    const raw = storage.getItem(SWIFT_POS_CART_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.items)) {
+      return {
+        items: parsed.items,
+        pricingMode: parsed.pricingMode === 'wholesale' ? 'wholesale' : 'retail',
+        discountRate: typeof parsed.discountRate === 'number' ? parsed.discountRate : 0,
+        discountType: (parsed.discountType as DiscountTierId) || 'none',
+      };
+    }
+  } catch (err) {
+    console.warn('[CartStore] Failed to parse persisted cart from localStorage:', err);
+  }
+  return null;
+}
+
+function savePersistedCart(state: {
+  items: CartItem[];
+  pricingMode: PricingMode;
+  discountRate: number;
+  discountType: DiscountTierId;
+}): void {
+  try {
+    const storage = getStorage();
+    if (!storage) return;
+    if (!state.items || state.items.length === 0) {
+      storage.removeItem(SWIFT_POS_CART_STORAGE_KEY);
+      return;
+    }
+    const payload: PersistedCartPayload = {
+      items: state.items,
+      pricingMode: state.pricingMode,
+      discountRate: state.discountRate,
+      discountType: state.discountType,
+    };
+    storage.setItem(SWIFT_POS_CART_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn('[CartStore] Failed to save cart to localStorage:', err);
+  }
+}
+
+export class CartStore {
   private state: CartStoreState;
   private readonly listeners = new Set<() => void>();
 
   constructor() {
-    const discountRate = 0;
-    const discountType: DiscountTierId = 'none';
+    const persisted = loadPersistedCart();
+    const items = persisted ? persisted.items : INITIAL_CART_ITEMS;
+    const pricingMode = persisted ? persisted.pricingMode : 'retail';
+    const discountRate = persisted ? persisted.discountRate : 0;
+    const discountType: DiscountTierId = persisted ? persisted.discountType : 'none';
+
     this.state = {
-      items: INITIAL_CART_ITEMS,
-      pricingMode: 'retail',
+      items,
+      pricingMode,
       discountRate,
       discountType,
-      totals: calculateCartTotals(INITIAL_CART_ITEMS, discountRate, discountType),
+      totals: calculateCartTotals(items, discountRate, discountType),
       isProcessingCheckout: false,
       isPaymentModalOpen: false,
       isReceiptModalOpen: false,
       activeReceiptData: null,
       lastCheckoutError: null
     };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key === SWIFT_POS_CART_STORAGE_KEY) {
+          this.rehydrateFromStorage();
+        }
+      });
+    }
   }
+
+  public rehydrateFromStorage = (): void => {
+    const persisted = loadPersistedCart();
+    if (persisted) {
+      this.updateState({
+        items: persisted.items,
+        pricingMode: persisted.pricingMode,
+        discountRate: persisted.discountRate,
+        discountType: persisted.discountType,
+      });
+    } else if (this.state.items.length > 0) {
+      this.updateState({
+        items: [],
+        discountRate: 0,
+        discountType: 'none',
+      });
+    }
+  };
 
   public getState = (): CartStoreState => {
     return this.state;
@@ -138,6 +233,16 @@ class CartStore {
       );
     }
     this.state = updatedState;
+
+    if (
+      partial.items !== undefined ||
+      partial.pricingMode !== undefined ||
+      partial.discountRate !== undefined ||
+      partial.discountType !== undefined
+    ) {
+      savePersistedCart(this.state);
+    }
+
     this.notify();
   }
 
@@ -376,19 +481,10 @@ class CartStore {
       return item;
     });
 
-    const totals = calculateCartTotals(
-      updatedItems,
-      this.state.discountRate,
-      this.state.discountType
-    );
-
-    this.state = {
-      ...this.state,
+    this.updateState({
       pricingMode: mode,
-      items: updatedItems,
-      totals
-    };
-    this.notify();
+      items: updatedItems
+    });
   };
 
   public setDiscountRate = (rate: number): void => {
@@ -618,6 +714,7 @@ export type UseCartStoreState = CartStoreState & {
   closePaymentModal: typeof cartStore.closePaymentModal;
   openReceiptModal: typeof cartStore.openReceiptModal;
   closeReceiptModal: typeof cartStore.closeReceiptModal;
+  rehydrateFromStorage: typeof cartStore.rehydrateFromStorage;
 };
 
 let cachedUseCartStoreState: UseCartStoreState | null = null;
@@ -642,7 +739,8 @@ function getCachedUseCartStoreState(): UseCartStoreState {
       openPaymentModal: cartStore.openPaymentModal,
       closePaymentModal: cartStore.closePaymentModal,
       openReceiptModal: cartStore.openReceiptModal,
-      closeReceiptModal: cartStore.closeReceiptModal
+      closeReceiptModal: cartStore.closeReceiptModal,
+      rehydrateFromStorage: cartStore.rehydrateFromStorage
     };
   }
   return cachedUseCartStoreState;

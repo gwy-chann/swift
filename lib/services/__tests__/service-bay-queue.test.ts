@@ -25,7 +25,7 @@ describe('Service Bay Work Order Queue & Mechanic Utilization Monitor (SIAA-35)'
           bayName: 'Bay 2 (Scooter Bay)',
           status: 'IN PROGRESS',
           vehicleService: 'Honda Click 150i • Full CVT Overhaul',
-          mechanicInfo: 'Mechanic: Alex Lim (~25 mins left)',
+          mechanicInfo: 'Mechanic: Dante Reyes (~25 mins left)',
         },
         {
           id: '3',
@@ -62,8 +62,8 @@ describe('Service Bay Work Order Queue & Mechanic Utilization Monitor (SIAA-35)'
     });
 
     it('formats another in-progress job with different mechanic and minutes', () => {
-      const info = formatMechanicTurnaround('Alex Lim', 'IN PROGRESS', 25);
-      assert.equal(info, 'Mechanic: Alex Lim (~25 mins left)');
+      const info = formatMechanicTurnaround('Rene Baterbonia', 'IN PROGRESS', 25);
+      assert.equal(info, 'Mechanic: Rene Baterbonia (~25 mins left)');
     });
 
     it('formats queued jobs without assigned bay as waiting for bay clearance', () => {

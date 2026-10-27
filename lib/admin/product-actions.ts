@@ -334,11 +334,11 @@ export interface CreateProductResult {
 function validateNewProductInput(payload: CreateProductPayload): Record<string, string> {
   const errors: Record<string, string> = {};
 
-  if (!payload.sku || !payload.sku.trim()) {
+  if (!payload.sku?.trim()) {
     errors.sku = 'SKU / Item Code is required.';
   }
 
-  if (!payload.name || !payload.name.trim()) {
+  if (!payload.name?.trim()) {
     errors.name = 'Product name is required.';
   }
 
@@ -346,24 +346,24 @@ function validateNewProductInput(payload: CreateProductPayload): Record<string, 
     errors.category = 'Category is required.';
   }
 
-  if (!payload.brand || !payload.brand.trim()) {
+  if (!payload.brand?.trim()) {
     errors.brand = 'Brand is required.';
   }
 
-  if (typeof payload.cost !== 'number' || isNaN(payload.cost) || payload.cost <= 0) {
+  if (typeof payload.cost !== 'number' || Number.isNaN(payload.cost) || payload.cost <= 0) {
     errors.cost = 'Unit cost must be greater than ₱0.00.';
   }
 
   if (
     payload.wholesale !== undefined &&
-    (typeof payload.wholesale !== 'number' || isNaN(payload.wholesale) || payload.wholesale <= 0)
+    (typeof payload.wholesale !== 'number' || Number.isNaN(payload.wholesale) || payload.wholesale <= 0)
   ) {
     errors.wholesale = 'Wholesale price must be greater than ₱0.00.';
   }
 
   if (
     payload.retail !== undefined &&
-    (typeof payload.retail !== 'number' || isNaN(payload.retail) || payload.retail <= 0)
+    (typeof payload.retail !== 'number' || Number.isNaN(payload.retail) || payload.retail <= 0)
   ) {
     errors.retail = 'Retail price must be greater than ₱0.00.';
   }
@@ -371,7 +371,7 @@ function validateNewProductInput(payload: CreateProductPayload): Record<string, 
   if (
     payload.stock !== undefined &&
     (typeof payload.stock !== 'number' ||
-      isNaN(payload.stock) ||
+      Number.isNaN(payload.stock) ||
       payload.stock < 0 ||
       !Number.isInteger(payload.stock))
   ) {
@@ -381,7 +381,7 @@ function validateNewProductInput(payload: CreateProductPayload): Record<string, 
   if (
     payload.minThreshold !== undefined &&
     (typeof payload.minThreshold !== 'number' ||
-      isNaN(payload.minThreshold) ||
+      Number.isNaN(payload.minThreshold) ||
       payload.minThreshold < 1 ||
       !Number.isInteger(payload.minThreshold))
   ) {
@@ -449,7 +449,7 @@ async function recordSupabaseInitialStock(supabaseClient: any, adminClient: any,
   };
 
   const { error: logError } = await supabaseClient.from('stock_adjustment_logs').insert(logPayload);
-  if (logError && logError.message.toLowerCase().includes('permission denied')) {
+  if (logError?.message.toLowerCase().includes('permission denied')) {
     const { error: adminLogError } = await adminClient.from('stock_adjustment_logs').insert(logPayload);
     if (adminLogError) {
       console.warn('[createProductAction] Failed to insert initial stock log with admin client:', adminLogError.message);
@@ -520,7 +520,7 @@ async function executeSupabaseCreateProduct(
       .single();
 
     const adminClient = createAdminClient();
-    if (insertError && insertError.message.toLowerCase().includes('permission denied')) {
+    if (insertError?.message.toLowerCase().includes('permission denied')) {
       const retryResult = await adminClient
         .from('products')
         .insert(insertPayload)

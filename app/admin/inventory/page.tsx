@@ -31,7 +31,6 @@ export default async function AdminInventoryPage(props: AdminInventoryPageProps)
       <InventoryCatalog
         initialProducts={initialProducts}
         initialPricingRules={initialPricingRules}
-        showHeader={true}
         initialStockFilter={isLowStock ? 'low_stock' : 'all'}
         initialLowStockOnly={isLowStock}
       />

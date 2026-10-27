@@ -7,6 +7,8 @@ import {
   calculateElapsedMinutes,
   computeRepairsKpiSummary,
   filterAdminRepairs,
+} from '../repairs-utils.ts';
+import {
   fetchAdminRepairsAction,
   reassignMotorRepairMechanicAction,
 } from '../repairs-actions.ts';
@@ -205,8 +207,8 @@ describe('Admin Motor Repair Tracking & Service Bay Monitoring (SIAA-107)', () =
         chassisNumber: 'CHAS-XYZ7890-0002',
         serviceCode: 'SRV-CVT-01',
         serviceName: 'CVT Cleaning',
-        mechanicId: 'mech-alex',
-        mechanicName: 'Alex Lim',
+        mechanicId: null,
+        mechanicName: undefined,
         status: 'PENDING_PARTS',
         stageBadge: 'Waiting for Parts',
         estimatedDurationMinutes: 45,
@@ -297,14 +299,14 @@ describe('Admin Motor Repair Tracking & Service Bay Monitoring (SIAA-107)', () =
       const reassignResult = await reassignMotorRepairMechanicAction({
         workOrderId: targetOrder.id,
         orderNumber: targetOrder.orderNumber,
-        mechanicId: 'd0000000-0000-0000-0000-000000000004',
-        mechanicName: 'Alex Lim',
+        mechanicId: 'd0000000-0000-0000-0000-000000000003',
+        mechanicName: 'Dante Reyes',
         bayId: targetOrder.bayId,
         reason: 'Bottleneck workload rebalancing',
       });
 
       assert.strictEqual(reassignResult.success, true);
-      assert.strictEqual(reassignResult.data?.mechanicName, 'Alex Lim');
+      assert.strictEqual(reassignResult.data?.mechanicName, 'Dante Reyes');
     });
 
     it('reassignMotorRepairMechanicAction rejects invalid payloads', async () => {

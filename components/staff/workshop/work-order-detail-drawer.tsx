@@ -32,8 +32,127 @@ interface WorkOrderDetailDrawerProps {
   onStatusChange: (orderId: string, newStatus: WorkOrderStatus) => void;
   isUpdating?: boolean;
   isAdmin?: boolean;
+  isTimedIn?: boolean;
   availableMechanics?: OnShiftMechanic[];
   onAssignMechanic?: (orderId: string, mechanicId: string, mechanicName: string) => void | Promise<void>;
+}
+
+interface DrawerActionButtonsProps {
+  order: DetailedWorkOrder;
+  isUpdating: boolean;
+  isTimedIn: boolean;
+  onClose: () => void;
+  onStatusChange: (orderId: string, newStatus: WorkOrderStatus) => void;
+}
+
+function DrawerActionButtons({
+  order,
+  isUpdating,
+  isTimedIn,
+  onClose,
+  onStatusChange,
+}: Readonly<DrawerActionButtonsProps>) {
+  if (order.status === "QUEUED") {
+    return (
+      <button
+        type="button"
+        disabled={isUpdating}
+        onClick={() => {
+          onStatusChange(order.id, "IN PROGRESS");
+          onClose();
+        }}
+        className="px-4 py-2 rounded text-xs font-bold bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+      >
+        <Play className="w-3.5 h-3.5" />
+        <span>Start Job</span>
+      </button>
+    );
+  }
+
+  if (order.status === "IN PROGRESS") {
+    return (
+      <>
+        <button
+          type="button"
+          disabled={isUpdating}
+          onClick={() => {
+            onStatusChange(order.id, "PENDING_PARTS");
+            onClose();
+          }}
+          className="px-3.5 py-2 rounded text-xs font-semibold bg-accent-light text-accent hover:bg-accent/20 border border-accent/30 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>Wait for Parts</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isUpdating || !isTimedIn}
+          onClick={() => {
+            onStatusChange(order.id, "COMPLETED");
+            onClose();
+          }}
+          title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Complete Service"}
+          className={`px-4 py-2 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 ${
+            !isTimedIn
+              ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+              : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Complete Service</span>
+        </button>
+      </>
+    );
+  }
+
+  if (order.status === "PENDING_PARTS") {
+    return (
+      <>
+        <button
+          type="button"
+          disabled={isUpdating}
+          onClick={() => {
+            onStatusChange(order.id, "IN PROGRESS");
+            onClose();
+          }}
+          className="px-3.5 py-2 rounded text-xs font-bold bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+        >
+          <Play className="w-3.5 h-3.5" />
+          <span>Resume Work</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isUpdating || !isTimedIn}
+          onClick={() => {
+            onStatusChange(order.id, "COMPLETED");
+            onClose();
+          }}
+          title={!isTimedIn ? "You must be timed in (on shift) to complete a job" : "Complete Service"}
+          className={`px-4 py-2 rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 ${
+            !isTimedIn
+              ? "bg-bg-muted text-text-muted border border-border cursor-not-allowed opacity-60"
+              : "bg-success hover:bg-success/90 text-white cursor-pointer disabled:opacity-50"
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Complete Service</span>
+        </button>
+      </>
+    );
+  }
+
+  if (order.status === "COMPLETED") {
+    return (
+      <span className="px-3 py-1.5 text-xs font-bold text-success bg-success-light rounded border border-success/30 flex items-center gap-1">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Service Finished
+      </span>
+    );
+  }
+
+  return null;
 }
 
 export function WorkOrderDetailDrawer({
@@ -43,6 +162,7 @@ export function WorkOrderDetailDrawer({
   onStatusChange,
   isUpdating = false,
   isAdmin = false,
+  isTimedIn = true,
   availableMechanics: initialMechanics,
   onAssignMechanic,
 }: Readonly<WorkOrderDetailDrawerProps>) {
@@ -327,87 +447,13 @@ export function WorkOrderDetailDrawer({
           </button>
 
           <div className="flex items-center gap-2">
-            {order.status === "QUEUED" && (
-              <button
-                type="button"
-                disabled={isUpdating}
-                onClick={() => {
-                  onStatusChange(order.id, "IN PROGRESS");
-                  onClose();
-                }}
-                className="px-4 py-2 rounded text-xs font-bold bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <Play className="w-3.5 h-3.5" />
-                <span>Start Job</span>
-              </button>
-            )}
-
-            {order.status === "IN PROGRESS" && (
-              <>
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => {
-                    onStatusChange(order.id, "PENDING_PARTS");
-                    onClose();
-                  }}
-                  className="px-3.5 py-2 rounded text-xs font-semibold bg-accent-light text-accent hover:bg-accent/20 border border-accent/30 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>Wait for Parts</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => {
-                    onStatusChange(order.id, "COMPLETED");
-                    onClose();
-                  }}
-                  className="px-4 py-2 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Complete Service</span>
-                </button>
-              </>
-            )}
-
-            {order.status === "PENDING_PARTS" && (
-              <>
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => {
-                    onStatusChange(order.id, "IN PROGRESS");
-                    onClose();
-                  }}
-                  className="px-3.5 py-2 rounded text-xs font-bold bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span>Resume Work</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => {
-                    onStatusChange(order.id, "COMPLETED");
-                    onClose();
-                  }}
-                  className="px-4 py-2 rounded text-xs font-bold bg-success hover:bg-success/90 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Complete Service</span>
-                </button>
-              </>
-            )}
-
-            {order.status === "COMPLETED" && (
-              <span className="px-3 py-1.5 text-xs font-bold text-success bg-success-light rounded border border-success/30 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Service Finished
-              </span>
-            )}
+            <DrawerActionButtons
+              order={order}
+              isUpdating={isUpdating}
+              isTimedIn={isTimedIn}
+              onClose={onClose}
+              onStatusChange={onStatusChange}
+            />
           </div>
         </div>
       </div>

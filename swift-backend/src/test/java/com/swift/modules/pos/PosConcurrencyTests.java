@@ -80,60 +80,7 @@ class PosConcurrencyTests {
 
         for (int i = 0; i < cashierCount; i++) {
             final int cashierIndex = i;
-            executor.submit(() -> {
-                try {
-                    startLatch.await(); // Synchronize all cashiers to fire at the exact same millisecond
-
-                    PosCheckoutRequest request = new PosCheckoutRequest(
-                        "REC-STRESS-" + cashierIndex,
-                        UUID.randomUUID(),
-                        "Cashier #" + cashierIndex,
-                        "retail",
-                        new BigDecimal("420.00"),
-                        null,
-                        BigDecimal.ZERO,
-                        BigDecimal.ZERO,
-                        new BigDecimal("420.00"),
-                        new BigDecimal("500.00"),
-                        new BigDecimal("80.00"),
-                        "Cash",
-                        List.of(
-                            new PosCheckoutItemDto(
-                                "part",
-                                CONCURRENT_SKU,
-                                "NGK Iridium Spark Plug",
-                                new BigDecimal("420.00"),
-                                1,
-                                new BigDecimal("420.00"),
-                                "B-03",
-                                null
-                            )
-                        )
-                    );
-
-                    // Execute checkout with retry for concurrency lock contention if necessary
-                    int maxRetries = 10;
-                    for (int attempt = 0; attempt < maxRetries; attempt++) {
-                        try {
-                            PosCheckoutResponse response = posCheckoutService.processCheckout(request);
-                            if (response.success()) {
-                                successCount.incrementAndGet();
-                                break;
-                            }
-                        } catch (Exception ex) {
-                            if (attempt == maxRetries - 1) {
-                                failureCount.incrementAndGet();
-                            } else {
-                                Thread.sleep(20 + (cashierIndex * 5));
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    failureCount.incrementAndGet();
-                } finally {
-                    finishLatch.countDown();
-                }
-            });
+            executor.submit(() -> executeConcurrentCashier(cashierIndex, startLatch, finishLatch, successCount, failureCount));
         }
 
         // Trigger simultaneous checkout flood
@@ -180,5 +127,91 @@ class PosConcurrencyTests {
         assertThrows(InsufficientStockException.class, () -> {
             posCheckoutService.processCheckout(extraRequest);
         }, "51st checkout must be rejected when stock is 0");
+    }
+
+    private void executeConcurrentCashier(
+            int cashierIndex,
+            CountDownLatch startLatch,
+            CountDownLatch finishLatch,
+            AtomicInteger successCount,
+            AtomicInteger failureCount) {
+        try {
+            startLatch.await(); // Synchronize all cashiers to fire at the exact same millisecond
+            PosCheckoutRequest request = buildStressCheckoutRequest(cashierIndex);
+            executeCheckoutWithRetry(request, cashierIndex, successCount, failureCount);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            failureCount.incrementAndGet();
+        } catch (Exception e) {
+            failureCount.incrementAndGet();
+        } finally {
+            finishLatch.countDown();
+        }
+    }
+
+    private void executeCheckoutWithRetry(
+            PosCheckoutRequest request,
+            int cashierIndex,
+            AtomicInteger successCount,
+            AtomicInteger failureCount) {
+        int maxRetries = 10;
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
+            if (tryProcessCheckout(request)) {
+                successCount.incrementAndGet();
+                return;
+            }
+            if (attempt == maxRetries - 1) {
+                failureCount.incrementAndGet();
+            } else {
+                pauseBetweenRetries(cashierIndex, failureCount);
+            }
+        }
+    }
+
+    private boolean tryProcessCheckout(PosCheckoutRequest request) {
+        try {
+            PosCheckoutResponse response = posCheckoutService.processCheckout(request);
+            return response.success();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void pauseBetweenRetries(int cashierIndex, AtomicInteger failureCount) {
+        try {
+            Thread.sleep(20L + cashierIndex * 5L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            failureCount.incrementAndGet();
+        }
+    }
+
+    private PosCheckoutRequest buildStressCheckoutRequest(int cashierIndex) {
+        return new PosCheckoutRequest(
+            "REC-STRESS-" + cashierIndex,
+            UUID.randomUUID(),
+            "Cashier #" + cashierIndex,
+            "retail",
+            new BigDecimal("420.00"),
+            null,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            new BigDecimal("420.00"),
+            new BigDecimal("500.00"),
+            new BigDecimal("80.00"),
+            "Cash",
+            List.of(
+                new PosCheckoutItemDto(
+                    "part",
+                    CONCURRENT_SKU,
+                    "NGK Iridium Spark Plug",
+                    new BigDecimal("420.00"),
+                    1,
+                    new BigDecimal("420.00"),
+                    "B-03",
+                    null
+                )
+            )
+        );
     }
 }

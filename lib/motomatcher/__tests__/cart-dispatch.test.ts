@@ -205,4 +205,36 @@ describe('MotoMatcher 1-Click POS Cart Dispatch Engine (SIAA-25)', () => {
       assert.equal(p2.retail, 850);
     });
   });
+
+  describe('Scenario 6: Role Restrictions', () => {
+    it('rejects adding to cart when userRole is mechanic', () => {
+      const comp = fromProductToComparisonPart(mockOemPart);
+
+      const result = dispatchMotoMatcherCartInsertion({
+        part: comp,
+        userRole: 'mechanic',
+      });
+
+      assert.equal(result.success, false);
+      assert.equal(result.status, 'INVALID_PART');
+      assert.match(result.message, /Access restricted: Mechanics cannot add items to the POS cart/i);
+      assert.equal(cartStore.getState().items.length, 0);
+    });
+
+    it('allows adding to cart when userRole is cashier or admin', () => {
+      const comp = fromProductToComparisonPart(mockOemPart);
+
+      const resCashier = dispatchMotoMatcherCartInsertion({
+        part: comp,
+        userRole: 'cashier',
+      });
+      assert.equal(resCashier.success, true);
+
+      const resAdmin = dispatchMotoMatcherCartInsertion({
+        part: comp,
+        userRole: 'admin',
+      });
+      assert.equal(resAdmin.success, true);
+    });
+  });
 });

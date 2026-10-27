@@ -7,8 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface PricingRulesRepository extends JpaRepository<PricingRules, Long> {
+public interface PricingRulesRepository extends JpaRepository<PricingRules, Integer> {
     default Optional<PricingRules> findActiveRules() {
-        return findById(1L);
+        return findById(1);
     }
 }

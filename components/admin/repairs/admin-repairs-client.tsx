@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useTransition, useMemo } from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import type {
   AdminMotorRepairItem,
   RepairsDashboardKpiSummary,
   RepairsFilterState,
 } from '@/lib/repairs/repairs-contracts';
-import { filterAdminRepairs } from '@/lib/repairs/repairs-actions';
+import { filterAdminRepairs } from '@/lib/repairs/repairs-utils';
 import { RepairsKpiSummary } from './repairs-kpi-summary';
 import { RepairsFilterBar } from './repairs-filter-bar';
 import { RepairMotorCard } from './repair-motor-card';
@@ -19,7 +19,12 @@ interface AdminRepairsClientProps {
   initialSummary: RepairsDashboardKpiSummary;
   availableMechanics: { id: string; name: string; status: string }[];
   baysList: { id: string; name: string }[];
-  onRefresh: () => Promise<{ items: AdminMotorRepairItem[]; summary: RepairsDashboardKpiSummary } | null>;
+  onRefresh: () => Promise<{
+    items: AdminMotorRepairItem[];
+    summary: RepairsDashboardKpiSummary;
+    mechanics?: { id: string; name: string; status: string }[];
+  } | null>;
+  onFetchOnShiftMechanics?: () => Promise<{ id: string; name: string; status: string }[]>;
   onReassignMechanic: (
     workOrderId: string,
     orderNumber: string,
@@ -36,10 +41,12 @@ export function AdminRepairsClient({
   availableMechanics,
   baysList,
   onRefresh,
+  onFetchOnShiftMechanics,
   onReassignMechanic,
 }: Readonly<AdminRepairsClientProps>) {
   const [items, setItems] = useState<AdminMotorRepairItem[]>(initialItems);
   const [summary, setSummary] = useState<RepairsDashboardKpiSummary>(initialSummary);
+  const [liveMechanics, setLiveMechanics] = useState<{ id: string; name: string; status: string }[]>(availableMechanics);
   const [selectedItem, setSelectedItem] = useState<AdminMotorRepairItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isPending, startTransition] = useTransition();
@@ -57,9 +64,9 @@ export function AdminRepairsClient({
     items.forEach((item) => {
       if (item.mechanicName) names.add(item.mechanicName);
     });
-    availableMechanics.forEach((m) => names.add(m.name));
+    liveMechanics.forEach((m) => names.add(m.name));
     return Array.from(names);
-  }, [items, availableMechanics]);
+  }, [items, liveMechanics]);
 
   const filteredItems = useMemo(() => {
     return filterAdminRepairs(items, filters);
@@ -72,6 +79,11 @@ export function AdminRepairsClient({
   function handleOpenDrawer(item: AdminMotorRepairItem) {
     setSelectedItem(item);
     setIsDrawerOpen(true);
+    if (onFetchOnShiftMechanics) {
+      void onFetchOnShiftMechanics().then((mechs) => {
+        if (mechs) setLiveMechanics(mechs);
+      });
+    }
   }
 
   function handleCloseDrawer() {
@@ -84,6 +96,9 @@ export function AdminRepairsClient({
       if (refreshed) {
         setItems(refreshed.items);
         setSummary(refreshed.summary);
+        if (refreshed.mechanics) {
+          setLiveMechanics(refreshed.mechanics);
+        }
         if (selectedItem) {
           const updatedSelected = refreshed.items.find((i) => i.id === selectedItem.id);
           if (updatedSelected) {
@@ -158,38 +173,6 @@ export function AdminRepairsClient({
 
   return (
     <div className="space-y-6">
-      {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-text-primary tracking-tight">
-              Workshop Motor Repairs
-            </h1>
-            <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Bays Monitoring
-            </span>
-          </div>
-          <p className="text-xs text-text-muted mt-1">
-            Track active customer motorcycles across service bays, inspect parts replaced, and supervise technician throughput.
-          </p>
-        </div>
-
-        {/* Quick Actions */}
-        <button
-          type="button"
-          onClick={handleManualRefresh}
-          disabled={isPending}
-          className="px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle hover:border-primary/40 text-text-secondary hover:text-text-primary text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin text-primary' : ''}`} />
-          <span>Refresh Feed</span>
-        </button>
-      </div>
-
-      {/* KPI Cards Summary */}
-      <RepairsKpiSummary summary={summary} />
-
       {/* Multi-Axis Filter Bar */}
       <RepairsFilterBar
         filters={filters}
@@ -197,7 +180,12 @@ export function AdminRepairsClient({
         mechanicsList={mechanicsList}
         baysList={baysList}
         totalResults={filteredItems.length}
+        onRefresh={handleManualRefresh}
+        isRefreshing={isPending}
       />
+
+      {/* KPI Cards Summary */}
+      <RepairsKpiSummary summary={summary} />
 
       {/* Main View: Grid vs Table */}
       {renderMainContent()}
@@ -207,7 +195,7 @@ export function AdminRepairsClient({
         item={selectedItem}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
-        availableMechanics={availableMechanics}
+        availableMechanics={liveMechanics}
         onReassignMechanic={handleReassign}
       />
     </div>
