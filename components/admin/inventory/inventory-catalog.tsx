@@ -8,7 +8,7 @@ import {
   calculateCatalogStats,
   StockFilterOption
 } from '@/lib/inventory/catalog-filter';
-import { Product } from '@/lib/types/product';
+import { Product, ProductCategory } from '@/lib/types/product';
 import { AdjustmentType } from '@/lib/inventory/stock-adjustment';
 import { InventoryStatsCards } from './inventory-stats-cards';
 import { CatalogFilterBar } from './catalog-filter-bar';
@@ -17,9 +17,11 @@ import { CatalogEmptyState } from './catalog-empty-state';
 import { CatalogPagination } from './catalog-pagination';
 import { StockAdjustmentModal } from './stock-adjustment-modal';
 import { ProductRegistrationModal } from './product-registration-modal';
+import { ProductEditModal } from './product-edit-modal';
 import {
   adjustProductStockAction,
-  createProductAction
+  createProductAction,
+  updateProductAction
 } from '@/lib/admin/product-actions';
 import { useInventoryRealtime } from '@/lib/hooks/use-inventory-realtime';
 import { usePricingRulesRealtime } from '@/lib/hooks/use-pricing-rules-realtime';
@@ -39,7 +41,14 @@ export function InventoryCatalog({
   initialStockFilter = 'all',
   initialLowStockOnly = false
 }: InventoryCatalogProps = {}) {
-  const { products, adjustStock, rollbackStock, registerProduct, hydrateProducts } = useInventoryStore();
+  const {
+    products,
+    adjustStock,
+    rollbackStock,
+    registerProduct,
+    hydrateProducts,
+    updateProduct
+  } = useInventoryStore();
   const [pricingRules, setPricingRules] = useState<PricingRules | undefined>(initialPricingRules);
 
   usePricingRulesRealtime({
@@ -74,6 +83,8 @@ export function InventoryCatalog({
   const [lowStockOnly, setLowStockOnly] = useState(initialLowStockOnly);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -279,6 +290,77 @@ export function InventoryCatalog({
     }
   };
 
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProductEdit = async (updated: {
+    sku: string;
+    name: string;
+    category: ProductCategory | string;
+    brand: string;
+    model: string;
+    cost: number;
+    retail: number;
+    location: string;
+    oem: boolean;
+    imageUrl?: string;
+    description?: string;
+  }): Promise<{ success: boolean; error?: string } | void> => {
+    try {
+      const result = await updateProductAction({
+        sku: updated.sku,
+        name: updated.name,
+        category: updated.category,
+        brand: updated.brand,
+        model: updated.model,
+        cost: updated.cost,
+        retail: updated.retail,
+        location: updated.location,
+        oem: updated.oem,
+        imageUrl: updated.imageUrl,
+        description: updated.description,
+        userName: 'Carlos Rodriguez (Admin)',
+        userRole: 'admin'
+      });
+
+      if (result.success && result.product) {
+        updateProduct(result.product);
+        setToastMessage({
+          type: 'success',
+          text: `Product "${result.product.name}" (${result.product.sku}) updated successfully!`
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 5000);
+        setIsEditModalOpen(false);
+        setEditingProduct(null);
+        return { success: true };
+      } else {
+        const errorMsg = result.error || 'Failed to update product details.';
+        setToastMessage({
+          type: 'error',
+          text: errorMsg
+        });
+        setTimeout(() => {
+          setToastMessage(null);
+        }, 6000);
+        return { success: false, error: errorMsg };
+      }
+    } catch {
+      const errorMsg = 'Network error while updating product details.';
+      setToastMessage({
+        type: 'error',
+        text: errorMsg
+      });
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 6000);
+      return { success: false, error: errorMsg };
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Toast Notification Banner */}
@@ -336,6 +418,7 @@ export function InventoryCatalog({
           <CatalogTable
             products={paginatedProducts}
             onAdjustStock={handleAdjustStock}
+            onEditProduct={handleEditProduct}
           />
           <CatalogPagination
             currentPage={effectivePage}
@@ -374,6 +457,18 @@ export function InventoryCatalog({
         onClose={() => setIsAddProductModalOpen(false)}
         onSubmit={handleRegisterProduct}
         existingSkus={products.map((p) => p.sku)}
+        pricingRules={pricingRules}
+      />
+
+      {/* Edit Product Details Modal */}
+      <ProductEditModal
+        isOpen={isEditModalOpen}
+        product={editingProduct}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onSubmit={handleSaveProductEdit}
         pricingRules={pricingRules}
       />
     </div>

@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Pencil } from 'lucide-react';
 import { Product } from '@/lib/types/product';
 import { formatPeso } from '@/lib/inventory/catalog-filter';
 import { ShelfLocationTag } from '@/components/inventory/shelf-location-tag';
@@ -7,9 +7,16 @@ import { StockBadge } from '@/components/inventory/stock-badge';
 interface CatalogTableProps {
   products: Product[];
   onAdjustStock?: (sku: string) => void;
+  onEditProduct?: (product: Product) => void;
+  canEdit?: boolean;
 }
 
-export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableProps>) {
+export function CatalogTable({
+  products,
+  onAdjustStock,
+  onEditProduct,
+  canEdit = true
+}: Readonly<CatalogTableProps>) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-bg-card shadow-xs">
       <table className="w-full text-left border-collapse min-w-212.5">
@@ -87,17 +94,30 @@ export function CatalogTable({ products, onAdjustStock }: Readonly<CatalogTableP
                   </span>
                 </td>
 
-                {/* Row Action: Adjust Stock */}
+                {/* Row Actions: Edit Product & Adjust Stock */}
                 <td className="px-4 py-3.5 align-middle text-center">
-                  <button
-                    type="button"
-                    onClick={() => onAdjustStock?.(product.sku)}
-                    aria-label={`Adjust stock for ${product.name}`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-bg-muted hover:bg-primary hover:text-text-light text-text-primary border border-border-subtle hover:border-primary transition-all cursor-pointer shadow-2xs"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    <span>Adjust</span>
-                  </button>
+                  <div className="flex items-center justify-center gap-1.5">
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEditProduct?.(product)}
+                        aria-label={`Edit details for ${product.name}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md bg-bg-muted hover:bg-bg-hover hover:border-border-strong text-text-primary border border-border-subtle transition-all cursor-pointer shadow-2xs"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-text-secondary" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onAdjustStock?.(product.sku)}
+                      aria-label={`Adjust stock for ${product.name}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-md bg-bg-muted hover:bg-primary hover:text-text-light text-text-primary border border-border-subtle hover:border-primary transition-all cursor-pointer shadow-2xs"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <span>Adjust</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
