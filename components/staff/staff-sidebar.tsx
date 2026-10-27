@@ -20,6 +20,7 @@ import { mapDbRoleToDisplay, type DbUserRole } from "@/lib/types/auth";
 interface StaffSidebarProps {
   onItemClick?: () => void;
   className?: string;
+  sessionRole?: string;
 }
 
 function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
@@ -32,8 +33,8 @@ function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
   return { text: "ON SHIFT", variant: "success" as const };
 }
 
-export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSidebarProps>) {
-
+export function StaffSidebar({ onItemClick, className = "", sessionRole }: Readonly<StaffSidebarProps>) {
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -50,13 +51,18 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
     resetShiftOnLogout,
   } = usePunchStore();
 
-  const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, currentStaffRole);
-  const primaryRoute = getRolePrimaryRoute(currentStaffRole);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const effectiveRole = mounted ? (currentStaffRole || sessionRole) : (sessionRole || currentStaffRole);
+  const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, effectiveRole);
+  const primaryRoute = getRolePrimaryRoute(effectiveRole);
   const homeHref = primaryRoute.isAuthorizedForPos ? "/staff/pos" : primaryRoute.targetPath;
 
   const displayName = currentStaff || DEFAULT_STAFF_USER.name;
-  const displayRole = currentStaffRole
-    ? mapDbRoleToDisplay(currentStaffRole.toLowerCase() as DbUserRole)
+  const displayRole = effectiveRole
+    ? mapDbRoleToDisplay(effectiveRole.toLowerCase() as DbUserRole)
     : DEFAULT_STAFF_USER.role;
   const avatarInitials =
     displayName

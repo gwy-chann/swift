@@ -67,13 +67,14 @@ export function StaffLayoutShell({ children, sessionUser }: Readonly<StaffLayout
     <div className="flex h-screen w-full bg-bg-base overflow-hidden">
       {/* Desktop Permanent Sidebar */}
       <div className="hidden md:block shrink-0">
-        <StaffSidebar />
+        <StaffSidebar sessionRole={sessionUser?.role} />
       </div>
 
       {/* Mobile Slide-Out Drawer */}
       <StaffMobileDrawer
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
+        sessionRole={sessionUser?.role}
       />
 
       {/* Main Workspace */}
