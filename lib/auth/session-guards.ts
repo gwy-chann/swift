@@ -83,28 +83,12 @@ export function classifyRoute(pathname: string): RouteClassification {
   return "OTHER";
 }
 
-function parsePendingChallenge(cookieValue?: string): {
+function parsePendingChallenge(_cookieValue?: string): {
   hasPendingPinChallenge: boolean;
   pendingStaffEmail?: string;
   pendingStaffName?: string;
   pendingStaffRole?: string;
 } {
-  if (!cookieValue) {
-    return { hasPendingPinChallenge: false };
-  }
-  try {
-    const parsed = JSON.parse(decodeURIComponent(cookieValue));
-    if (parsed?.userId && parsed?.portalRole === "staff") {
-      return {
-        hasPendingPinChallenge: true,
-        pendingStaffEmail: parsed.email,
-        pendingStaffName: parsed.name,
-        pendingStaffRole: parsed.role,
-      };
-    }
-  } catch {
-    // Ignore JSON parse errors
-  }
   return { hasPendingPinChallenge: false };
 }
 
