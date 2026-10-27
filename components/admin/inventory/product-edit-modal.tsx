@@ -78,9 +78,6 @@ function ProductEditForm({
   const [specType, setSpecType] = useState<'oem' | 'aftermarket'>(
     product.oem ? 'oem' : 'aftermarket'
   );
-  const [description, setDescription] = useState(product.description || '');
-  const [imageUrl, setImageUrl] = useState(product.imageUrl || '');
-
   const [manualRetailOverride, setManualRetailOverride] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -196,8 +193,8 @@ function ProductEditForm({
         retail: Number.parseFloat(retail),
         location: location.trim().toUpperCase(),
         oem: specType === 'oem',
-        imageUrl: imageUrl.trim() || undefined,
-        description: description.trim() || undefined
+        imageUrl: product.imageUrl,
+        description: product.description
       });
 
       if (result && !result.success && result.error) {
@@ -555,7 +552,7 @@ function ProductEditForm({
 
           {/* Wholesale Price Display (Excluded from manual edit) */}
           <div>
-            <span className="block text-xs font-semibold text-text-muted mb-1 flex items-center justify-between">
+            <span className="flex items-center justify-between text-xs font-semibold text-text-muted mb-1">
               <span>Wholesale Price</span>
               <span className="text-[10px] text-text-muted">Auto (+{wholesaleMarkupRate}%)</span>
             </span>
@@ -584,47 +581,6 @@ function ProductEditForm({
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. RACK-A-01, BIN-12"
             className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-surface text-text-primary uppercase font-mono focus:outline-hidden focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-      </div>
-
-      {/* Section 4: Optional Metadata (Description & Image URL) */}
-      <div className="space-y-3.5 pt-2 border-t border-border-subtle">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
-          Product Description & Imagery
-        </h3>
-
-        <div>
-          <label
-            htmlFor="edit-product-image"
-            className="block text-xs font-semibold text-text-primary mb-1"
-          >
-            Image URL (Optional)
-          </label>
-          <input
-            id="edit-product-image"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://example.com/part.jpg"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-surface text-text-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40 font-mono text-xs"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="edit-product-description"
-            className="block text-xs font-semibold text-text-primary mb-1"
-          >
-            Technical Description & Notes (Optional)
-          </label>
-          <textarea
-            id="edit-product-description"
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Specifications, compatibility notes, package contents..."
-            className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-surface text-text-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>
