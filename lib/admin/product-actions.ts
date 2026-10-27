@@ -749,5 +749,314 @@ export async function createProductAction(
   };
 }
 
+export interface UpdateProductPayload {
+  sku: string;
+  name: string;
+  category: ProductCategory | string;
+  brand: string;
+  model?: string;
+  cost: number;
+  retail: number;
+  location?: string;
+  oem?: boolean;
+  imageUrl?: string;
+  description?: string;
+  userName?: string;
+  userRole?: string;
+}
+
+export type UpdateProductErrorCode =
+  | 'VALIDATION_ERROR'
+  | 'PRODUCT_NOT_FOUND'
+  | 'UNAUTHORIZED'
+  | 'DATABASE_ERROR';
+
+export interface UpdateProductResult {
+  success: boolean;
+  product?: Product;
+  error?: string;
+  code?: UpdateProductErrorCode;
+  fieldErrors?: Record<string, string>;
+}
+
+function validateUpdateProductInput(payload: UpdateProductPayload): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  if (!payload.sku?.trim()) {
+    errors.sku = 'SKU / Item Code is required.';
+  }
+
+  if (!payload.name?.trim()) {
+    errors.name = 'Product name is required.';
+  }
+
+  if (!payload.category || !String(payload.category).trim()) {
+    errors.category = 'Category is required.';
+  }
+
+  if (!payload.brand?.trim()) {
+    errors.brand = 'Brand is required.';
+  }
+
+  if (typeof payload.cost !== 'number' || Number.isNaN(payload.cost) || payload.cost <= 0) {
+    errors.cost = 'Unit cost must be greater than ₱0.00.';
+  }
+
+  if (typeof payload.retail !== 'number' || Number.isNaN(payload.retail) || payload.retail <= 0) {
+    errors.retail = 'Retail price must be greater than ₱0.00.';
+  }
+
+  return errors;
+}
+
+async function executeSupabaseUpdateProduct(
+  payload: UpdateProductPayload,
+  normalizedSku: string,
+  wholesalePrice: number,
+  isOem: boolean
+): Promise<UpdateProductResult | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { createClient } = await import('../supabase/server.ts');
+    const supabase = await createClient();
+
+    const updatePayload = {
+      name: payload.name.trim(),
+      category: String(payload.category).trim(),
+      brand: payload.brand.trim(),
+      model: (payload.model || 'Universal').trim(),
+      cost: payload.cost,
+      wholesale: wholesalePrice,
+      retail: payload.retail,
+      location: (payload.location || '').trim().toUpperCase() || null,
+      oem: isOem,
+      image_url: payload.imageUrl?.trim() || null,
+      description: payload.description?.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('products')
+      .update(updatePayload)
+      .ilike('sku', normalizedSku)
+      .select()
+      .maybeSingle();
+
+    if (updateError?.message.toLowerCase().includes('permission denied')) {
+      return null;
+    }
+
+    if (updateError) {
+      return {
+        success: false,
+        error: updateError.message || 'Database error occurred during product update.',
+        code: 'DATABASE_ERROR'
+      };
+    }
+
+    if (!updatedProduct) {
+      return {
+        success: false,
+        error: `Product with SKU "${normalizedSku}" was not found in the catalog.`,
+        code: 'PRODUCT_NOT_FOUND'
+      };
+    }
+
+    try {
+      const { logSecurityEventAction } = await import('./audit-actions.ts');
+      await logSecurityEventAction({
+        action: `Updated inventory product SKU: ${normalizedSku} (${payload.name.trim()})`,
+        severity: 'info',
+        userEmail: payload.userName ?? 'admin@swift.ph',
+        terminalIp: '192.168.1.100 (Admin PC)',
+        metadata: {
+          sku: normalizedSku,
+          name: payload.name.trim(),
+          cost: payload.cost,
+          retail: payload.retail,
+          location: payload.location
+        }
+      });
+    } catch {
+      // Non-blocking audit log failure
+    }
+
+    await safeRevalidateInventoryPath();
+
+    return {
+      success: true,
+      product: mapDbProductToDomain(updatedProduct)
+    };
+  } catch (err) {
+    console.warn(
+      '[updateProductAction] Supabase update encountered issue, checking fallback:',
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
+}
+
+async function executePrismaUpdateProduct(
+  payload: UpdateProductPayload,
+  normalizedSku: string,
+  wholesalePrice: number,
+  isOem: boolean
+): Promise<UpdateProductResult | null> {
+  const prisma = getPrismaClient();
+  if (!prisma) return null;
+
+  try {
+    const existing = await prisma.product.findFirst({
+      where: {
+        sku: { equals: normalizedSku, mode: 'insensitive' }
+      }
+    });
+
+    if (!existing) {
+      return {
+        success: false,
+        error: `Product with SKU "${normalizedSku}" was not found in the catalog.`,
+        code: 'PRODUCT_NOT_FOUND'
+      };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = prisma as any;
+    const updated = await db.product.update({
+      where: { id: existing.id },
+      data: {
+        name: payload.name.trim(),
+        category: String(payload.category).trim(),
+        brand: payload.brand.trim(),
+        model: (payload.model || 'Universal').trim(),
+        cost: payload.cost,
+        wholesale: wholesalePrice,
+        retail: payload.retail,
+        location: (payload.location || '').trim().toUpperCase() || null,
+        oem: isOem,
+        imageUrl: payload.imageUrl?.trim() || null,
+        description: payload.description?.trim() || null
+      }
+    });
+
+    try {
+      const { logSecurityEventAction } = await import('./audit-actions.ts');
+      await logSecurityEventAction({
+        action: `Updated inventory product SKU: ${normalizedSku} (${payload.name.trim()})`,
+        severity: 'info',
+        userEmail: payload.userName ?? 'admin@swift.ph',
+        terminalIp: '192.168.1.100 (Admin PC)',
+        metadata: {
+          sku: normalizedSku,
+          name: payload.name.trim(),
+          cost: payload.cost,
+          retail: payload.retail,
+          location: payload.location
+        }
+      });
+    } catch {
+      // Non-blocking audit log
+    }
+
+    await safeRevalidateInventoryPath();
+
+    return {
+      success: true,
+      product: {
+        id: updated.id,
+        sku: updated.sku,
+        name: updated.name,
+        category: updated.category as ProductCategory,
+        brand: updated.brand,
+        model: updated.model,
+        cost: Number(updated.cost),
+        wholesale: Number(updated.wholesale),
+        retail: Number(updated.retail),
+        stock: updated.stock,
+        minThreshold: updated.minThreshold,
+        location: updated.location || '',
+        oem: updated.oem,
+        imageUrl: updated.imageUrl || undefined,
+        description: updated.description || undefined,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString()
+      }
+    };
+  } catch (err) {
+    console.warn(
+      '[updateProductAction] Prisma fallback update encountered error:',
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
+}
+
+/**
+ * Server action to update existing product details in the master catalog.
+ * Validates inputs, rejects non-admin roles (RBAC), recomputes wholesale price
+ * based on global markup rules, updates PostgreSQL via Supabase with Prisma fallback,
+ * records administrative audit log, and revalidates inventory cache paths.
+ *
+ * @param {UpdateProductPayload} payload Form inputs for editing product details
+ * @returns {Promise<UpdateProductResult>} Result object with updated product or error
+ */
+export async function updateProductAction(
+  payload: UpdateProductPayload
+): Promise<UpdateProductResult> {
+  if (payload.userRole && payload.userRole !== 'admin') {
+    return {
+      success: false,
+      error: 'Administrative privileges required to edit product details.',
+      code: 'UNAUTHORIZED'
+    };
+  }
+
+  const fieldErrors = validateUpdateProductInput(payload);
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      success: false,
+      error: 'Validation failed for one or more product fields.',
+      code: 'VALIDATION_ERROR',
+      fieldErrors
+    };
+  }
+
+  const normalizedSku = normalizeSku(payload.sku);
+  const isOem = Boolean(payload.oem);
+  const markups = calculateMarkupPrices(payload.cost, isOem);
+  const wholesalePrice = markups.wholesale;
+
+  const supabaseResult = await executeSupabaseUpdateProduct(
+    payload,
+    normalizedSku,
+    wholesalePrice,
+    isOem
+  );
+
+  if (supabaseResult) {
+    return supabaseResult;
+  }
+
+  const prismaResult = await executePrismaUpdateProduct(
+    payload,
+    normalizedSku,
+    wholesalePrice,
+    isOem
+  );
+
+  if (prismaResult) {
+    return prismaResult;
+  }
+
+  return {
+    success: false,
+    error: 'Database connection is unavailable to update product details.',
+    code: 'DATABASE_ERROR'
+  };
+}
+
 export { getMotorcycleModelsAction } from '../actions/motomatcher-actions.ts';
 
