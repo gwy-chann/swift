@@ -104,7 +104,6 @@ export function HybridCatalogPane({
         });
       }
     } else {
-      if (item.stock <= 0) return;
       onSelectProduct(item);
     }
   };
@@ -122,8 +121,7 @@ export function HybridCatalogPane({
         const srv = result.matchedItem as LaborService;
         onSelectService(srv);
       } else if (result.status === 'OUT_OF_STOCK_OVERRIDE' && result.matchedItem) {
-        const item = result.matchedItem as Product;
-        onScanNotFound?.(`Item ${item.sku} is out of stock.`);
+        onSelectProduct(result.matchedItem as Product);
       } else {
         onScanNotFound?.(query);
       }
