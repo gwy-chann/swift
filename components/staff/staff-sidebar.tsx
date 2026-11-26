@@ -21,6 +21,7 @@ interface StaffSidebarProps {
   onItemClick?: () => void;
   className?: string;
   sessionRole?: string;
+  sessionUserName?: string;
 }
 
 function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
@@ -33,8 +34,19 @@ function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
   return { text: "ON SHIFT", variant: "success" as const };
 }
 
-export function StaffSidebar({ onItemClick, className = "", sessionRole }: Readonly<StaffSidebarProps>) {
-  const [mounted, setMounted] = useState(false);
+const emptySubscribe = () => () => {};
+
+export function StaffSidebar({
+  onItemClick,
+  className = "",
+  sessionRole,
+  sessionUserName,
+}: Readonly<StaffSidebarProps>) {
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -51,16 +63,13 @@ export function StaffSidebar({ onItemClick, className = "", sessionRole }: Reado
     resetShiftOnLogout,
   } = usePunchStore();
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const effectiveRole = mounted ? (currentStaffRole || sessionRole) : (sessionRole || currentStaffRole);
+  const effectiveRole = mounted ? (currentStaffRole || sessionRole) : sessionRole;
   const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, effectiveRole);
   const primaryRoute = getRolePrimaryRoute(effectiveRole);
   const homeHref = primaryRoute.isAuthorizedForPos ? "/staff/pos" : primaryRoute.targetPath;
 
-  const displayName = currentStaff || DEFAULT_STAFF_USER.name;
+  const initialName = sessionUserName || DEFAULT_STAFF_USER.name;
+  const displayName = mounted ? (currentStaff || initialName) : initialName;
   const displayRole = effectiveRole
     ? mapDbRoleToDisplay(effectiveRole.toLowerCase() as DbUserRole)
     : DEFAULT_STAFF_USER.role;
@@ -126,7 +135,7 @@ export function StaffSidebar({ onItemClick, className = "", sessionRole }: Reado
               {visibleNavItems.map((item) => {
                 let itemWithBadge = item;
 
-                if (item.id === "pos" && cartItemCount > 0) {
+                if (item.id === "pos" && mounted && cartItemCount > 0) {
                   itemWithBadge = {
                     ...item,
                     badge: {
@@ -137,7 +146,10 @@ export function StaffSidebar({ onItemClick, className = "", sessionRole }: Reado
                 } else if (item.id === "clock") {
                   itemWithBadge = {
                     ...item,
-                    badge: getClockBadge(isShiftActive, shiftStatus),
+                    badge: getClockBadge(
+                      mounted ? isShiftActive : false,
+                      mounted ? shiftStatus : "idle"
+                    ),
                   };
                 }
 

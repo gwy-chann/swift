@@ -23,10 +23,19 @@ function getLabelText(isShiftActive: boolean, shiftStatus: string): string {
   return "Active Shift:";
 }
 
+function formatFallbackSeconds(seconds?: number): string {
+  if (!seconds || seconds <= 0) return "00:00:00";
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
 export function ShiftDurationTimer({
+  initialSeconds,
   className = "",
   showLabel = true,
-}: ShiftDurationTimerProps) {
+}: Readonly<ShiftDurationTimerProps>) {
   const isClient = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -34,8 +43,11 @@ export function ShiftDurationTimer({
   );
 
   const { formattedTimer, isShiftActive, shiftStatus } = usePunchStore();
-  const labelColor = getLabelColor(isShiftActive, shiftStatus);
-  const labelText = getLabelText(isShiftActive, shiftStatus);
+  const effectiveShiftActive = isClient && isShiftActive;
+  const effectiveShiftStatus = isClient ? shiftStatus : "idle";
+  const labelColor = getLabelColor(effectiveShiftActive, effectiveShiftStatus);
+  const labelText = getLabelText(effectiveShiftActive, effectiveShiftStatus);
+  const fallbackDisplay = formatFallbackSeconds(initialSeconds);
 
   return (
     <div className={`flex items-center gap-1.5 text-xs ${className}`}>
@@ -47,10 +59,10 @@ export function ShiftDurationTimer({
       <strong
         id="shiftTimerDisplay"
         className={`font-mono font-bold text-sm tracking-wider transition-colors ${
-          isShiftActive ? "text-text-primary" : "text-text-muted opacity-80"
+          effectiveShiftActive ? "text-text-primary" : "text-text-muted opacity-80"
         }`}
       >
-        {isClient && isShiftActive ? formattedTimer : "00:00:00"}
+        {effectiveShiftActive ? formattedTimer : fallbackDisplay}
       </strong>
     </div>
   );
