@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import {
   SCANNER_FEEDBACK_CONSTANTS,
   setAudioContextForTesting,
+  playScanCaptureBeep,
   playSuccessChime,
   playSoldOutBuzzer,
   playNotFoundTone,
@@ -83,6 +84,11 @@ describe("Scanner Feedback Audio Engine (SIAA-113)", () => {
     assert.deepStrictEqual(SCANNER_FEEDBACK_CONSTANTS.SOLD_OUT_HAPTIC_PATTERN, [200, 100, 200]);
     assert.strictEqual(SCANNER_FEEDBACK_CONSTANTS.DEFAULT_AUTO_DISMISS_MS, 3500);
     assert.strictEqual(SCANNER_FEEDBACK_CONSTANTS.VIEWFINDER_PULSE_DURATION_MS, 400);
+  });
+
+  it("plays 1000Hz synthesized sine beep for 80ms on scan capture (SIAA-110)", () => {
+    const result = playScanCaptureBeep(mockCtx as unknown as AudioContext, 1000, 0.08);
+    assert.strictEqual(result, true);
   });
 
   it("plays 1200Hz success chime successfully with audio context", () => {
