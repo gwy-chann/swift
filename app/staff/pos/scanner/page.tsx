@@ -132,15 +132,15 @@ function MobileScannerContent() {
 
   return (
     <main
-      className="relative w-full h-[100dvh] flex flex-col bg-surface overflow-hidden select-none"
+      className="relative w-full h-[100dvh] flex flex-col bg-bg-base overflow-hidden select-none"
       data-testid="pos-mobile-scanner-page"
     >
       {/* Sticky Top Header Navigation */}
-      <header className="relative z-30 flex items-center justify-between px-4 py-3 bg-surface/85 backdrop-blur-md border-b border-border text-text-primary">
+      <header className="relative z-30 flex items-center justify-between px-4 py-3 bg-bg-surface/90 backdrop-blur-md border-b border-border text-text-primary">
         <div className="flex items-center gap-3">
           <Link
             href="/staff/pos"
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-elevated text-text-muted hover:text-text-primary transition-colors border border-border"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-bg-base text-text-muted hover:text-text-primary transition-colors border border-border"
             aria-label="Return to POS Terminal"
           >
             ←
@@ -169,7 +169,7 @@ function MobileScannerContent() {
               {statusPillText}
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-surface-elevated text-text-muted border border-border">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-bg-base text-text-muted border border-border">
               Offline Mode
             </span>
           )}
@@ -188,17 +188,17 @@ function MobileScannerContent() {
 
         {/* Transient Scan Capture Toast */}
         {toastMessage && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-surface/95 border border-success/40 text-text-primary text-xs font-semibold shadow-lg backdrop-blur-md flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-bg-surface/95 border border-success/40 text-text-primary text-xs font-semibold shadow-lg backdrop-blur-md flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
             <span className="text-success">✓</span> {toastMessage}
           </div>
         )}
       </div>
 
       {/* Floating Bottom Action Dock */}
-      <footer className="relative z-30 flex flex-col items-center gap-2 px-4 py-3 bg-surface/90 backdrop-blur-md border-t border-border">
+      <footer className="relative z-30 flex flex-col items-center gap-2 px-4 py-3 bg-bg-surface/90 backdrop-blur-md border-t border-border">
         {/* Recent Scanned Code Chip */}
         {recentScans.length > 0 && (
-          <div className="w-full max-w-sm flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface-elevated border border-border text-[11px] font-mono">
+          <div className="w-full max-w-sm flex items-center justify-between px-3 py-1.5 rounded-lg bg-bg-base border border-border text-[11px] font-mono">
             <span className="text-text-muted truncate">Last: <strong className="text-text-primary">{recentScans[0].code}</strong> ({recentScans[0].format})</span>
             <span className="text-text-muted/80 text-[10px] shrink-0 ml-2">{recentScans[0].timeString}</span>
           </div>
@@ -208,7 +208,7 @@ function MobileScannerContent() {
         <button
           type="button"
           onClick={() => setIsManualModalOpen(true)}
-          className="w-full max-w-sm py-2.5 px-4 rounded-xl bg-surface-elevated hover:bg-surface border border-border text-text-primary font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98"
+          className="w-full max-w-sm py-2.5 px-4 rounded-xl bg-bg-base hover:bg-bg-hover border border-border text-text-primary font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98"
           data-testid="open-manual-sku-btn"
         >
           <span>⌨️</span> Type SKU Manually
@@ -235,7 +235,7 @@ export default function MobileScannerPage() {
   return (
     <Suspense
       fallback={
-        <div className="w-full h-[100dvh] flex items-center justify-center bg-surface text-text-muted text-xs">
+        <div className="w-full h-[100dvh] flex items-center justify-center bg-bg-base text-text-muted text-xs">
           Loading Scanner...
         </div>
       }

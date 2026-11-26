@@ -55,7 +55,7 @@ export function ManualSkuModal({
       />
 
       {/* Slide-up Bottom Sheet Container */}
-      <div className="relative w-full sm:max-w-md bg-surface border-t sm:border border-border rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl z-10 flex flex-col gap-4 text-text-primary">
+      <div className="relative w-full sm:max-w-md bg-bg-surface border-t sm:border border-border rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl z-10 flex flex-col gap-4 text-text-primary">
         <div className="flex items-center justify-between border-b border-border/40 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-xl" aria-hidden="true">⌨️</span>
@@ -66,7 +66,7 @@ export function ManualSkuModal({
           <button
             type="button"
             onClick={handleClose}
-            className="text-text-muted hover:text-text-primary p-1.5 rounded-lg hover:bg-surface-elevated transition-colors"
+            className="text-text-muted hover:text-text-primary p-1.5 rounded-lg hover:bg-bg-hover transition-colors"
             aria-label="Close manual SKU entry"
           >
             ✕
@@ -95,7 +95,7 @@ export function ManualSkuModal({
                 if (validationError) setValidationError(null);
               }}
               placeholder="e.g. YAM-NMAX-BL01 or 4901234567890"
-              className="w-full px-3.5 py-3 rounded-xl bg-surface-elevated border border-border text-text-primary placeholder:text-text-muted/60 text-sm font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              className="w-full px-3.5 py-3 rounded-xl bg-bg-base border border-border text-text-primary placeholder:text-text-muted/60 text-sm font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               data-testid="manual-sku-input"
             />
             {validationError && (
@@ -109,13 +109,13 @@ export function ManualSkuModal({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 rounded-xl border border-border bg-surface-elevated text-text-muted hover:text-text-primary font-medium text-sm transition-colors"
+              className="px-4 py-2.5 rounded-xl border border-border bg-bg-base text-text-muted hover:text-text-primary font-medium text-sm transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-text-inverse font-semibold text-sm transition-colors shadow-sm active:scale-98"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-sm transition-colors shadow-xs active:scale-98"
               data-testid="manual-sku-submit-btn"
             >
               Submit SKU

@@ -303,8 +303,8 @@ export function MobileCameraScanner({
           onClick={toggleTorch}
           className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md border transition-all ${
             isTorchActive
-              ? 'bg-warning text-text-inverse border-warning/80 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
-              : 'bg-surface/80 text-text-primary border-border hover:bg-surface'
+              ? 'bg-accent text-white border-accent shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+              : 'bg-bg-surface/90 text-text-primary border-border hover:bg-bg-hover'
           }`}
           aria-label={isTorchActive ? 'Turn off flashlight' : 'Turn on flashlight'}
           data-testid="torch-toggle-btn"
@@ -316,7 +316,7 @@ export function MobileCameraScanner({
       {/* Permission Denied / Error / Unavailable Fallback Screen */}
       {(status === 'PERMISSION_DENIED' || status === 'UNAVAILABLE' || status === 'ERROR') && (
         <div
-          className="relative z-30 flex flex-col items-center justify-center p-6 text-center max-w-sm mx-auto bg-surface/95 backdrop-blur-md rounded-2xl border border-border shadow-2xl text-text-primary"
+          className="relative z-30 flex flex-col items-center justify-center p-6 text-center max-w-sm mx-auto bg-bg-surface/95 backdrop-blur-md rounded-2xl border border-border shadow-2xl text-text-primary"
           data-testid="camera-error-screen"
         >
           <div className="w-14 h-14 rounded-full bg-danger-light text-danger flex items-center justify-center text-2xl mb-3">
