@@ -69,6 +69,40 @@ export async function unlockAudioContext(): Promise<boolean> {
 }
 
 /**
+ * Synthesizes a crisp 1000Hz sine-wave beep for 80ms via Web Audio API (SIAA-110).
+ * Plays instantaneously upon optical barcode capture without external sound files.
+ */
+export function playScanCaptureBeep(
+  customCtx?: AudioContext | null,
+  frequencyHz: number = 1000,
+  durationSec: number = 0.08
+): boolean {
+  const ctx = customCtx ?? getAudioContext();
+  if (!ctx) return false;
+
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(frequencyHz, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationSec);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + durationSec);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Plays a high-pitch 1200Hz success chime for cart addition (160ms with smooth exponential decay).
  */
 export function playSuccessChime(customCtx?: AudioContext | null): boolean {
