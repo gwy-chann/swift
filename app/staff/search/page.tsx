@@ -1,22 +1,49 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from "react";
-import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal, Lock } from "lucide-react";
+import Link from "next/link";
+import { PackageSearch, Search, MapPin, AlertCircle, AlertTriangle, X, SlidersHorizontal, Lock, Clock } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { usePunchStore } from "@/lib/store/punch-store";
 import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
 import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { StockAdjustmentModal } from "@/components/admin/inventory/stock-adjustment-modal";
 import { ManagerOverrideModal } from "@/components/pos/manager-override-modal";
+import { ActiveShiftGuardModal } from "@/components/pos/active-shift-guard-modal";
 import type { Product } from "@/lib/types/product";
 import type { AdjustmentType } from "@/lib/inventory/stock-adjustment";
 import { TablePagination, usePagination } from "@/components/common/table-pagination";
 
-function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean): string {
-  if (!isRestrictedRole) return "Adjust physical stock count";
-  return isMechanic
-    ? "Mechanics are not allowed to adjust stock count"
-    : "Cashiers are not allowed to adjust stock count";
+function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean, isTimedIn: boolean): string {
+  if (isRestrictedRole) {
+    return isMechanic
+      ? "Mechanics are not allowed to adjust stock count"
+      : "Cashiers are not allowed to adjust stock count";
+  }
+  if (!isTimedIn) {
+    return "Time-in required: You must be on an active shift to adjust stock count";
+  }
+  return "Adjust physical stock count";
+}
+
+function getAdjustButtonClass(isRestrictedRole: boolean, isTimedIn: boolean): string {
+  if (isRestrictedRole) {
+    return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-bg-base text-text-muted border border-border hover:border-danger/40 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer shadow-2xs";
+  }
+  if (!isTimedIn) {
+    return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20 transition-colors cursor-pointer shadow-2xs";
+  }
+  return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs";
+}
+
+function renderAdjustIcon(isRestrictedRole: boolean, isTimedIn: boolean) {
+  if (isRestrictedRole) {
+    return <Lock className="w-3 h-3 text-text-muted" />;
+  }
+  if (!isTimedIn) {
+    return <Clock className="w-3 h-3 text-warning" />;
+  }
+  return <SlidersHorizontal className="w-3 h-3" />;
 }
 
 function getToastClasses(type: "success" | "error" | "warning"): string {
@@ -48,17 +75,20 @@ export default function StaffSearchPage() {
     !isInventoryClerk &&
     !isAdmin;
   const isRestrictedRole = isCashier || isMechanic;
+  const isTimedIn = Boolean(isAdmin || (punchState.isShiftActive && punchState.shiftStatus === "on_shift"));
   const canAdjustStock = Boolean(
     (isInventoryClerk ||
     isAdmin ||
     punchState.currentPermissions?.can_adjust_stock) &&
-    !isRestrictedRole
+    !isRestrictedRole &&
+    isTimedIn
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
   const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isRestrictedModalOpen, setIsRestrictedModalOpen] = useState(false);
+  const [isShiftGuardModalOpen, setIsShiftGuardModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
   const [toastMessage, setToastMessage] = useState<{
@@ -146,13 +176,19 @@ export default function StaffSearchPage() {
   const handleRequestAdjustStock = (item: Product) => {
     setSelectedProduct(item);
 
-    // Cashier and mechanic role restriction: override is disabled; validate that they are not allowed to adjust stock
+    // 1. Shift time-in requirement: Staff must be timed in (on active shift) to adjust anything
+    if (!isTimedIn) {
+      setIsShiftGuardModalOpen(true);
+      return;
+    }
+
+    // 2. Cashier and mechanic role restriction: override is disabled; validate that they are not allowed to adjust stock
     if (isRestrictedRole) {
       setIsRestrictedModalOpen(true);
       return;
     }
 
-    // Inventory clerks (and admins or users with stock adjustment permissions) manipulate stock directly without a master code
+    // 3. Inventory clerks (and admins or users with stock adjustment permissions) manipulate stock directly without a master code
     if (canAdjustStock) {
       setIsAdjustmentModalOpen(true);
     } else {
@@ -171,6 +207,13 @@ export default function StaffSearchPage() {
     delta: number;
     reason: string;
   }) => {
+    if (!isTimedIn) {
+      setIsAdjustmentModalOpen(false);
+      setSelectedProduct(null);
+      setIsShiftGuardModalOpen(true);
+      return;
+    }
+
     if (isRestrictedRole || !canAdjustStock) {
       setIsAdjustmentModalOpen(false);
       setSelectedProduct(null);
@@ -261,6 +304,24 @@ export default function StaffSearchPage() {
         </div>
       )}
 
+      {/* Off-Shift Attendance Guard Banner */}
+      {!isTimedIn && !isRestrictedRole && (
+        <div className="p-3 sm:px-4 bg-danger-light border border-danger/30 text-danger rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            <span>
+              <strong>Shift Inactive:</strong> You are currently timed out. You must <strong>time in</strong> on the Punch Clock before adjusting stock.
+            </span>
+          </div>
+          <Link
+            href="/staff/clock"
+            className="px-3 py-1.5 rounded-lg bg-bg-surface hover:bg-danger hover:text-white text-danger border border-danger/30 font-semibold text-xs shadow-xs transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            Go to Punch Clock
+          </Link>
+        </div>
+      )}
+
       {/* Search & Filter Bar */}
       <div className="p-4 bg-bg-surface border border-border rounded-xl shadow-xs flex flex-col sm:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
@@ -329,18 +390,10 @@ export default function StaffSearchPage() {
                     <button
                       type="button"
                       onClick={() => handleRequestAdjustStock(item)}
-                      className={
-                        isRestrictedRole
-                          ? "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-bg-base text-text-muted border border-border hover:border-danger/40 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer shadow-2xs"
-                          : "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs"
-                      }
-                      title={getAdjustButtonTitle(isRestrictedRole, isMechanic)}
+                      className={getAdjustButtonClass(isRestrictedRole, isTimedIn)}
+                      title={getAdjustButtonTitle(isRestrictedRole, isMechanic, isTimedIn)}
                     >
-                      {isRestrictedRole ? (
-                        <Lock className="w-3 h-3 text-text-muted" />
-                      ) : (
-                        <SlidersHorizontal className="w-3 h-3" />
-                      )}
+                      {renderAdjustIcon(isRestrictedRole, isTimedIn)}
                       <span>Adjust Stock</span>
                     </button>
                   </td>
@@ -420,6 +473,21 @@ export default function StaffSearchPage() {
           </div>
         </dialog>
       )}
+
+      {/* Active Shift Guard Modal */}
+      <ActiveShiftGuardModal
+        isOpen={isShiftGuardModalOpen}
+        shiftStatus={punchState.shiftStatus}
+        currentStaff={punchState.currentStaff}
+        title={punchState.shiftStatus === "break" ? "Shift Currently on Break" : "Active Shift Required to Adjust Stock"}
+        subtitle="Staff Accountability & Inventory Audit Guard"
+        description="You must clock in / time in on the Punch Clock before performing physical stock adjustments. All inventory counts, adjustments, and audit trails must be attributed to an active on-duty staff member."
+        requirementNotice="Physical stock modifications cannot be made without an active on-duty shift. Navigate to the Punch Clock to record your shift punch."
+        onClose={() => {
+          setIsShiftGuardModalOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
 
       {/* Manager Elevation Override only for non-restricted roles */}
       {!isRestrictedRole && (

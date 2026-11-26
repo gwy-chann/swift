@@ -10,13 +10,21 @@ export interface ActiveShiftGuardModalProps {
   shiftStatus?: ShiftStateStatus;
   currentStaff?: string | null;
   onClose: () => void;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  requirementNotice?: string;
 }
 
 export function ActiveShiftGuardModal({
   isOpen,
   shiftStatus = 'idle',
   currentStaff,
-  onClose
+  onClose,
+  title: customTitle,
+  subtitle: customSubtitle,
+  description: customDescription,
+  requirementNotice: customRequirementNotice,
 }: Readonly<ActiveShiftGuardModalProps>) {
   const router = useRouter();
 
@@ -42,18 +50,28 @@ export function ActiveShiftGuardModal({
 
   if (!isOpen) return null;
 
-  let title = 'Active Shift Required';
+  let title = customTitle || 'Active Shift Required';
   let description =
+    customDescription ||
     'You must clock in / time in before processing customer orders. All completed sales and inventory decrements must be attributed to an active cashier on duty.';
 
-  if (shiftStatus === 'break') {
+  if (!customTitle && !customDescription) {
+    if (shiftStatus === 'break') {
+      title = 'Shift Currently on Break';
+      description =
+        'Your shift is currently paused on break. Cashiers must resume their active shift before processing customer sales.';
+    } else if (shiftStatus === 'completed') {
+      description =
+        'Your previous shift has ended. Please clock in for a new shift to resume ringing up customer sales.';
+    }
+  } else if (!customTitle && shiftStatus === 'break') {
     title = 'Shift Currently on Break';
-    description =
-      'Your shift is currently paused on break. Cashiers must resume their active shift before processing customer sales.';
-  } else if (shiftStatus === 'completed') {
-    description =
-      'Your previous shift has ended. Please clock in for a new shift to resume ringing up customer sales.';
   }
+
+  const subtitle = customSubtitle || 'Staff Accountability & Sales Attribution Guard';
+  const requirementNotice =
+    customRequirementNotice ||
+    'Shift Time-In Requirement: Transactions cannot be settled without an accountable on-duty employee. Navigate to the Punch Clock to record your shift punch.';
 
   return (
     <div
@@ -75,7 +93,7 @@ export function ActiveShiftGuardModal({
                 {title}
               </h3>
               <p className="text-[11px] text-warning font-semibold">
-                Staff Accountability &amp; Sales Attribution Guard
+                {subtitle}
               </p>
             </div>
           </div>
@@ -106,7 +124,7 @@ export function ActiveShiftGuardModal({
           </div>
 
           <div className="text-[11px] text-text-muted bg-bg-surface/50 p-2.5 rounded-lg border border-border-subtle">
-            💡 <span className="font-medium">Shift Time-In Requirement:</span> Transactions cannot be settled without an accountable on-duty employee. Navigate to the Punch Clock to record your shift punch.
+            💡 <span className="font-medium">Notice:</span> {requirementNotice}
           </div>
 
           {/* Action Buttons */}

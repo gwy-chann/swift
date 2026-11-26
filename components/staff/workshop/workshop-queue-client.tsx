@@ -243,9 +243,9 @@ export function WorkshopQueueClient({
 
   // Atomic Status Transition Handler
   async function handleStatusChange(orderId: string, newStatus: WorkOrderStatus) {
-    if (newStatus === "COMPLETED" && !isTimedIn) {
+    if (!isTimedIn) {
       setToastMessage({
-        text: "You must be timed in (on shift) to complete a job. Please clock in on the punch clock.",
+        text: "You must be timed in (on shift) to update work orders. Please clock in on the punch clock.",
         type: "error",
       });
       return;
@@ -302,6 +302,13 @@ export function WorkshopQueueClient({
   // Admin Assign Mechanic Handler (SIAA-101 Scenario 3)
   const handleAssignMechanic = useCallback(
     async (orderId: string, mechId: string, mechName: string) => {
+      if (!isTimedIn) {
+        setToastMessage({
+          text: "You must be timed in (on shift) to assign mechanics. Please clock in on the punch clock.",
+          type: "error",
+        });
+        return;
+      }
       setIsUpdating(true);
       try {
         const res = await assignMechanicAction(orderId, mechId, mechName);
@@ -316,7 +323,7 @@ export function WorkshopQueueClient({
         setIsUpdating(false);
       }
     },
-    []
+    [isTimedIn]
   );
 
   // Claim Job Handler

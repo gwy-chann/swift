@@ -223,7 +223,7 @@ export default function StaffPosPage() {
     if (items.length === 0 || isProcessing) return;
 
     if (!isShiftActive || shiftStatus !== "on_shift") {
-      router.push("/staff/clock");
+      setIsShiftGuardModalOpen(true);
       return;
     }
 
@@ -243,7 +243,7 @@ export default function StaffPosPage() {
         return;
       }
       if (auth.reason === "SHIFT_INACTIVE") {
-        router.push("/staff/clock");
+        setIsShiftGuardModalOpen(true);
         return;
       }
       if (auth.reason === "CART_EMPTY") {
@@ -400,7 +400,7 @@ export default function StaffPosPage() {
           return;
         }
         if (evaluation.reason === "SHIFT_INACTIVE") {
-          router.push("/staff/clock");
+          setIsShiftGuardModalOpen(true);
           return;
         }
         if (evaluation.reason === "CART_EMPTY") {
