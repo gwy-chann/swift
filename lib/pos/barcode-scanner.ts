@@ -8,8 +8,23 @@ import type {
   BarcodeScanResult,
   BarcodeScanStatus
 } from "@/specs/029-barcode-scan-pos-hotkeys/contracts/pos-barcode-hotkeys.contract";
+import {
+  evaluateProductAvailability,
+  buildPosScanValidationResponse,
+  type PosScanStatus,
+  type PosScanValidationResponse,
+  type AvailabilityCheckResult
+} from "./availability-validator";
 
-export type { BarcodeScanResult, BarcodeScanStatus };
+export type {
+  BarcodeScanResult,
+  BarcodeScanStatus,
+  PosScanStatus,
+  PosScanValidationResponse,
+  AvailabilityCheckResult
+};
+
+export { evaluateProductAvailability, buildPosScanValidationResponse };
 
 /**
  * Resolves a scanned barcode or manually entered SKU/code against active catalog products and labor services.
