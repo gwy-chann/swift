@@ -35,6 +35,6 @@
 - [x] Task 3.6: Commit UI components and route views (`feat(pos): [SIAA-111] wire scanner pairing modal and background broadcast ingestion in staff pos page`).
 
 ## Phase 4: Unit 6 — Task Completion & Governance Sync
-- [ ] Task 4.1: Mark all tasks complete in `tasks.md`.
-- [ ] Task 4.2: Trigger `graphify-auto-sync` (`graphify . --update`) to update AST knowledge graph.
-- [ ] Task 4.3: Commit task completion sync (`docs(specs): [SIAA-111] mark all implementation tasks complete`).
+- [x] Task 4.1: Mark all tasks complete in `tasks.md`.
+- [x] Task 4.2: Trigger `graphify-auto-sync` (`graphify . --update`) to update AST knowledge graph.
+- [x] Task 4.3: Commit task completion sync (`docs(specs): [SIAA-111] mark all implementation tasks complete`).
