@@ -20,7 +20,9 @@ export async function broadcastPosScanValidation(
 
     const sessionCode = pairingCode?.trim() || "default";
     const supabase = createClient();
-    const channelName = `pos-session:${sessionCode}`;
+    const channelName = sessionCode.startsWith("pos-")
+      ? `pos-channel:${sessionCode}`
+      : `pos-session:${sessionCode}`;
     const channel = supabase.channel(channelName);
 
     await channel.send({
