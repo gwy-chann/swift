@@ -1,3 +1,6 @@
+"use client";
+
+import { useServerInsertedHTML } from "next/navigation";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 
 const themeInitScript = `(function() {
@@ -74,13 +77,17 @@ const themeInitScript = `(function() {
 /**
  * Blocking Theme Script to prevent Flash of Unstyled Content (FOUC), hydration flicker,
  * and strip browser-extension injected attributes (like bis_skin_checked) before React hydrates.
- * Placed in <head> to execute synchronously before the browser paints or hydrates the DOM.
+ * Injected during SSR via useServerInsertedHTML so it runs synchronously before paint
+ * without triggering React 19's client script tag warning.
  */
 export function ThemeScript() {
-  return (
+  useServerInsertedHTML(() => (
     <script
       id="swift-theme-init"
       dangerouslySetInnerHTML={{ __html: themeInitScript }}
     />
-  );
+  ));
+
+  return null;
 }
+
