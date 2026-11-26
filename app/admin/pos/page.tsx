@@ -1,22 +1,49 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Smartphone, RefreshCw } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
 import { ManagerOverrideModal } from "@/components/staff/pos/manager-override-modal";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt-modal";
 import { CashTenderModal } from "@/components/pos/cash-tender-modal";
 import { CustomerIntakeModal } from "@/components/pos/customer-intake-modal";
+import { ScannerPairingModal } from "@/components/pos/scanner-pairing-modal";
 import { HybridCatalogPane } from "@/components/pos/hybrid-catalog-pane";
 import { HybridCartPane } from "@/components/pos/hybrid-cart-pane";
 import { getProductsAction } from "@/lib/admin/product-actions";
 import { getLaborServicesAction } from "@/lib/pos/actions";
 import { useLaborServicesRealtime } from "@/lib/hooks/use-labor-services-realtime";
 import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
+import { usePosScannerChannel } from "@/lib/hooks/use-pos-scanner-channel";
+import { createScannerSessionInfo, type ScannerSessionInfo } from "@/lib/pos/scanner-session";
+import { resolveBarcodeScanQuery } from "@/lib/pos/barcode-scanner";
+import { buildPosScanValidationResponse } from "@/lib/pos/availability-validator";
+import { broadcastPosScanValidation } from "@/lib/pos/companion-broadcast";
+import { calculateCartTotals } from "@/lib/pos/discount-matrix";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contracts";
+
+function getScannerButtonClass(state: string): string {
+  if (state === "CONNECTED") {
+    return "bg-success-light text-success border-success/30 font-semibold";
+  }
+  if (state === "DISCONNECTED") {
+    return "bg-surface-elevated text-text-primary border-border hover:bg-border/30";
+  }
+  return "bg-warning-light text-warning border-warning/30 animate-pulse font-semibold";
+}
+
+function getScannerButtonLabel(state: string, latencyMs?: number): string {
+  if (state === "CONNECTED") {
+    return `📱 Phone Connected (${latencyMs ?? 15}ms)`;
+  }
+  if (state === "WAITING_FOR_DEVICE") {
+    return "📱 Waiting for Phone...";
+  }
+  return "📱 Pair Phone Scanner";
+}
 
 export default function AdminPosPage() {
   const { products, hydrateProducts } = useInventoryStore();
@@ -26,6 +53,9 @@ export default function AdminPosPage() {
   const {
     items,
     totals,
+    pricingMode,
+    discountRate,
+    discountType,
     addPart,
     addService,
     isPaymentModalOpen,
@@ -44,6 +74,19 @@ export default function AdminPosPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // SIAA-111: Scanner session & pairing state
+  const [isPairingModalOpen, setIsPairingModalOpen] = useState(false);
+  const [scannerSession, setScannerSession] = useState<ScannerSessionInfo | null>(() =>
+    typeof window !== "undefined" ? createScannerSessionInfo("ADMIN-01") : null
+  );
+  const [hasScannerDisconnected, setHasScannerDisconnected] = useState(false);
+
+  const handleRegenerateSession = useCallback(() => {
+    const newSession = createScannerSessionInfo("ADMIN-01");
+    setScannerSession(newSession);
+    setHasScannerDisconnected(false);
+  }, []);
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
@@ -110,17 +153,108 @@ export default function AdminPosPage() {
 
   const handleSelectProduct = useCallback(
     (product: Product) => {
+      const existingItem = items.find((i) => i.type === "part" && i.sku === product.sku);
+      const currentCartQty = existingItem ? existingItem.qty : 0;
+      const targetQty = currentCartQty + 1;
+
+      const activePrice = pricingMode === "wholesale" ? product.wholesale : product.retail;
+
       if (product.stock <= 0) {
         showToast("error", `Cannot add ${product.name}: Item is out of stock.`);
+        broadcastPosScanValidation(
+          buildPosScanValidationResponse({
+            status: "OUT_OF_STOCK",
+            product,
+            requestedQty: 1,
+            availableStock: 0,
+            message: "Item is sold out"
+          }),
+          scannerSession?.sessionKey
+        );
+        return;
+      }
+
+      if (targetQty > product.stock) {
+        showToast(
+          "error",
+          `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+        );
+        broadcastPosScanValidation(
+          buildPosScanValidationResponse({
+            status: "EXCEEDS_STOCK",
+            product,
+            currentCartQty,
+            availableStock: product.stock,
+            message: `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+          }),
+          scannerSession?.sessionKey
+        );
         return;
       }
 
       const res = addPart(product, 1);
       if (!res.success) {
-        showToast("error", `Cannot add ${product.name}: Insufficient stock available.`);
+        if (res.reason === "exceeds_stock") {
+          showToast(
+            "error",
+            `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+          );
+        } else {
+          showToast("error", `Cannot add ${product.name}: Insufficient stock available.`);
+        }
+        broadcastPosScanValidation(
+          buildPosScanValidationResponse({
+            status: "EXCEEDS_STOCK",
+            product,
+            currentCartQty,
+            availableStock: product.stock,
+            message: `Cannot add ${product.name}: Insufficient stock available.`
+          }),
+          scannerSession?.sessionKey
+        );
+        return;
       }
+
+      const updatedTotals = calculateCartTotals(
+        existingItem
+          ? items.map((i) =>
+              i.type === "part" && i.sku === product.sku ? { ...i, qty: targetQty } : i
+            )
+          : [
+              ...items,
+              {
+                id: product.sku,
+                type: "part",
+                sku: product.sku,
+                name: product.name,
+                price: activePrice,
+                qty: 1,
+                location: product.location,
+                retailPrice: product.retail,
+                wholesalePrice: product.wholesale,
+                stock: product.stock,
+                minThreshold: product.minThreshold
+              }
+            ],
+        discountRate,
+        discountType
+      );
+
+      broadcastPosScanValidation(
+        buildPosScanValidationResponse({
+          status: "SUCCESS",
+          product,
+          activePrice,
+          currentCartQty,
+          requestedQty: 1,
+          targetQty,
+          cartItemCount: updatedTotals.itemCount,
+          cartTotal: updatedTotals.total
+        }),
+        scannerSession?.sessionKey
+      );
     },
-    [addPart, showToast]
+    [items, pricingMode, discountRate, discountType, addPart, showToast, scannerSession?.sessionKey]
   );
 
   const handleSelectService = useCallback(
@@ -145,6 +279,59 @@ export default function AdminPosPage() {
     },
     [showToast]
   );
+
+  const handleScanNotFound = useCallback(
+    (query?: string) => {
+      const rawCode = query || "";
+      showToast("error", "Item code or barcode not found");
+      broadcastPosScanValidation(
+        buildPosScanValidationResponse({
+          status: "NOT_FOUND",
+          rawQuery: rawCode,
+          message: "Barcode not found in catalog"
+        }),
+        scannerSession?.sessionKey
+      );
+    },
+    [showToast, scannerSession?.sessionKey]
+  );
+
+  // SIAA-111: Focus-agnostic background scan ingestion from paired companion phone
+  const handleCompanionBarcodeScan = useCallback(
+    (code: string) => {
+      const result = resolveBarcodeScanQuery(code, products, laborServices);
+      if (result.status === "MATCHED_PART" && result.matchedItem) {
+        handleSelectProduct(result.matchedItem as Product);
+      } else if (result.status === "MATCHED_SERVICE" && result.matchedItem) {
+        handleSelectService(result.matchedItem as LaborService);
+      } else if (result.status === "OUT_OF_STOCK_OVERRIDE" && result.matchedItem) {
+        handleSelectProduct(result.matchedItem as Product);
+      } else {
+        handleScanNotFound(code);
+      }
+    },
+    [products, laborServices, handleSelectProduct, handleSelectService, handleScanNotFound]
+  );
+
+  // SIAA-111: Connect to Supabase Realtime Broadcast channel
+  const {
+    connectionState: scannerConnectionState,
+    telemetry: scannerTelemetry
+  } = usePosScannerChannel({
+    sessionKey: scannerSession?.sessionKey,
+    terminalId: "ADMIN-01",
+    onBarcodeScanned: (code) => {
+      handleCompanionBarcodeScan(code);
+    },
+    onDeviceConnected: (payload) => {
+      setHasScannerDisconnected(false);
+      showToast("success", `Phone scanner connected (${payload.device || "Mobile Device"})`);
+    },
+    onDeviceDisconnected: () => {
+      setHasScannerDisconnected(true);
+      showToast("error", "Phone scanner disconnected.");
+    }
+  });
 
   const handleOpenPayment = useCallback(() => {
     if (items.length === 0 || isProcessing) return;
@@ -210,7 +397,8 @@ export default function AdminPosPage() {
         !isPaymentModalOpen &&
         !isIntakeModalOpen &&
         !isReceiptModalOpen &&
-        !isOverrideModalOpen
+        !isOverrideModalOpen &&
+        !isPairingModalOpen
       ) {
         e.preventDefault();
         handleOpenPayment();
@@ -218,14 +406,14 @@ export default function AdminPosPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPaymentModalOpen, isIntakeModalOpen, isReceiptModalOpen, isOverrideModalOpen, handleOpenPayment]);
+  }, [isPaymentModalOpen, isIntakeModalOpen, isReceiptModalOpen, isOverrideModalOpen, isPairingModalOpen, handleOpenPayment]);
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200">
+    <div className="flex flex-col gap-3 h-[calc(100vh-8.5rem)] animate-in fade-in duration-200">
       {/* High-Contrast Toast Notification Banner */}
       {toastMessage && (
         <output
-          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all print:hidden ${
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md transition-all shrink-0 print:hidden ${
             toastMessage.type === "success"
               ? "bg-success-light text-success border-success/30"
               : "bg-danger-light text-danger border-danger/30"
@@ -250,14 +438,65 @@ export default function AdminPosPage() {
         </output>
       )}
 
+      {/* POS Top Action Bar (SIAA-111) */}
+      <div className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-surface border border-border shrink-0 print:hidden shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-bold text-text-primary tracking-wide">
+            Admin Counter POS
+          </span>
+          <span className="text-2xs px-2 py-0.5 rounded bg-surface-elevated text-text-muted font-mono border border-border">
+            Terminal ADMIN-01
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* SIAA-111: Pair Phone Scanner Action Button */}
+          <button
+            type="button"
+            onClick={() => setIsPairingModalOpen(true)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${getScannerButtonClass(
+              scannerConnectionState
+            )}`}
+            aria-label="Pair Phone Barcode Scanner"
+          >
+            <Smartphone className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              {getScannerButtonLabel(
+                scannerConnectionState,
+                scannerTelemetry.lastPingLatencyMs
+              )}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* SIAA-111: Scanner Disconnection Recovery Alert Banner */}
+      {hasScannerDisconnected && scannerConnectionState === "DISCONNECTED" && (
+        <div className="flex items-center justify-between p-2.5 px-3.5 rounded-lg border border-danger/30 bg-danger-light text-danger text-xs font-medium shrink-0 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>Companion phone scanner disconnected. Active cart items remain preserved.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPairingModalOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-danger text-white text-2xs font-semibold hover:opacity-90 cursor-pointer transition-opacity"
+          >
+            <RefreshCw className="w-3 h-3" />
+            1-Click Re-pair
+          </button>
+        </div>
+      )}
+
       {/* POS Terminal Workspace: Admin does NOT need to time in */}
-      <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-8.5rem)] print:hidden">
+      <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0 print:hidden">
         {/* Left Pane: Catalog */}
         <HybridCatalogPane
           products={products}
           laborServices={laborServices}
           onSelectProduct={handleSelectProduct}
           onSelectService={handleSelectService}
+          onScanNotFound={handleScanNotFound}
           showTitle={false}
         />
 
@@ -313,6 +552,16 @@ export default function AdminPosPage() {
           showToast("success", "Receipt printed & checkout session finalized.");
         }}
         receiptData={activeReceiptData}
+      />
+
+      {/* SIAA-111: Scanner Pairing Modal */}
+      <ScannerPairingModal
+        isOpen={isPairingModalOpen}
+        onClose={() => setIsPairingModalOpen(false)}
+        sessionInfo={scannerSession}
+        connectionState={scannerConnectionState}
+        telemetry={scannerTelemetry}
+        onRegenerateSession={handleRegenerateSession}
       />
     </div>
   );
