@@ -28,7 +28,7 @@ flowchart TD
 
 ## Phase 2: Multi-Tone Sound & Haptic Feedback Engine
 
-- [ ] **TASK-2.1**: Implement `lib/pos/scanner-feedback.ts`:
+- [x] **TASK-2.1**: Implement `lib/pos/scanner-feedback.ts`:
   - `playSuccessChime()`: Synthesizes high-pitch 1200Hz sine wave tone via Web Audio API with smooth gain envelope.
   - `playSoldOutBuzzer()`: Synthesizes low-pitch 250Hz tone pulse (double buzz) for out-of-stock / rejected items.
   - `playNotFoundTone()`: Synthesizes 440Hz -> 330Hz sequence for unrecognized items.
@@ -41,7 +41,7 @@ flowchart TD
 
 ## Phase 3: Automated Unit & TDD Test Suite
 
-- [ ] **TASK-3.1**: Create `lib/pos/__tests__/scanner-feedback.test.ts`:
+- [x] **TASK-3.1**: Create `lib/pos/__tests__/scanner-feedback.test.ts`:
   - Test Scenario 1: Verify audio frequencies (1200Hz success, 250Hz buzzer, 440Hz/330Hz not found).
   - Test Scenario 2: Verify haptic vibration parameters (80ms single pulse vs [200, 100, 200] double pulse).
   - Test Scenario 3: Verify graceful no-op behavior in non-browser or non-vibration environments.
@@ -51,20 +51,20 @@ flowchart TD
 
 ## Phase 4: Mobile Scanner UI Components Suite
 
-- [ ] **TASK-4.1**: Create `components/pos/scanner/scan-validation-card.tsx`:
+- [x] **TASK-4.1**: Create `components/pos/scanner/scan-validation-card.tsx`:
   - Top-anchored floating container with slide-in and fade-out animations.
   - Success state: Product Name, SKU, Unit Price in ₱ (PHP format), and Remaining Stock counter ("X units remaining").
   - Rejection state: High-contrast alert banner ("SOLD OUT / UNAVAILABLE — NOT ADDED TO CART"), exact SKU, and failure reason.
   - Auto-dismiss lifecycle: 3.5s timeout automatically managed via `useEffect` with instant cancel on new scan or tap dismiss.
   - Accessible ARIA live regions (`aria-live="polite"` vs `aria-live="assertive"`).
   - Strictly consumes SWIFT semantic tokens (`var(--success)`, `var(--danger)`, `bg-bg-card`, `border-border`).
-- [ ] **TASK-4.2**: Create `components/pos/scanner/scanner-viewfinder-overlay.tsx`:
+- [x] **TASK-4.2**: Create `components/pos/scanner/scanner-viewfinder-overlay.tsx`:
   - Camera reticle frame with corner bracket indicators.
   - Dynamic perimeter border flashing:
     - Emerald green pulse (`#10b981` / `border-success`) for 400ms on success.
     - Crimson red pulse (`#ef4444` / `border-danger`) with alert animation for 400ms on rejection.
     - Resets to neutral idle reticle upon animation end.
-- [ ] **TASK-4.3**: Create `components/pos/scanner/mobile-cart-summary-dock.tsx`:
+- [x] **TASK-4.3**: Create `components/pos/scanner/mobile-cart-summary-dock.tsx`:
   - Compact sticky bottom dock (`fixed bottom-0 inset-x-0 z-30`).
   - Displays live running cart state: `"Cart: X items | Subtotal: ₱Y,YYY.00"`.
   - Consumes SWIFT design tokens (`bg-bg-surface/95 backdrop-blur-md border-border text-text-primary`).
@@ -73,7 +73,7 @@ flowchart TD
 
 ## Phase 5: Verification Suite, Typecheck, and Linting
 
-- [ ] **TASK-5.1**: Run automated test suite: `node --env-file=.env.local --experimental-strip-types --test lib/pos/__tests__/scanner-feedback.test.ts` and `npm test`.
-- [ ] **TASK-5.2**: Run TypeScript verification: `npx tsc --noEmit`.
-- [ ] **TASK-5.3**: Run ESLint validation: `npm run lint`.
-- [ ] **TASK-5.4**: Run Graphify knowledge graph sync: `graphify . --update`.
+- [x] **TASK-5.1**: Run automated test suite: `node --env-file=.env.local --experimental-strip-types --test lib/pos/__tests__/scanner-feedback.test.ts` and `npm test`.
+- [x] **TASK-5.2**: Run TypeScript verification: `npx tsc --noEmit`.
+- [x] **TASK-5.3**: Run ESLint validation: `npm run lint`.
+- [x] **TASK-5.4**: Run Graphify knowledge graph sync: `graphify . --update`.
