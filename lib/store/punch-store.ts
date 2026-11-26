@@ -138,6 +138,7 @@ export function resolveStaffPermissions(
 
 export class PunchStore {
   private state: PunchStoreState;
+  private readonly serverSnapshot: PunchStoreState;
   private readonly listeners = new Set<() => void>();
   private readonly errorListeners = new Set<(error: PunchStoreError) => void>();
 
@@ -146,6 +147,7 @@ export class PunchStore {
     const defaultProfileId = '00000000-0000-0000-0000-000000000002'; // Mike Morales
     const defaultStaff = 'Mike Morales';
 
+    this.serverSnapshot = this.createDefaultState(defaultStaff, defaultProfileId, initialLogs);
     this.state = this.loadInitialState(defaultStaff, defaultProfileId, initialLogs);
 
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
@@ -398,6 +400,10 @@ export class PunchStore {
 
   public getState = (): PunchStoreState => {
     return this.state;
+  };
+
+  public getServerSnapshot = (): PunchStoreState => {
+    return this.serverSnapshot;
   };
 
   public getActiveStaffCount = (): number => {
@@ -1651,7 +1657,7 @@ export function usePunchStore(): PunchStoreState & {
   const state = useSyncExternalStore(
     punchStore.subscribe,
     punchStore.getState,
-    punchStore.getState
+    punchStore.getServerSnapshot
   );
 
   return {

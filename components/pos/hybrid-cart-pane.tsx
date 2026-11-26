@@ -323,7 +323,7 @@ export function HybridCartPane({
       </div>
 
       {/* Summary & Checkout Footer */}
-      <div className="p-4 border-t border-border bg-bg-surface/80 space-y-2.5">
+      <div className="p-4 border-t border-border bg-bg-surface/80 space-y-2.5" suppressHydrationWarning>
         <div className="flex items-center justify-between text-xs text-text-secondary">
           <span>Subtotal</span>
           <span className="font-mono font-bold text-text-primary">₱{totals.subtotal.toFixed(2)}</span>
@@ -397,6 +397,7 @@ export function HybridCartPane({
           <div
             role="button"
             tabIndex={0}
+            suppressHydrationWarning
             onClick={() => router.push('/staff/clock')}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -429,6 +430,7 @@ export function HybridCartPane({
         {/* Complete Sale Action */}
         <button
           type="button"
+          suppressHydrationWarning
           disabled={isCheckoutDisabled}
           onClick={handleCheckoutClick}
           title={!isShiftReady ? 'Time-in required: Click to go to Punch Clock' : checkoutTitle}
