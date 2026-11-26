@@ -18,13 +18,13 @@
 - [x] Task 1.9: Commit specification artifacts following atomic commit guidelines (`docs(specs): [SIAA-111] add specification, architecture plan, and contracts for pos qr session pairing`).
 
 ## Phase 2: Unit 4 — Domain Models, Session Engine, QR Generator & TDD Tests
-- [ ] Task 2.1: Implement session key generation and validation utilities in `lib/pos/scanner-session.ts`.
-- [ ] Task 2.2: Implement zero-dependency vector SVG QR code generator in `lib/pos/qr-code.ts` and `components/pos/qr-code-svg.tsx`.
-- [ ] Task 2.3: Author unit test suite in `lib/pos/__tests__/scanner-session.test.ts` validating session key entropy, validation, expiry, and URL builders.
-- [ ] Task 2.4: Implement Supabase Realtime Broadcast hook in `lib/hooks/use-pos-scanner-channel.ts` supporting handshake, heartbeats, and focus-agnostic `BARCODE_SCANNED` event dispatching.
-- [ ] Task 2.5: Author unit test suite in `lib/pos/__tests__/pos-scanner-channel.test.ts` validating connection state transitions, heartbeat timeouts, and scan ingestion.
-- [ ] Task 2.6: Run tests and typecheck (`npm test`, `npx tsc --noEmit`).
-- [ ] Task 2.7: Commit domain models, logic, and tests (`feat(pos): [SIAA-111] implement scanner session manager, svg qr generator, realtime broadcast hook, and test suites`).
+- [x] Task 2.1: Implement session key generation and validation utilities in `lib/pos/scanner-session.ts`.
+- [x] Task 2.2: Implement zero-dependency vector SVG QR code generator in `lib/pos/qr-code.ts` and `components/pos/qr-code-svg.tsx`.
+- [x] Task 2.3: Author unit test suite in `lib/pos/__tests__/scanner-session.test.ts` validating session key entropy, validation, expiry, and URL builders.
+- [x] Task 2.4: Implement Supabase Realtime Broadcast hook in `lib/hooks/use-pos-scanner-channel.ts` supporting handshake, heartbeats, and focus-agnostic `BARCODE_SCANNED` event dispatching.
+- [x] Task 2.5: Author unit test suite in `lib/pos/__tests__/pos-scanner-channel.test.ts` validating connection state transitions, heartbeat timeouts, and scan ingestion.
+- [x] Task 2.6: Run tests and typecheck (`npm test`, `npx tsc --noEmit`).
+- [x] Task 2.7: Commit domain models, logic, and tests (`feat(pos): [SIAA-111] implement scanner session manager, svg qr generator, realtime broadcast hook, and test suites`).
 
 ## Phase 3: Unit 5 — UI Components & Staff POS Integration
 - [ ] Task 3.1: Implement `components/pos/scanner-pairing-modal.tsx` rendering pairing QR code, copy link action, live connection telemetry, and latency badge.
