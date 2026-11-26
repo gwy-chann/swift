@@ -31,9 +31,7 @@ export function AuthCard({ initialNotice }: Readonly<AuthCardProps> = {}) {
   );
 
   const [activeRole, setActiveRole] = useState<PortalRole | null>(null);
-  const isPinChallengeNotice =
-    initialNotice === "pin_challenge_pending" || initialNotice === "pin_required";
-  const selectedRole = activeRole ?? (isPinChallengeNotice ? "staff" : savedRole);
+  const selectedRole = activeRole ?? savedRole;
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");

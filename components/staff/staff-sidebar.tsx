@@ -20,6 +20,8 @@ import { mapDbRoleToDisplay, type DbUserRole } from "@/lib/types/auth";
 interface StaffSidebarProps {
   onItemClick?: () => void;
   className?: string;
+  sessionRole?: string;
+  sessionUserName?: string;
 }
 
 function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
@@ -32,8 +34,19 @@ function getClockBadge(isShiftActive: boolean, shiftStatus: string) {
   return { text: "ON SHIFT", variant: "success" as const };
 }
 
-export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSidebarProps>) {
+const emptySubscribe = () => () => {};
 
+export function StaffSidebar({
+  onItemClick,
+  className = "",
+  sessionRole,
+  sessionUserName,
+}: Readonly<StaffSidebarProps>) {
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -50,13 +63,15 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
     resetShiftOnLogout,
   } = usePunchStore();
 
-  const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, currentStaffRole);
-  const primaryRoute = getRolePrimaryRoute(currentStaffRole);
+  const effectiveRole = mounted ? (currentStaffRole || sessionRole) : sessionRole;
+  const visibleNavItems = filterNavItemsByRole(STAFF_NAV_ITEMS, effectiveRole);
+  const primaryRoute = getRolePrimaryRoute(effectiveRole);
   const homeHref = primaryRoute.isAuthorizedForPos ? "/staff/pos" : primaryRoute.targetPath;
 
-  const displayName = currentStaff || DEFAULT_STAFF_USER.name;
-  const displayRole = currentStaffRole
-    ? mapDbRoleToDisplay(currentStaffRole.toLowerCase() as DbUserRole)
+  const initialName = sessionUserName || DEFAULT_STAFF_USER.name;
+  const displayName = mounted ? (currentStaff || initialName) : initialName;
+  const displayRole = effectiveRole
+    ? mapDbRoleToDisplay(effectiveRole.toLowerCase() as DbUserRole)
     : DEFAULT_STAFF_USER.role;
   const avatarInitials =
     displayName
@@ -120,7 +135,7 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
               {visibleNavItems.map((item) => {
                 let itemWithBadge = item;
 
-                if (item.id === "pos" && cartItemCount > 0) {
+                if (item.id === "pos" && mounted && cartItemCount > 0) {
                   itemWithBadge = {
                     ...item,
                     badge: {
@@ -131,7 +146,10 @@ export function StaffSidebar({ onItemClick, className = "" }: Readonly<StaffSide
                 } else if (item.id === "clock") {
                   itemWithBadge = {
                     ...item,
-                    badge: getClockBadge(isShiftActive, shiftStatus),
+                    badge: getClockBadge(
+                      mounted ? isShiftActive : false,
+                      mounted ? shiftStatus : "idle"
+                    ),
                   };
                 }
 

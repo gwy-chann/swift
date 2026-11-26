@@ -23,6 +23,9 @@ import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { evaluatePosHotkey } from "@/lib/pos/barcode-scanner";
 import { evaluatePosCheckoutAuthorization } from "@/lib/contracts/checkout-guard";
 import { logSecurityEventAction } from "@/lib/admin/audit-actions";
+import { buildPosScanValidationResponse } from "@/lib/pos/availability-validator";
+import { broadcastPosScanValidation } from "@/lib/pos/companion-broadcast";
+import { calculateCartTotals } from "@/lib/pos/discount-matrix";
 import type { Product } from "@/lib/types/product";
 import type { LaborService } from "@/lib/types/service";
 import type { CustomerIntakeInput } from "@/lib/workshop/intake-dispatch-contracts";
@@ -41,6 +44,9 @@ export default function StaffPosPage() {
   const {
     items,
     totals,
+    pricingMode,
+    discountRate,
+    discountType,
     addPart,
     addService,
     isPaymentModalOpen,
@@ -161,17 +167,111 @@ export default function StaffPosPage() {
 
   const handleSelectProduct = useCallback(
     (product: Product) => {
+      const existingItem = items.find((i) => i.type === "part" && i.sku === product.sku);
+      const currentCartQty = existingItem ? existingItem.qty : 0;
+      const targetQty = currentCartQty + 1;
+      const activePrice = pricingMode === "wholesale" ? product.wholesale : product.retail;
+
       if (product.stock <= 0) {
         showToast("error", `Cannot add ${product.name}: Item is out of stock.`);
+        broadcastPosScanValidation(
+          buildPosScanValidationResponse({
+            status: "OUT_OF_STOCK",
+            product,
+            requestedQty: 1,
+            availableStock: 0,
+            message: "Item is sold out"
+          })
+        );
+        return;
+      }
+
+      if (targetQty > product.stock) {
+        showToast(
+          "error",
+          `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+        );
+        broadcastPosScanValidation(
+          buildPosScanValidationResponse({
+            status: "EXCEEDS_STOCK",
+            product,
+            currentCartQty,
+            availableStock: product.stock,
+            message: `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+          })
+        );
         return;
       }
 
       const res = addPart(product, 1);
       if (!res.success) {
-        showToast("error", `Cannot add ${product.name}: Insufficient stock available.`);
+        if (res.reason === "exceeds_stock") {
+          showToast(
+            "error",
+            `Cannot add another ${product.name}: Exceeds available stock (${product.stock} units max)`
+          );
+          broadcastPosScanValidation(
+            buildPosScanValidationResponse({
+              status: "EXCEEDS_STOCK",
+              product,
+              currentCartQty,
+              availableStock: product.stock
+            })
+          );
+        } else {
+          showToast("error", `Cannot add ${product.name}: Item is out of stock.`);
+          broadcastPosScanValidation(
+            buildPosScanValidationResponse({
+              status: "OUT_OF_STOCK",
+              product,
+              requestedQty: 1,
+              availableStock: 0,
+              message: "Item is sold out"
+            })
+          );
+        }
+        return;
       }
+
+      const updatedTotals = calculateCartTotals(
+        existingItem
+          ? items.map((i) =>
+              i.type === "part" && i.sku === product.sku ? { ...i, qty: targetQty } : i
+            )
+          : [
+              ...items,
+              {
+                id: product.sku,
+                type: "part",
+                sku: product.sku,
+                name: product.name,
+                price: activePrice,
+                qty: 1,
+                location: product.location,
+                retailPrice: product.retail,
+                wholesalePrice: product.wholesale,
+                stock: product.stock,
+                minThreshold: product.minThreshold
+              }
+            ],
+        discountRate,
+        discountType
+      );
+
+      broadcastPosScanValidation(
+        buildPosScanValidationResponse({
+          status: "SUCCESS",
+          product,
+          activePrice,
+          currentCartQty,
+          requestedQty: 1,
+          targetQty,
+          cartItemCount: updatedTotals.itemCount,
+          cartTotal: updatedTotals.total
+        })
+      );
     },
-    [addPart, showToast]
+    [items, pricingMode, discountRate, discountType, addPart, showToast]
   );
 
   const handleSelectService = useCallback(
@@ -223,7 +323,7 @@ export default function StaffPosPage() {
     if (items.length === 0 || isProcessing) return;
 
     if (!isShiftActive || shiftStatus !== "on_shift") {
-      router.push("/staff/clock");
+      setIsShiftGuardModalOpen(true);
       return;
     }
 
@@ -243,7 +343,7 @@ export default function StaffPosPage() {
         return;
       }
       if (auth.reason === "SHIFT_INACTIVE") {
-        router.push("/staff/clock");
+        setIsShiftGuardModalOpen(true);
         return;
       }
       if (auth.reason === "CART_EMPTY") {
@@ -342,9 +442,20 @@ export default function StaffPosPage() {
     }
   }, [items, isProcessing, currentStaff, checkout, intakeData, showToast, hydrateProducts]);
 
-  const handleScanNotFound = useCallback(() => {
-    showToast("error", "Item code or barcode not found");
-  }, [showToast]);
+  const handleScanNotFound = useCallback(
+    (query?: string) => {
+      const rawCode = query || "";
+      showToast("error", "Item code or barcode not found");
+      broadcastPosScanValidation(
+        buildPosScanValidationResponse({
+          status: "NOT_FOUND",
+          rawQuery: rawCode,
+          message: "Barcode not found in catalog"
+        })
+      );
+    },
+    [showToast]
+  );
 
   const handleCloseModals = useCallback(() => {
     if (isPaymentModalOpen) closePaymentModal();
@@ -400,7 +511,7 @@ export default function StaffPosPage() {
           return;
         }
         if (evaluation.reason === "SHIFT_INACTIVE") {
-          router.push("/staff/clock");
+          setIsShiftGuardModalOpen(true);
           return;
         }
         if (evaluation.reason === "CART_EMPTY") {

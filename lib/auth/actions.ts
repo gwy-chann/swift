@@ -105,9 +105,8 @@ function setSessionCookies(
       maxAge,
     });
   }
-  if (role === "admin") {
-    clearPendingStaffChallengeCookie(cookieStore);
-  } else {
+  clearPendingStaffChallengeCookie(cookieStore);
+  if (role !== "admin") {
     cookieStore.delete("swift_admin_elevated");
   }
 }
@@ -197,32 +196,32 @@ async function handleDemoAuthentication(
   if (isStaff && liveRole !== "admin") {
     const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
     const targetRoute =
-      ROLE_ROUTE_CONFIG[liveRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
+      ROLE_ROUTE_CONFIG[liveRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath ||
+      demoAccount.targetUrl ||
+      "/staff/pos";
 
-    const challenge: PendingStaffAuthChallenge = {
-      userId: demoAccount.id,
+    const session: UserSession = {
+      id: demoAccount.id,
       email: normalizedEmail,
       name: demoAccount.name,
-      role: liveRole,
-      portalRole: "staff",
-      targetUrl: targetRoute,
-      rememberTerminal,
-      challengeIssuedAt: Date.now(),
+      role: "staff",
+      staffRole: liveRole,
+      expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
-    setPendingStaffChallengeCookie(cookieStore, challenge);
+    setSessionCookies(
+      cookieStore,
+      "staff",
+      demoAccount.name,
+      rememberTerminal,
+      demoAccount.id,
+      liveRole
+    );
 
     return {
       success: true,
-      requiresPin: true,
-      step: "ENTER_PIN",
-      staffSummary: {
-        userId: challenge.userId,
-        name: challenge.name,
-        email: challenge.email,
-        role: challenge.role,
-        targetUrl: challenge.targetUrl,
-      },
+      redirectTo: targetRoute,
+      session,
     };
   }
 
@@ -244,9 +243,35 @@ async function handleDemoAuthentication(
   };
 }
 
+type PortalRoleValidation =
+  | { isValid: true }
+  | { isValid: false; error: string; code: AuthErrorCode };
+
+function validatePortalRole(
+  selectedRole: "admin" | "staff",
+  liveRole: string,
+  metaRole?: string
+): PortalRoleValidation {
+  if (selectedRole === "staff" && (liveRole === "admin" || metaRole === "admin")) {
+    return {
+      isValid: false,
+      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
+      code: "ADMIN_STAFF_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  if (selectedRole === "admin" && liveRole !== "admin" && metaRole !== "admin") {
+    return {
+      isValid: false,
+      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
+      code: "STAFF_ADMIN_PORTAL_FORBIDDEN" as AuthErrorCode,
+    };
+  }
+  return { isValid: true };
+}
+
 /**
  * Authenticates a user against Supabase Auth with fallback to demo accounts
- * For staff roles, enforces two-step login: verifies credentials then issues a PIN challenge.
+ * For staff roles, directly creates authenticated session and redirects to role route.
  */
 export async function authenticateUserAction(
   credentials: LoginCredentials
@@ -319,32 +344,6 @@ export async function authenticateUserAction(
       metaRole ||
       "cashier";
 
-type PortalRoleValidation =
-  | { isValid: true }
-  | { isValid: false; error: string; code: AuthErrorCode };
-
-function validatePortalRole(
-  selectedRole: "admin" | "staff",
-  liveRole: string,
-  metaRole?: string
-): PortalRoleValidation {
-  if (selectedRole === "staff" && (liveRole === "admin" || metaRole === "admin")) {
-    return {
-      isValid: false,
-      error: "Admin accounts cannot log in to the Staff Portal. Please switch to the Admin Portal tab.",
-      code: "ADMIN_STAFF_PORTAL_FORBIDDEN" as AuthErrorCode,
-    };
-  }
-  if (selectedRole === "admin" && liveRole !== "admin" && metaRole !== "admin") {
-    return {
-      isValid: false,
-      error: "Staff accounts cannot log in to the Admin Portal. Please switch to the Staff Portal tab.",
-      code: "STAFF_ADMIN_PORTAL_FORBIDDEN" as AuthErrorCode,
-    };
-  }
-  return { isValid: true };
-}
-
     const portalCheck = validatePortalRole(selectedRole, liveRole, metaRole);
     if (!portalCheck.isValid) {
       await supabase.auth.signOut();
@@ -384,37 +383,12 @@ function validatePortalRole(
 
     const name = resolvedName || data.user.email?.split("@")[0] || "User";
 
+    const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
+    let targetRoute: string = targetRedirect;
+
     if (isStaff && liveRole !== "admin") {
-      const staffRole = liveRole;
-      const { ROLE_ROUTE_CONFIG } = await import("../staff/navigation.ts");
-      const targetRoute =
-        ROLE_ROUTE_CONFIG[staffRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
-
-      const challenge: PendingStaffAuthChallenge = {
-        userId: data.user.id,
-        email: data.user.email || normalizedEmail,
-        name,
-        role: staffRole,
-        portalRole: "staff",
-        targetUrl: targetRoute,
-        rememberTerminal,
-        challengeIssuedAt: Date.now(),
-      };
-
-      setPendingStaffChallengeCookie(cookieStore, challenge);
-
-      return {
-        success: true,
-        requiresPin: true,
-        step: "ENTER_PIN",
-        staffSummary: {
-          userId: challenge.userId,
-          name: challenge.name,
-          email: challenge.email,
-          role: challenge.role,
-          targetUrl: challenge.targetUrl,
-        },
-      };
+      targetRoute =
+        ROLE_ROUTE_CONFIG[liveRole as keyof typeof ROLE_ROUTE_CONFIG]?.targetPath || "/staff/pos";
     }
 
     const role = selectedRole;
@@ -423,6 +397,7 @@ function validatePortalRole(
       email: data.user.email || normalizedEmail,
       name,
       role,
+      staffRole: liveRole,
       expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * (rememberTerminal ? 30 : 1),
     };
 
@@ -430,7 +405,7 @@ function validatePortalRole(
 
     return {
       success: true,
-      redirectTo: targetRedirect,
+      redirectTo: targetRoute,
       session,
     };
   } catch (err) {
@@ -665,22 +640,8 @@ export async function cancelStaffPinChallengeAction(): Promise<{ success: boolea
  */
 export async function getPendingStaffChallengeAction(): Promise<PendingStaffSummary | null> {
   const cookieStore = await getSafeCookieStore();
-  const rawChallenge = cookieStore.get("swift-pending-staff-auth")?.value;
-  if (!rawChallenge) return null;
-  try {
-    const challenge: PendingStaffAuthChallenge = JSON.parse(
-      decodeURIComponent(rawChallenge)
-    );
-    return {
-      userId: challenge.userId,
-      email: challenge.email,
-      name: challenge.name,
-      role: challenge.role,
-      targetUrl: challenge.targetUrl,
-    };
-  } catch {
-    return null;
-  }
+  clearPendingStaffChallengeCookie(cookieStore);
+  return null;
 }
 
 /**

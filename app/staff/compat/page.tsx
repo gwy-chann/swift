@@ -52,18 +52,20 @@ export default function StaffCompatPage() {
   const [systemCategory, setSystemCategory] = useState("ALL");
   const [includeUniversal, setIncludeUniversal] = useState(true);
   const [addedSku, setAddedSku] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(() => {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Read stored redirect toast after mount to preserve SSR hydration match
+  useEffect(() => {
     try {
       if (typeof window !== "undefined") {
         const storedToast = sessionStorage.getItem("swift_staff_redirect_toast");
         if (storedToast) {
           sessionStorage.removeItem("swift_staff_redirect_toast");
-          return storedToast;
+          setToastMessage(storedToast);
         }
       }
     } catch {}
-    return null;
-  });
+  }, []);
   const [toastType, setToastType] = useState<"success" | "warning">("warning");
   const { currentStaffRole } = usePunchStore();
   const roleLower = (currentStaffRole || "").toLowerCase().trim();

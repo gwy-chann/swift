@@ -381,7 +381,7 @@ describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema &
       const updatedRole = await getStaffUserRole(reneId);
       assert.equal(updatedRole, 'inventory_clerk');
 
-      // 4. Two-step authentication reflects the new role and target inventory route (/staff/search)
+      // 4. Authentication reflects the new role and target inventory route (/staff/search) directly without PIN
       const authResult = await authenticateUserAction({
         email: reneEmail,
         password: 'any-password',
@@ -389,14 +389,7 @@ describe('STORY-7.6: Supabase RBAC Extension, Granular Permission Flags Schema &
         rememberTerminal: false,
       });
       assert.equal(authResult.success, true);
-      assert.equal(authResult.requiresPin, true);
-      assert.equal(authResult.staffSummary?.role, 'inventory_clerk');
-      assert.equal(authResult.staffSummary?.targetUrl, '/staff/search');
-
-      // 5. Completing the PIN challenge redirects properly to /staff/search
-      const pinResult = await completeStaffTwoStepLoginAction({ pin: '2008' });
-      assert.equal(pinResult.success, true);
-      assert.equal(pinResult.redirectTo, '/staff/search');
+      assert.equal(authResult.redirectTo, '/staff/search');
 
       // 6. fetchStaffShiftAction reflects the updated role
       const shiftResult = await fetchStaffShiftAction(reneId);

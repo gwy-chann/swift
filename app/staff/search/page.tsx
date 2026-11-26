@@ -1,22 +1,59 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from "react";
-import { PackageSearch, Search, MapPin, AlertCircle, X, SlidersHorizontal, Lock } from "lucide-react";
+import Link from "next/link";
+import { PackageSearch, Search, MapPin, AlertCircle, AlertTriangle, X, SlidersHorizontal, Lock, Clock } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { usePunchStore } from "@/lib/store/punch-store";
-import { getProductsAction } from "@/lib/admin/product-actions";
+import { getProductsAction, adjustProductStockAction } from "@/lib/admin/product-actions";
 import { useInventoryRealtime } from "@/lib/hooks/use-inventory-realtime";
 import { StockAdjustmentModal } from "@/components/admin/inventory/stock-adjustment-modal";
 import { ManagerOverrideModal } from "@/components/pos/manager-override-modal";
+import { ActiveShiftGuardModal } from "@/components/pos/active-shift-guard-modal";
 import type { Product } from "@/lib/types/product";
 import type { AdjustmentType } from "@/lib/inventory/stock-adjustment";
 import { TablePagination, usePagination } from "@/components/common/table-pagination";
 
-function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean): string {
-  if (!isRestrictedRole) return "Adjust physical stock count";
-  return isMechanic
-    ? "Mechanics are not allowed to adjust stock count"
-    : "Cashiers are not allowed to adjust stock count";
+function getAdjustButtonTitle(isRestrictedRole: boolean, isMechanic: boolean, isTimedIn: boolean): string {
+  if (isRestrictedRole) {
+    return isMechanic
+      ? "Mechanics are not allowed to adjust stock count"
+      : "Cashiers are not allowed to adjust stock count";
+  }
+  if (!isTimedIn) {
+    return "Time-in required: You must be on an active shift to adjust stock count";
+  }
+  return "Adjust physical stock count";
+}
+
+function getAdjustButtonClass(isRestrictedRole: boolean, isTimedIn: boolean): string {
+  if (isRestrictedRole) {
+    return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-bg-base text-text-muted border border-border hover:border-danger/40 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer shadow-2xs";
+  }
+  if (!isTimedIn) {
+    return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20 transition-colors cursor-pointer shadow-2xs";
+  }
+  return "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs";
+}
+
+function renderAdjustIcon(isRestrictedRole: boolean, isTimedIn: boolean) {
+  if (isRestrictedRole) {
+    return <Lock className="w-3 h-3 text-text-muted" />;
+  }
+  if (!isTimedIn) {
+    return <Clock className="w-3 h-3 text-warning" />;
+  }
+  return <SlidersHorizontal className="w-3 h-3" />;
+}
+
+function getToastClasses(type: "success" | "error" | "warning"): string {
+  if (type === "success") {
+    return "bg-success/10 text-success border-success/30";
+  }
+  if (type === "error") {
+    return "bg-danger/10 text-danger border-danger/30";
+  }
+  return "bg-warning/10 text-warning border-warning/30";
 }
 
 export default function StaffSearchPage() {
@@ -38,31 +75,46 @@ export default function StaffSearchPage() {
     !isInventoryClerk &&
     !isAdmin;
   const isRestrictedRole = isCashier || isMechanic;
+  const isTimedIn = Boolean(isAdmin || (punchState.isShiftActive && punchState.shiftStatus === "on_shift"));
   const canAdjustStock = Boolean(
     (isInventoryClerk ||
     isAdmin ||
     punchState.currentPermissions?.can_adjust_stock) &&
-    !isRestrictedRole
+    !isRestrictedRole &&
+    isTimedIn
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [isRestrictedModalOpen, setIsRestrictedModalOpen] = useState(false);
+  const [isShiftGuardModalOpen, setIsShiftGuardModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("ALL");
-  const [toastMessage, setToastMessage] = useState<string | null>(() => {
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error" | "warning";
+    text: string;
+  } | null>(null);
+
+  // Read stored redirect toast after mount to preserve SSR hydration match
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
     try {
       if (typeof window !== "undefined") {
         const storedToast = sessionStorage.getItem("swift_staff_redirect_toast");
         if (storedToast) {
           sessionStorage.removeItem("swift_staff_redirect_toast");
-          return storedToast;
+          timer = setTimeout(() => {
+            setToastMessage({ type: "warning", text: storedToast });
+          }, 0);
         }
       }
     } catch {}
-    return null;
-  });
-  const { products, hydrateProducts, adjustStock } = useInventoryStore();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+  const { products, hydrateProducts, adjustStock, rollbackStock } = useInventoryStore();
 
   // Real-time synchronization with Supabase products table
   useInventoryRealtime();
@@ -77,11 +129,15 @@ export default function StaffSearchPage() {
 
   useEffect(() => {
     let isMounted = true;
-    getProductsAction().then((fetched) => {
-      if (isMounted && fetched.length > 0) {
-        hydrateProducts(fetched);
-      }
-    });
+    void getProductsAction()
+      .then((fetched) => {
+        if (isMounted && fetched.length > 0) {
+          hydrateProducts(fetched);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch products:", err);
+      });
     return () => {
       isMounted = false;
     };
@@ -104,8 +160,8 @@ export default function StaffSearchPage() {
         !q ||
         item.name.toLowerCase().includes(q) ||
         item.sku.toLowerCase().includes(q) ||
-        (item.model && item.model.toLowerCase().includes(q)) ||
-        (item.location && item.location.toLowerCase().includes(q));
+        Boolean(item.model?.toLowerCase().includes(q)) ||
+        Boolean(item.location?.toLowerCase().includes(q));
       return matchCat && matchSearch;
     });
   }, [products, category, searchTerm]);
@@ -120,13 +176,19 @@ export default function StaffSearchPage() {
   const handleRequestAdjustStock = (item: Product) => {
     setSelectedProduct(item);
 
-    // Cashier and mechanic role restriction: override is disabled; validate that they are not allowed to adjust stock
+    // 1. Shift time-in requirement: Staff must be timed in (on active shift) to adjust anything
+    if (!isTimedIn) {
+      setIsShiftGuardModalOpen(true);
+      return;
+    }
+
+    // 2. Cashier and mechanic role restriction: override is disabled; validate that they are not allowed to adjust stock
     if (isRestrictedRole) {
       setIsRestrictedModalOpen(true);
       return;
     }
 
-    // Inventory clerks (and admins or users with stock adjustment permissions) manipulate stock directly without a master code
+    // 3. Inventory clerks (and admins or users with stock adjustment permissions) manipulate stock directly without a master code
     if (canAdjustStock) {
       setIsAdjustmentModalOpen(true);
     } else {
@@ -139,12 +201,19 @@ export default function StaffSearchPage() {
     setIsAdjustmentModalOpen(true);
   };
 
-  const handleAdjustmentSubmit = (params: {
+  const handleAdjustmentSubmit = async (params: {
     sku: string;
     type: AdjustmentType;
     delta: number;
     reason: string;
   }) => {
+    if (!isTimedIn) {
+      setIsAdjustmentModalOpen(false);
+      setSelectedProduct(null);
+      setIsShiftGuardModalOpen(true);
+      return;
+    }
+
     if (isRestrictedRole || !canAdjustStock) {
       setIsAdjustmentModalOpen(false);
       setSelectedProduct(null);
@@ -152,25 +221,77 @@ export default function StaffSearchPage() {
       return;
     }
 
-    adjustStock({
+    const clerkName = punchState.currentStaff || "Inventory Clerk";
+
+    // 1. Instant Optimistic State Update (<16ms)
+    const snapshot = adjustStock({
       sku: params.sku,
       type: params.type,
       units: params.delta,
       reason: params.reason,
-      user: punchState.currentStaff || "Staff Member",
+      user: clerkName,
     });
-    setIsAdjustmentModalOpen(false);
-    setSelectedProduct(null);
+
+    setIsAdjustSubmitting(true);
+
+    try {
+      // 2. Persist to PostgreSQL database & immutable audit logs via Server Action
+      const result = await adjustProductStockAction({
+        sku: params.sku,
+        type: params.type,
+        delta: params.delta,
+        reason: params.reason,
+        userName: clerkName,
+      });
+
+      if (result.success) {
+        setToastMessage({
+          type: "success",
+          text: `Stock adjusted successfully for part ${params.sku} (${params.delta > 0 ? "+" : ""}${params.delta} units). New on-hand: ${result.newStock}.`,
+        });
+        setIsAdjustmentModalOpen(false);
+        setSelectedProduct(null);
+      } else {
+        // Rollback on rejection (e.g. INSUFFICIENT_STOCK)
+        rollbackStock({
+          sku: params.sku,
+          previousStock: snapshot.previousStock,
+          logId: snapshot.logId,
+        });
+        setToastMessage({
+          type: "error",
+          text: `Failed to adjust stock: ${result.error || "Unknown database error"}`,
+        });
+      }
+    } catch (err) {
+      rollbackStock({
+        sku: params.sku,
+        previousStock: snapshot.previousStock,
+        logId: snapshot.logId,
+      });
+      setToastMessage({
+        type: "error",
+        text: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setIsAdjustSubmitting(false);
+    }
   };
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Toast Notification Banner (Redirect only) */}
+      {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md bg-warning/10 text-warning border-warning/30 shrink-0">
+        <div
+          role="status"
+          aria-live="polite"
+          className={`p-3 rounded-lg border text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 shadow-md shrink-0 ${getToastClasses(
+            toastMessage.type
+          )}`}
+        >
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{toastMessage}</span>
+            <span>{toastMessage.text}</span>
           </div>
           <button
             type="button"
@@ -180,6 +301,24 @@ export default function StaffSearchPage() {
           >
             <X className="w-3.5 h-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* Off-Shift Attendance Guard Banner */}
+      {!isTimedIn && !isRestrictedRole && (
+        <div className="p-3 sm:px-4 bg-danger-light border border-danger/30 text-danger rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+            <span>
+              <strong>Shift Inactive:</strong> You are currently timed out. You must <strong>time in</strong> on the Punch Clock before adjusting stock.
+            </span>
+          </div>
+          <Link
+            href="/staff/clock"
+            className="px-3 py-1.5 rounded-lg bg-bg-surface hover:bg-danger hover:text-white text-danger border border-danger/30 font-semibold text-xs shadow-xs transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            Go to Punch Clock
+          </Link>
         </div>
       )}
 
@@ -251,18 +390,10 @@ export default function StaffSearchPage() {
                     <button
                       type="button"
                       onClick={() => handleRequestAdjustStock(item)}
-                      className={
-                        isRestrictedRole
-                          ? "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-bg-base text-text-muted border border-border hover:border-danger/40 hover:text-danger hover:bg-danger/5 transition-colors cursor-pointer shadow-2xs"
-                          : "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary-light text-primary border border-primary/20 hover:bg-primary hover:text-text-light transition-colors cursor-pointer shadow-2xs"
-                      }
-                      title={getAdjustButtonTitle(isRestrictedRole, isMechanic)}
+                      className={getAdjustButtonClass(isRestrictedRole, isTimedIn)}
+                      title={getAdjustButtonTitle(isRestrictedRole, isMechanic, isTimedIn)}
                     >
-                      {isRestrictedRole ? (
-                        <Lock className="w-3 h-3 text-text-muted" />
-                      ) : (
-                        <SlidersHorizontal className="w-3 h-3" />
-                      )}
+                      {renderAdjustIcon(isRestrictedRole, isTimedIn)}
                       <span>Adjust Stock</span>
                     </button>
                   </td>
@@ -286,6 +417,7 @@ export default function StaffSearchPage() {
       <StockAdjustmentModal
         isOpen={isAdjustmentModalOpen}
         product={selectedProduct}
+        isSubmitting={isAdjustSubmitting}
         onClose={() => {
           setIsAdjustmentModalOpen(false);
           setSelectedProduct(null);
@@ -295,11 +427,15 @@ export default function StaffSearchPage() {
 
       {/* Role Restriction Validation Modal */}
       {isRestrictedModalOpen && (
-        <div
-          role="dialog"
+        <dialog
+          open
           aria-modal="true"
           aria-labelledby="role-restriction-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in"
+          onCancel={(e) => {
+            e.preventDefault();
+            setIsRestrictedModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs border-0 m-0 w-full h-full max-w-none max-h-none animate-in fade-in"
         >
           <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-4 border-b border-border bg-bg-card flex items-center justify-between">
@@ -335,8 +471,23 @@ export default function StaffSearchPage() {
               </div>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
+
+      {/* Active Shift Guard Modal */}
+      <ActiveShiftGuardModal
+        isOpen={isShiftGuardModalOpen}
+        shiftStatus={punchState.shiftStatus}
+        currentStaff={punchState.currentStaff}
+        title={punchState.shiftStatus === "break" ? "Shift Currently on Break" : "Active Shift Required to Adjust Stock"}
+        subtitle="Staff Accountability & Inventory Audit Guard"
+        description="You must clock in / time in on the Punch Clock before performing physical stock adjustments. All inventory counts, adjustments, and audit trails must be attributed to an active on-duty staff member."
+        requirementNotice="Physical stock modifications cannot be made without an active on-duty shift. Navigate to the Punch Clock to record your shift punch."
+        onClose={() => {
+          setIsShiftGuardModalOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
 
       {/* Manager Elevation Override only for non-restricted roles */}
       {!isRestrictedRole && (

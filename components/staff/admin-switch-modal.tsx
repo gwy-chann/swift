@@ -15,7 +15,7 @@ export function AdminSwitchModal({
   isOpen,
   onClose,
   targetUsername = "admin@swift.local",
-}: AdminSwitchModalProps) {
+}: Readonly<AdminSwitchModalProps>) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -90,20 +90,25 @@ export function AdminSwitchModal({
   }
 
   return (
-    <div
+    <dialog
       id="switchPortalModal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      open
+      aria-modal="true"
+      aria-labelledby="switchPortalTitle"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 w-full h-full max-w-none max-h-none border-0 m-0"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleDismiss();
         }
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          handleDismiss();
+        }
+      }}
     >
       <div
-        className="w-full max-w-md bg-bg-card border border-border rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="switchPortalTitle"
+        className="w-full max-w-md bg-bg-card border border-border rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-left"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-bg-surface">
@@ -239,6 +244,6 @@ export function AdminSwitchModal({
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 }

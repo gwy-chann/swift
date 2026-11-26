@@ -7,9 +7,16 @@ import { X } from "lucide-react";
 interface StaffMobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  sessionRole?: string;
+  sessionUserName?: string;
 }
 
-export function StaffMobileDrawer({ isOpen, onClose }: StaffMobileDrawerProps) {
+export function StaffMobileDrawer({
+  isOpen,
+  onClose,
+  sessionRole,
+  sessionUserName,
+}: StaffMobileDrawerProps) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -52,7 +59,12 @@ export function StaffMobileDrawer({ isOpen, onClose }: StaffMobileDrawerProps) {
           <X className="w-4 h-4" />
         </button>
 
-        <StaffSidebar onItemClick={onClose} className="w-full h-full" />
+        <StaffSidebar
+          onItemClick={onClose}
+          className="w-full h-full"
+          sessionRole={sessionRole}
+          sessionUserName={sessionUserName}
+        />
       </div>
     </div>
   );

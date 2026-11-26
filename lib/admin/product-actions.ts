@@ -1,5 +1,8 @@
+'use server';
+
 import { getPrismaClient } from '../prisma.ts';
-import type { Product as DbProduct } from '@prisma/client';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DbProduct = Record<string, any>;
 import type { Product, ProductCategory } from '../types/product.ts';
 import type {
   StockAdjustmentPayload,
@@ -820,8 +823,8 @@ async function executeSupabaseUpdateProduct(
   }
 
   try {
-    const { createClient } = await import('../supabase/server.ts');
-    const supabase = await createClient();
+    const { createClient, createAdminClient } = await import('../supabase/server.ts');
+    let supabase = await createClient();
 
     const updatePayload = {
       name: payload.name.trim(),
@@ -838,15 +841,29 @@ async function executeSupabaseUpdateProduct(
       updated_at: new Date().toISOString()
     };
 
-    const { data: updatedProduct, error: updateError } = await supabase
+    let { data: updatedProduct, error: updateError } = await supabase
       .from('products')
       .update(updatePayload)
       .ilike('sku', normalizedSku)
       .select()
       .maybeSingle();
 
-    if (updateError?.message.toLowerCase().includes('permission denied')) {
-      return null;
+    if (updateError?.message.toLowerCase().includes('permission denied') || (!updatedProduct && !updateError)) {
+      const adminClient = createAdminClient();
+      const retryResult = await adminClient
+        .from('products')
+        .update(updatePayload)
+        .ilike('sku', normalizedSku)
+        .select()
+        .maybeSingle();
+
+      if (!retryResult.error && retryResult.data) {
+        updatedProduct = retryResult.data;
+        updateError = null;
+        supabase = adminClient;
+      } else if (retryResult.error) {
+        updateError = retryResult.error;
+      }
     }
 
     if (updateError) {
@@ -1058,5 +1075,10 @@ export async function updateProductAction(
   };
 }
 
-export { getMotorcycleModelsAction } from '../actions/motomatcher-actions.ts';
+export async function getMotorcycleModelsAction() {
+  const { getMotorcycleModelsAction: action } = await import(
+    '../actions/motomatcher-actions.ts'
+  );
+  return action();
+}
 

@@ -41,6 +41,12 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Server Actions handle their own redirects and security; bypass middleware route redirects
+  // to avoid unexpected 307 responses breaking the Next.js Server Action RPC protocol.
+  if (request.headers.get('next-action')) {
+    return supabaseResponse
+  }
+
   // Evaluate route guard rules
   const resolvedSession = resolveSession(request.cookies, user)
   const decision = evaluateRouteAccess(request.nextUrl.pathname, resolvedSession)

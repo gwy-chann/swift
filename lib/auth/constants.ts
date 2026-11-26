@@ -91,7 +91,7 @@ export const PORTAL_CONFIG = {
   },
   staff: {
     title: "Staff Portal",
-    submitLabel: "Access Staff Fast-Lane POS",
+    submitLabel: "Access Staff Portal",
     defaultRoute: "/staff/pos",
     demoAccount: DEMO_ACCOUNTS.staff,
   },

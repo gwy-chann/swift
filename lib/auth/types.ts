@@ -10,6 +10,7 @@ export interface UserSession {
   email: string;
   name: string;
   role: PortalRole;
+  staffRole?: string;
   terminalId?: string;
   createdAt?: string;
   expiresAt: number;

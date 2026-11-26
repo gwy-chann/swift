@@ -6,7 +6,6 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   SCANNER_FEEDBACK_CONSTANTS,
-  getAudioContext,
   setAudioContextForTesting,
   playSuccessChime,
   playSoldOutBuzzer,
@@ -22,14 +21,17 @@ import {
   MobileCartSummarySchema,
 } from "../../../specs/113-pos-mobile-companion-validation-alerts/contracts/validation-card.contract.ts";
 
+type VibratePattern = number | number[];
+type VibrateArg = VibratePattern | null;
+
 // Mock Web Audio API interfaces for Node environment
 class MockAudioParam {
   value = 0;
-  setValueAtTime(_value: number, _time: number) {
-    this.value = _value;
+  setValueAtTime(val: number) {
+    this.value = val;
   }
-  exponentialRampToValueAtTime(_value: number, _time: number) {
-    this.value = _value;
+  exponentialRampToValueAtTime(val: number) {
+    this.value = val;
   }
 }
 
@@ -115,9 +117,9 @@ describe("Scanner Feedback Audio Engine (SIAA-113)", () => {
 
 describe("Scanner Feedback Haptic Engine (SIAA-113)", () => {
   it("triggers 80ms haptic confirmation pulse for success", () => {
-    let vibrateArg: number | number[] | null = null;
+    let vibrateArg: VibrateArg = null;
     const mockNav = {
-      vibrate: (pattern: number | number[]) => {
+      vibrate: (pattern: VibratePattern) => {
         vibrateArg = pattern;
         return true;
       },
@@ -129,9 +131,9 @@ describe("Scanner Feedback Haptic Engine (SIAA-113)", () => {
   });
 
   it("triggers [200, 100, 200] double vibration pattern for rejection", () => {
-    let vibrateArg: number | number[] | null = null;
+    let vibrateArg: VibrateArg = null;
     const mockNav = {
-      vibrate: (pattern: number | number[]) => {
+      vibrate: (pattern: VibratePattern) => {
         vibrateArg = pattern;
         return true;
       },
@@ -143,9 +145,9 @@ describe("Scanner Feedback Haptic Engine (SIAA-113)", () => {
   });
 
   it("triggers [100, 50, 100] haptic pattern for not found", () => {
-    let vibrateArg: number | number[] | null = null;
+    let vibrateArg: VibrateArg = null;
     const mockNav = {
-      vibrate: (pattern: number | number[]) => {
+      vibrate: (pattern: VibratePattern) => {
         vibrateArg = pattern;
         return true;
       },
