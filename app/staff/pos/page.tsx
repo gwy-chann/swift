@@ -38,7 +38,7 @@ function getScannerButtonClass(state: string): string {
     return "bg-success-light text-success border-success/30 font-semibold";
   }
   if (state === "DISCONNECTED") {
-    return "bg-surface-elevated text-text-primary border-border hover:bg-border/30";
+    return "bg-bg-surface text-text-primary border-border hover:bg-bg-hover";
   }
   return "bg-warning-light text-warning border-warning/30 animate-pulse font-semibold";
 }
@@ -415,7 +415,6 @@ export default function StaffPosPage() {
     logUnauthorizedCheckoutAttempt,
     openPaymentModal,
     showToast,
-    router,
   ]);
 
   const handleIntakeSubmit = useCallback(
@@ -626,7 +625,6 @@ export default function StaffPosPage() {
     handleOpenPayment,
     handleCloseModals,
     showToast,
-    router,
   ]);
 
   if (isUnauthorizedRole) {
@@ -683,12 +681,12 @@ export default function StaffPosPage() {
       )}
 
       {/* POS Top Action Bar (SIAA-111) */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-surface border border-border shrink-0 print:hidden shadow-xs">
+      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-bg-surface border border-border shrink-0 print:hidden shadow-xs">
         <div className="flex items-center gap-2.5">
           <span className="text-xs font-bold text-text-primary tracking-wide">
             Fast-Lane Counter POS
           </span>
-          <span className="text-2xs px-2 py-0.5 rounded bg-surface-elevated text-text-muted font-mono border border-border">
+          <span className="text-2xs px-2 py-0.5 rounded bg-bg-base text-text-muted font-mono border border-border">
             Terminal T1
           </span>
         </div>

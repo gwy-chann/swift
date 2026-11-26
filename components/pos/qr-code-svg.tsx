@@ -44,7 +44,7 @@ export function QrCodeSvg({
   if (!pathData) {
     return (
       <div
-        className={`flex items-center justify-center bg-surface-elevated text-text-muted text-xs ${className}`}
+        className={`flex items-center justify-center bg-bg-base text-text-muted text-xs ${className}`}
         style={{ width: size, height: size }}
       >
         <span>Unable to generate QR</span>
