@@ -60,15 +60,18 @@ function resolveRawDataset(
   return INITIAL_WEEKLY_DATA;
 }
 
-export function RevenueComparisonChart({
-  data,
-  initialWeeklyData,
-  dateRange,
-  todayPartsIncrement = 0,
-  todayLaborIncrement = 0,
-  initialFilter = "all",
-  className = "",
-}: RevenueComparisonChartProps = {}) {
+export function RevenueComparisonChart(props: RevenueComparisonChartProps = {}) {
+  const {
+    data,
+    initialWeeklyData,
+    dateRange,
+    todayPartsIncrement = 0,
+    todayLaborIncrement = 0,
+    initialFilter = "all",
+    className = "",
+  } = props;
+
+  const isControlled = props.todayPartsIncrement !== undefined;
   const [internalPartsIncrement, setInternalPartsIncrement] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(4); // Default tooltip on Friday
   const [hoveredType, setHoveredType] = useState<"parts" | "labor">("parts");
@@ -76,12 +79,15 @@ export function RevenueComparisonChart({
 
   // Realtime hook for standalone mode
   useExecutiveRealtime({
+    enabled: !isControlled,
     onTransaction: (tx) => {
       setInternalPartsIncrement((prev) => prev + (tx.total_due || 0));
     },
   });
 
-  const effectivePartsIncrement = todayPartsIncrement || internalPartsIncrement;
+  const effectivePartsIncrement = isControlled
+    ? todayPartsIncrement
+    : internalPartsIncrement;
 
   // Resolve base array
   const rawDataset = resolveRawDataset(data, initialWeeklyData);

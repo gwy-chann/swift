@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useId } from 'react';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { createClient } from '../supabase/client.ts';
 import type {
   UseExecutiveRealtimeOptions,
   UseExecutiveRealtimeResult,
   RealtimeChannelStatus,
+  RealtimeEventType,
   DbTransactionBroadcast,
   DbWorkOrderBroadcast,
   DbServiceBayBroadcast,
@@ -60,6 +61,216 @@ function mapChannelStatus(rawStatus: string): { status: RealtimeChannelStatus; i
   return { status: 'CONNECTING', isConnected: false };
 }
 
+interface ExecutiveSubscriber {
+  onTransaction?: (tx: DbTransactionBroadcast) => void;
+  onWorkOrderChange?: (record: DbWorkOrderBroadcast, eventType: RealtimeEventType) => void;
+  onServiceBayChange?: (record: DbServiceBayBroadcast, eventType: RealtimeEventType) => void;
+  onStockAlert?: (record: DbProductStockBroadcast) => void;
+  onStatusChange?: (status: RealtimeChannelStatus) => void;
+  updateStatus: (status: RealtimeChannelStatus, isConnected: boolean) => void;
+  updateTimestamp: (timestamp: string) => void;
+}
+
+/**
+ * Shared singleton hub that multiplexes a single Supabase Realtime channel across
+ * multiple hook consumers. Prevents `cannot add postgres_changes callbacks after subscribe()`
+ * errors when multiple components or React StrictMode mount simultaneously.
+ */
+class ExecutiveRealtimeHub {
+  private subscribers = new Map<string, ExecutiveSubscriber>();
+  private channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
+  private supabase: ReturnType<typeof createClient> | null = null;
+  private currentStatus: RealtimeChannelStatus = 'CONNECTING';
+  private isConnected = false;
+  private lastCommitTimestamp: string | null = null;
+
+  register(id: string, callbacks: ExecutiveSubscriber, channelName: string) {
+    this.subscribers.set(id, callbacks);
+
+    // If channel is already established, share existing state immediately
+    if (this.channel) {
+      callbacks.updateStatus(this.currentStatus, this.isConnected);
+      if (this.lastCommitTimestamp) {
+        callbacks.updateTimestamp(this.lastCommitTimestamp);
+      }
+      return;
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      this.currentStatus = 'CLOSED';
+      this.isConnected = false;
+      callbacks.updateStatus('CLOSED', false);
+      return;
+    }
+
+    try {
+      this.supabase = createClient();
+
+      // Clean up any stale or unmounted channel with this name
+      const existing = this.supabase.getChannels().find(
+        (c) => c.topic === `realtime:${channelName}`
+      );
+      if (existing) {
+        this.supabase.removeChannel(existing).catch(() => {});
+      }
+
+      const ch = this.supabase.channel(channelName);
+      this.channel = ch;
+
+      ch.on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'transactions' },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          if (!payload.new) return;
+          const txData = parseTransactionRecord(payload.new as Record<string, unknown>);
+          const ts = payload.commit_timestamp || new Date().toISOString();
+          this.lastCommitTimestamp = ts;
+          this.subscribers.forEach((s) => {
+            s.updateTimestamp(ts);
+            s.onTransaction?.(txData);
+          });
+        }
+      );
+
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'work_orders' },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          const hasNew = payload.new && Object.keys(payload.new).length > 0;
+          const record = (hasNew ? payload.new : payload.old) as unknown as DbWorkOrderBroadcast;
+          if (record?.id) {
+            const ts = payload.commit_timestamp || new Date().toISOString();
+            this.lastCommitTimestamp = ts;
+            const evType = (payload.eventType || 'UPDATE') as RealtimeEventType;
+            this.subscribers.forEach((s) => {
+              s.updateTimestamp(ts);
+              s.onWorkOrderChange?.(record, evType);
+            });
+          }
+        }
+      );
+
+      ch.on(
+        'broadcast',
+        { event: 'WORK_ORDER_CREATED' },
+        (eventPayload: { payload: unknown }) => {
+          if (eventPayload?.payload) {
+            const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
+            if (record?.id) {
+              const ts = new Date().toISOString();
+              this.lastCommitTimestamp = ts;
+              this.subscribers.forEach((s) => {
+                s.updateTimestamp(ts);
+                s.onWorkOrderChange?.(record, 'INSERT');
+              });
+            }
+          }
+        }
+      );
+
+      ch.on(
+        'broadcast',
+        { event: 'WORK_ORDER_UPDATED' },
+        (eventPayload: { payload: unknown }) => {
+          if (eventPayload?.payload) {
+            const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
+            if (record?.id) {
+              const ts = new Date().toISOString();
+              this.lastCommitTimestamp = ts;
+              this.subscribers.forEach((s) => {
+                s.updateTimestamp(ts);
+                s.onWorkOrderChange?.(record, 'UPDATE');
+              });
+            }
+          }
+        }
+      );
+
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_bays' },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          const hasNew = payload.new && Object.keys(payload.new).length > 0;
+          const record = (hasNew ? payload.new : payload.old) as unknown as DbServiceBayBroadcast;
+          if (record?.id) {
+            const ts = payload.commit_timestamp || new Date().toISOString();
+            this.lastCommitTimestamp = ts;
+            const evType = (payload.eventType || 'UPDATE') as RealtimeEventType;
+            this.subscribers.forEach((s) => {
+              s.updateTimestamp(ts);
+              s.onServiceBayChange?.(record, evType);
+            });
+          }
+        }
+      );
+
+      ch.on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'products' },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          if (!payload.new) return;
+          const alert = parseStockAlertRecord(payload.new as Record<string, unknown>);
+          if (alert) {
+            const ts = payload.commit_timestamp || new Date().toISOString();
+            this.lastCommitTimestamp = ts;
+            this.subscribers.forEach((s) => {
+              s.updateTimestamp(ts);
+              s.onStockAlert?.(alert);
+            });
+          }
+        }
+      );
+
+      ch.subscribe((rawStatus: string) => {
+        const mapped = mapChannelStatus(rawStatus);
+        this.currentStatus = mapped.status;
+        this.isConnected = mapped.isConnected;
+        this.subscribers.forEach((s) => {
+          s.updateStatus(mapped.status, mapped.isConnected);
+        });
+      });
+    } catch (err) {
+      console.warn('[useExecutiveRealtime] Supabase Realtime channel setup failed:', err);
+      this.currentStatus = 'CHANNEL_ERROR';
+      this.isConnected = false;
+      this.subscribers.forEach((s) => {
+        s.updateStatus('CHANNEL_ERROR', false);
+      });
+    }
+  }
+
+  updateCallbacks(id: string, callbacks: Partial<ExecutiveSubscriber>) {
+    const existing = this.subscribers.get(id);
+    if (existing) {
+      this.subscribers.set(id, { ...existing, ...callbacks });
+    }
+  }
+
+  unregister(id: string) {
+    this.subscribers.delete(id);
+    if (this.subscribers.size === 0 && this.channel && this.supabase) {
+      const ch = this.channel;
+      this.channel = null;
+      this.currentStatus = 'CLOSED';
+      this.isConnected = false;
+      this.supabase.removeChannel(ch).catch(() => {});
+    }
+  }
+
+  dispatchLocalCheckout(txData: DbTransactionBroadcast) {
+    const ts = txData.created_at || new Date().toISOString();
+    this.lastCommitTimestamp = ts;
+    this.subscribers.forEach((s) => {
+      s.updateTimestamp(ts);
+      s.onTransaction?.(txData);
+    });
+  }
+}
+
+const globalHub = new ExecutiveRealtimeHub();
+
 /**
  * Custom hook subscribing to Supabase Realtime Change Data Capture (CDC) events
  * on channel `operational-intelligence` (Jira Ticket SIAA-68 / STORY-6.8).
@@ -76,6 +287,8 @@ export function useExecutiveRealtime(
   );
   const [lastEventTimestamp, setLastEventTimestamp] = useState<string | null>(null);
 
+  const subscriberId = useId();
+
   const onTransactionRef = useRef(options?.onTransaction);
   const onWorkOrderChangeRef = useRef(options?.onWorkOrderChange);
   const onServiceBayChangeRef = useRef(options?.onServiceBayChange);
@@ -88,7 +301,16 @@ export function useExecutiveRealtime(
     onServiceBayChangeRef.current = options?.onServiceBayChange;
     onStockAlertRef.current = options?.onStockAlert;
     onStatusChangeRef.current = options?.onStatusChange;
+
+    globalHub.updateCallbacks(subscriberId, {
+      onTransaction: options?.onTransaction,
+      onWorkOrderChange: options?.onWorkOrderChange,
+      onServiceBayChange: options?.onServiceBayChange,
+      onStockAlert: options?.onStockAlert,
+      onStatusChange: options?.onStatusChange,
+    });
   }, [
+    subscriberId,
     options?.onTransaction,
     options?.onWorkOrderChange,
     options?.onServiceBayChange,
@@ -101,110 +323,23 @@ export function useExecutiveRealtime(
       return;
     }
 
-    const updateStatus = (newStatus: RealtimeChannelStatus, connected: boolean) => {
-      setStatus(newStatus);
-      setIsConnected(connected);
-      onStatusChangeRef.current?.(newStatus);
-    };
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    let supabase: ReturnType<typeof createClient> | null = null;
-    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
-
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        supabase = createClient();
-        channel = supabase.channel(channelName);
-
-        channel.on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'transactions' },
-          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-            if (!payload.new) return;
-            const txData = parseTransactionRecord(payload.new as Record<string, unknown>);
-            setLastEventTimestamp(payload.commit_timestamp || new Date().toISOString());
-            onTransactionRef.current?.(txData);
-          }
-        );
-
-        channel.on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'work_orders' },
-          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-            const hasNew = payload.new && Object.keys(payload.new).length > 0;
-            const record = (hasNew ? payload.new : payload.old) as unknown as DbWorkOrderBroadcast;
-            if (record?.id) {
-              setLastEventTimestamp(payload.commit_timestamp || new Date().toISOString());
-              onWorkOrderChangeRef.current?.(record, payload.eventType);
-            }
-          }
-        );
-
-        channel.on(
-          'broadcast',
-          { event: 'WORK_ORDER_CREATED' },
-          (eventPayload: { payload: unknown }) => {
-            if (eventPayload?.payload) {
-              const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
-              if (record?.id) {
-                setLastEventTimestamp(new Date().toISOString());
-                onWorkOrderChangeRef.current?.(record, 'INSERT');
-              }
-            }
-          }
-        );
-
-        channel.on(
-          'broadcast',
-          { event: 'WORK_ORDER_UPDATED' },
-          (eventPayload: { payload: unknown }) => {
-            if (eventPayload?.payload) {
-              const record = eventPayload.payload as unknown as DbWorkOrderBroadcast;
-              if (record?.id) {
-                setLastEventTimestamp(new Date().toISOString());
-                onWorkOrderChangeRef.current?.(record, 'UPDATE');
-              }
-            }
-          }
-        );
-
-        channel.on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'service_bays' },
-          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-            const hasNew = payload.new && Object.keys(payload.new).length > 0;
-            const record = (hasNew ? payload.new : payload.old) as unknown as DbServiceBayBroadcast;
-            if (record?.id) {
-              setLastEventTimestamp(payload.commit_timestamp || new Date().toISOString());
-              onServiceBayChangeRef.current?.(record, payload.eventType);
-            }
-          }
-        );
-
-        channel.on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'products' },
-          (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-            if (!payload.new) return;
-            const alert = parseStockAlertRecord(payload.new as Record<string, unknown>);
-            if (alert) {
-              setLastEventTimestamp(payload.commit_timestamp || new Date().toISOString());
-              onStockAlertRef.current?.(alert);
-            }
-          }
-        );
-
-        channel.subscribe((rawStatus: string) => {
-          const mapped = mapChannelStatus(rawStatus);
-          updateStatus(mapped.status, mapped.isConnected);
-        });
-      } catch (err) {
-        console.warn('[useExecutiveRealtime] Supabase Realtime channel setup failed:', err);
-        updateStatus('CHANNEL_ERROR', false);
-      }
-    }
+    globalHub.register(
+      subscriberId,
+      {
+        onTransaction: (tx) => onTransactionRef.current?.(tx),
+        onWorkOrderChange: (wo, ev) => onWorkOrderChangeRef.current?.(wo, ev),
+        onServiceBayChange: (bay, ev) => onServiceBayChangeRef.current?.(bay, ev),
+        onStockAlert: (alert) => onStockAlertRef.current?.(alert),
+        onStatusChange: (newStatus) => onStatusChangeRef.current?.(newStatus),
+        updateStatus: (newStatus, connected) => {
+          setStatus(newStatus);
+          setIsConnected(connected);
+          onStatusChangeRef.current?.(newStatus);
+        },
+        updateTimestamp: (ts) => setLastEventTimestamp(ts),
+      },
+      channelName
+    );
 
     const handleLocalCheckout = (e: Event) => {
       const customEvent = e as CustomEvent<{ totalDue?: number; receiptNumber?: string }>;
@@ -217,8 +352,7 @@ export function useExecutiveRealtime(
           payment_method: 'Cash',
           created_at: new Date().toISOString(),
         };
-        setLastEventTimestamp(new Date().toISOString());
-        onTransactionRef.current?.(txData);
+        globalHub.dispatchLocalCheckout(txData);
       }
     };
 
@@ -227,14 +361,12 @@ export function useExecutiveRealtime(
     }
 
     return () => {
-      if (supabase && channel) {
-        supabase.removeChannel(channel).catch(() => {});
-      }
+      globalHub.unregister(subscriberId);
       if (typeof window !== 'undefined') {
         window.removeEventListener('swift:pos:checkout', handleLocalCheckout);
       }
     };
-  }, [enabled, channelName]);
+  }, [enabled, channelName, subscriberId]);
 
   return {
     isConnected,
