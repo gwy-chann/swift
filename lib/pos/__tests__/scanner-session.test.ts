@@ -6,8 +6,7 @@ import {
   buildCompanionPairingUrl,
   createScannerSessionInfo,
   isSessionExpired,
-  getScannerChannelName,
-  DEFAULT_SESSION_TTL_MS
+  getScannerChannelName
 } from "../scanner-session.ts";
 import { generateQrMatrix, qrMatrixToSvgPath } from "../qr-code.ts";
 
@@ -45,7 +44,7 @@ describe("SIAA-111: POS Scanner Session Lifecycle Engine", () => {
 
     it("rejects invalid, malformed, or empty session keys", () => {
       assert.strictEqual(validateScannerSessionKey("").valid, false);
-      assert.strictEqual(validateScannerSessionKey(null as any).valid, false);
+      assert.strictEqual(validateScannerSessionKey(null as unknown as string).valid, false);
       assert.strictEqual(validateScannerSessionKey("invalid-key").valid, false);
       assert.strictEqual(validateScannerSessionKey("pos-T1-onlytwo").valid, false);
     });

@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/cognitive-complexity */
 /**
  * Native Zero-Dependency QR Code Generator (Model 2, Byte Mode)
  * Produces boolean 2D matrices and optimized SVG paths for crisp vector QR rendering.
@@ -94,7 +95,7 @@ export function generateQrMatrix(text: string): QrMatrix {
     throw new Error(`Text too long for QR encoder (${textLen} bytes)`);
   }
 
-  const { size, dataCapacity, totalCodewords, eccPerBlock, blocks, alignmentPatterns } = spec;
+  const { size, dataCapacity, eccPerBlock, blocks, alignmentPatterns } = spec;
 
   // 1. Bit buffer construction (Byte Mode: indicator 0100, 8-bit length, data, terminator)
   const bitArray: number[] = [];

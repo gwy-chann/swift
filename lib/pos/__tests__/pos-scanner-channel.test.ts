@@ -11,20 +11,20 @@ import type {
  */
 class MockRealtimeChannel {
   public channelName: string;
-  public listeners: Map<string, (msg: any) => void> = new Map();
-  public sentBroadcasts: Array<{ type: string; event: string; payload: any }> = [];
+  public listeners: Map<string, (msg: { payload: Record<string, unknown> }) => void> = new Map();
+  public sentBroadcasts: Array<{ type: string; event: string; payload: Record<string, unknown> }> = [];
   public status: string = "CLOSED";
 
   constructor(channelName: string) {
     this.channelName = channelName;
   }
 
-  on(type: string, filter: { event: string }, callback: (msg: any) => void) {
+  on(type: string, filter: { event: string }, callback: (msg: { payload: Record<string, unknown> }) => void) {
     this.listeners.set(`${type}:${filter.event}`, callback);
     return this;
   }
 
-  async send(message: { type: string; event: string; payload: any }) {
+  async send(message: { type: string; event: string; payload: Record<string, unknown> }) {
     this.sentBroadcasts.push(message);
     return "ok";
   }
@@ -40,7 +40,7 @@ class MockRealtimeChannel {
   }
 
   // Test simulation trigger
-  simulateBroadcast(event: string, payload: any) {
+  simulateBroadcast(event: string, payload: Record<string, unknown>) {
     const handler = this.listeners.get(`broadcast:${event}`);
     if (handler) {
       handler({ payload });
@@ -55,7 +55,8 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
       let receivedDevice: string | null = null;
 
       channel.on("broadcast", { event: "CLIENT_JOINED" }, (msg) => {
-        receivedDevice = msg.payload.device;
+        const payload = msg.payload as unknown as ClientJoinedPayload;
+        receivedDevice = payload.device;
         channel.send({
           type: "broadcast",
           event: "TERMINAL_ACK",
@@ -72,12 +73,15 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
         companionSessionId: "cmp-session-1"
       };
 
-      channel.simulateBroadcast("CLIENT_JOINED", joinPayload);
+      channel.simulateBroadcast("CLIENT_JOINED", joinPayload as unknown as Record<string, unknown>);
 
       assert.strictEqual(receivedDevice, "iPhone 15 Mobile Safari");
       assert.strictEqual(channel.sentBroadcasts.length, 1);
       assert.strictEqual(channel.sentBroadcasts[0].event, "TERMINAL_ACK");
-      assert.strictEqual(channel.sentBroadcasts[0].payload.terminalId, "T1");
+      assert.strictEqual(
+        (channel.sentBroadcasts[0].payload as { terminalId: string }).terminalId,
+        "T1"
+      );
     });
   });
 
@@ -87,8 +91,9 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
       const ingestedCodes: string[] = [];
 
       channel.on("broadcast", { event: "BARCODE_SCANNED" }, (msg) => {
-        if (msg.payload?.code) {
-          ingestedCodes.push(msg.payload.code);
+        const payload = msg.payload as unknown as BarcodeScannedPayload;
+        if (payload?.code) {
+          ingestedCodes.push(payload.code);
         }
       });
 
@@ -101,7 +106,7 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
         format: "CODE_128"
       };
 
-      channel.simulateBroadcast("BARCODE_SCANNED", scanPayload);
+      channel.simulateBroadcast("BARCODE_SCANNED", scanPayload as unknown as Record<string, unknown>);
 
       const elapsedMs = Date.now() - startTime;
       assert.strictEqual(ingestedCodes.length, 1);
@@ -116,7 +121,8 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
       let calculatedLatency: number = 0;
 
       channel.on("broadcast", { event: "HEARTBEAT" }, (msg) => {
-        const pingTime = msg.payload.timestamp;
+        const payload = msg.payload as unknown as HeartbeatPayload;
+        const pingTime = payload.timestamp;
         const now = pingTime + 18; // simulate 18ms latency
         calculatedLatency = now - pingTime;
         channel.send({
@@ -138,12 +144,15 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
         timestamp: Date.now()
       };
 
-      channel.simulateBroadcast("HEARTBEAT", pingPayload);
+      channel.simulateBroadcast("HEARTBEAT", pingPayload as unknown as Record<string, unknown>);
 
       assert.strictEqual(calculatedLatency, 18);
       assert.strictEqual(channel.sentBroadcasts.length, 1);
       assert.strictEqual(channel.sentBroadcasts[0].event, "HEARTBEAT_ACK");
-      assert.strictEqual(channel.sentBroadcasts[0].payload.latencyMs, 18);
+      assert.strictEqual(
+        (channel.sentBroadcasts[0].payload as { latencyMs: number }).latencyMs,
+        18
+      );
     });
 
     it("handles explicit CLIENT_DISCONNECTED gracefully", async () => {

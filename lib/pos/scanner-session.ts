@@ -29,8 +29,12 @@ export function generateScannerSessionKey(
     randomSlice = entropyProvider();
   } else if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     randomSlice = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  } else if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const buf = new Uint8Array(4);
+    crypto.getRandomValues(buf);
+    randomSlice = Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
   } else {
-    randomSlice = Math.random().toString(36).slice(2, 10);
+    randomSlice = Date.now().toString(36).slice(-8);
   }
 
   const timestampPart = Date.now().toString(36);

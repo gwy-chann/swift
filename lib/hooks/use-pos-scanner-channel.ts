@@ -3,14 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getScannerChannelName } from "@/lib/pos/scanner-session";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type {
   ScannerConnectionState,
   ScannerChannelTelemetry,
   BarcodeScannedPayload,
   ClientJoinedPayload,
-  HeartbeatPayload,
-  HeartbeatAckPayload,
-  ClientDisconnectedPayload
+  HeartbeatPayload
 } from "@/specs/111-pos-terminal-qr-session-pairing/contracts/pos-scanner-channel.contract";
 import type { PosScanValidationResponse } from "@/specs/112-pos-realtime-availability-validation/contracts/pos-scan-validation.contract";
 
@@ -49,20 +48,21 @@ export function usePosScannerChannel({
   const [telemetry, setTelemetry] = useState<ScannerChannelTelemetry>({
     state: "DISCONNECTED"
   });
+  const [reconnectCounter, setReconnectCounter] = useState(0);
 
   // Keep callback refs stable across renders
   const onBarcodeScannedRef = useRef(onBarcodeScanned);
-  onBarcodeScannedRef.current = onBarcodeScanned;
-
   const onDeviceConnectedRef = useRef(onDeviceConnected);
-  onDeviceConnectedRef.current = onDeviceConnected;
-
   const onDeviceDisconnectedRef = useRef(onDeviceDisconnected);
-  onDeviceDisconnectedRef.current = onDeviceDisconnected;
 
-  const channelRef = useRef<any>(null);
+  useEffect(() => {
+    onBarcodeScannedRef.current = onBarcodeScanned;
+    onDeviceConnectedRef.current = onDeviceConnected;
+    onDeviceDisconnectedRef.current = onDeviceDisconnected;
+  });
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const lastHeartbeatTimeRef = useRef<number>(0);
-  const reconnectCounterRef = useRef<number>(0);
 
   const broadcastValidationResult = useCallback(
     async (payload: PosScanValidationResponse): Promise<void> => {
@@ -93,20 +93,16 @@ export function usePosScannerChannel({
 
   const reconnectSession = useCallback(() => {
     disconnectSession();
-    reconnectCounterRef.current += 1;
+    setReconnectCounter((c) => c + 1);
   }, [disconnectSession]);
 
   useEffect(() => {
     if (!sessionKey || typeof window === "undefined") {
-      setConnectionState("DISCONNECTED");
-      setTelemetry({ state: "DISCONNECTED" });
       return;
     }
 
     const supabase = createClient();
     const channelName = getScannerChannelName(sessionKey);
-    setConnectionState("CONNECTING");
-    setTelemetry({ state: "CONNECTING" });
 
     const channel = supabase.channel(channelName, {
       config: {
@@ -209,7 +205,7 @@ export function usePosScannerChannel({
     channel.on(
       "broadcast",
       { event: "CLIENT_DISCONNECTED" },
-      (message: { payload: ClientDisconnectedPayload }) => {
+      () => {
         setConnectionState("DISCONNECTED");
         setTelemetry({ state: "DISCONNECTED" });
         onDeviceDisconnectedRef.current?.();
@@ -256,7 +252,7 @@ export function usePosScannerChannel({
       } catch {}
       channelRef.current = null;
     };
-  }, [sessionKey, terminalId, reconnectCounterRef.current]);
+  }, [sessionKey, terminalId, reconnectCounter]);
 
   return {
     connectionState,

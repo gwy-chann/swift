@@ -14,7 +14,7 @@ import {
   type PosScanStatus,
   type PosScanValidationResponse,
   type AvailabilityCheckResult
-} from "./availability-validator";
+} from "./availability-validator.ts";
 
 export type {
   BarcodeScanResult,

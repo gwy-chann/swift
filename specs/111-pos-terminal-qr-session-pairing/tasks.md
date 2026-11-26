@@ -27,12 +27,12 @@
 - [x] Task 2.7: Commit domain models, logic, and tests (`feat(pos): [SIAA-111] implement scanner session manager, svg qr generator, realtime broadcast hook, and test suites`).
 
 ## Phase 3: Unit 5 — UI Components & Staff POS Integration
-- [ ] Task 3.1: Implement `components/pos/scanner-pairing-modal.tsx` rendering pairing QR code, copy link action, live connection telemetry, and latency badge.
-- [ ] Task 3.2: Integrate scanner pairing button and connection badge into POS top action bar in `app/staff/pos/page.tsx`.
-- [ ] Task 3.3: Wire `usePosScannerChannel` to `handleSelectProduct` / availability validation pipeline for background focus-agnostic scan ingestion.
-- [ ] Task 3.4: Harmonize channel naming with `lib/pos/companion-broadcast.ts` to ensure compatibility with SIAA-112/SIAA-113.
-- [ ] Task 3.5: Verify UI build, typecheck, and lint (`npx tsc --noEmit`, `npm run lint`).
-- [ ] Task 3.6: Commit UI components and route views (`feat(pos): [SIAA-111] wire scanner pairing modal and background broadcast ingestion in staff pos page`).
+- [x] Task 3.1: Implement `components/pos/scanner-pairing-modal.tsx` rendering pairing QR code, copy link action, live connection telemetry, and latency badge.
+- [x] Task 3.2: Integrate scanner pairing button and connection badge into POS top action bar in `app/staff/pos/page.tsx`.
+- [x] Task 3.3: Wire `usePosScannerChannel` to `handleSelectProduct` / availability validation pipeline for background focus-agnostic scan ingestion.
+- [x] Task 3.4: Harmonize channel naming with `lib/pos/companion-broadcast.ts` to ensure compatibility with SIAA-112/SIAA-113.
+- [x] Task 3.5: Verify UI build, typecheck, and lint (`npx tsc --noEmit`, `npm run lint`).
+- [x] Task 3.6: Commit UI components and route views (`feat(pos): [SIAA-111] wire scanner pairing modal and background broadcast ingestion in staff pos page`).
 
 ## Phase 4: Unit 6 — Task Completion & Governance Sync
 - [ ] Task 4.1: Mark all tasks complete in `tasks.md`.
