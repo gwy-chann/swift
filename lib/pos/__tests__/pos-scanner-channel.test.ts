@@ -113,6 +113,38 @@ describe("SIAA-111: Supabase Realtime Broadcast Channel Protocol", () => {
       assert.strictEqual(ingestedCodes[0], "HON-BRK-01");
       assert.ok(elapsedMs < 100);
     });
+
+    it("deduplicates identical scan broadcasts arriving via dual-transport", async () => {
+      const ingestedCodes: string[] = [];
+      const processedScanIds = new Set<string>();
+      let lastProcessedScan: { code: string; time: number } | null = null;
+
+      const handleScan = (payload: BarcodeScannedPayload) => {
+        const now = Date.now();
+        const scanId = payload.scanId || `${payload.code}-${payload.timestamp}`;
+        if (processedScanIds.has(scanId)) return;
+        if (lastProcessedScan && lastProcessedScan.code === payload.code && now - lastProcessedScan.time < 500) {
+          return;
+        }
+        processedScanIds.add(scanId);
+        lastProcessedScan = { code: payload.code, time: now };
+        ingestedCodes.push(payload.code);
+      };
+
+      const scanPayload: BarcodeScannedPayload = {
+        scanId: "HON-BRK-01-12345-abc",
+        code: "HON-BRK-01",
+        timestamp: Date.now(),
+        format: "CODE_128"
+      };
+
+      // Simulate arrival from SSE transport
+      handleScan(scanPayload);
+      // Simulate arrival from Supabase Realtime transport 5ms later
+      handleScan(scanPayload);
+
+      assert.strictEqual(ingestedCodes.length, 1, "Duplicate scan across transports must only ingest once");
+    });
   });
 
   describe("Scenario 4: Heartbeat Monitoring & Graceful Disconnection", () => {
