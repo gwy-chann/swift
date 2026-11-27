@@ -43,6 +43,7 @@ export interface BarcodeScannedPayload {
   code: string;
   timestamp: number;
   format?: string;
+  scanId?: string;
 }
 
 export interface ClientDisconnectedPayload {
