@@ -71,7 +71,7 @@ export function HybridCatalogPane({
   // Filter items by category & search query
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return allPosItems.filter((item) => {
+    const matched = allPosItems.filter((item) => {
       const matchCat =
         activeCategory === 'ALL' ||
         (activeCategory === 'SERVICES'
@@ -85,6 +85,20 @@ export function HybridCatalogPane({
         item.brand.toLowerCase().includes(q);
 
       return matchCat && matchQuery;
+    });
+
+    // Automatically put out of stock products above
+    return matched.sort((a, b) => {
+      const aOutOfStock = a.category !== 'SERVICES' && a.stock <= 0 ? 1 : 0;
+      const bOutOfStock = b.category !== 'SERVICES' && b.stock <= 0 ? 1 : 0;
+      if (aOutOfStock !== bOutOfStock) {
+        return bOutOfStock - aOutOfStock;
+      }
+      const nameComparison = a.name.localeCompare(b.name);
+      if (nameComparison !== 0) {
+        return nameComparison;
+      }
+      return a.sku.localeCompare(b.sku);
     });
   }, [allPosItems, activeCategory, searchQuery]);
 

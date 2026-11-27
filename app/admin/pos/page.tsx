@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { CheckCircle2, AlertCircle, Smartphone, RefreshCw } from "lucide-react";
 import { useInventoryStore } from "@/lib/store/inventory-store";
 import { useCartStore } from "@/lib/store/cart-store";
@@ -77,10 +77,14 @@ export default function AdminPosPage() {
 
   // SIAA-111: Scanner session & pairing state
   const [isPairingModalOpen, setIsPairingModalOpen] = useState(false);
-  const [scannerSession, setScannerSession] = useState<ScannerSessionInfo | null>(() =>
-    typeof window !== "undefined" ? createScannerSessionInfo("ADMIN-01") : null
-  );
+  const [scannerSession, setScannerSession] = useState<ScannerSessionInfo | null>(null);
   const [hasScannerDisconnected, setHasScannerDisconnected] = useState(false);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      setScannerSession((prev) => prev || createScannerSessionInfo("ADMIN-01"));
+    });
+  }, []);
 
   const handleRegenerateSession = useCallback(() => {
     const newSession = createScannerSessionInfo("ADMIN-01");
@@ -297,8 +301,19 @@ export default function AdminPosPage() {
   );
 
   // SIAA-111: Focus-agnostic background scan ingestion from paired companion phone
+  const lastProcessedCompanionScanRef = useRef<{ code: string; time: number } | null>(null);
   const handleCompanionBarcodeScan = useCallback(
     (code: string) => {
+      const now = Date.now();
+      if (
+        lastProcessedCompanionScanRef.current &&
+        lastProcessedCompanionScanRef.current.code === code &&
+        now - lastProcessedCompanionScanRef.current.time < 500
+      ) {
+        return; // Suppress duplicate scan within 500ms
+      }
+      lastProcessedCompanionScanRef.current = { code, time: now };
+
       const result = resolveBarcodeScanQuery(code, products, laborServices);
       if (result.status === "MATCHED_PART" && result.matchedItem) {
         handleSelectProduct(result.matchedItem as Product);

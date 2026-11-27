@@ -87,37 +87,67 @@ export function MobileCameraScanner({
 
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const isThrottledRef = useRef<boolean>(false);
+  const lastScannedCodeRef = useRef<string | null>(null);
+  const lastScanTimeRef = useRef<number>(0);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep callback and setting refs stable across renders so parent re-renders don't restart the camera
+  const onScanRef = useRef(onScan);
+  const onErrorRef = useRef(onError);
+  const enableAudioRef = useRef(enableAudio);
+  const enableHapticsRef = useRef(enableHaptics);
+  const cooldownMsRef = useRef(cooldownMs);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+    onErrorRef.current = onError;
+    enableAudioRef.current = enableAudio;
+    enableHapticsRef.current = enableHaptics;
+    cooldownMsRef.current = cooldownMs;
+  });
 
   // Safe callback trigger for scanned barcodes
   const handleDecodedText = useCallback(
     (decodedText: string, decodedResult: unknown) => {
-      if (isThrottledRef.current) {
-        return; // Suppress duplicate consecutive frames during cooldown
-      }
-
       const rawCode = decodedText?.trim();
       if (!rawCode) return;
 
+      const now = Date.now();
+      const isSameCode = rawCode === lastScannedCodeRef.current;
+      
+      // If throttled during cooldown window, suppress duplicate frames
+      if (isThrottledRef.current) {
+        return;
+      }
+      if (isSameCode && now - lastScanTimeRef.current < cooldownMsRef.current) {
+        return;
+      }
+
       // Lock throttle gate
       isThrottledRef.current = true;
+      lastScannedCodeRef.current = rawCode;
+      lastScanTimeRef.current = now;
       setPulseState('success');
 
       // Zero-asset Web Audio synthesis & haptic pulse
-      if (enableAudio) {
+      if (enableAudioRef.current) {
         playScanCaptureBeep(null, SCANNER_CONSTANTS.AUDIO_BEEP_FREQ_HZ, 0.08);
       }
-      if (enableHaptics) {
+      if (enableHapticsRef.current) {
         triggerSuccessHaptic();
       }
 
       const payload: BarcodeScanPayload = {
         rawCode,
         format: mapBarcodeFormat(decodedResult as { result?: { format?: { formatName?: string } } }) as BarcodeScanPayload['format'],
-        timestamp: Date.now()
+        timestamp: now
       };
 
-      onScan(payload);
+      try {
+        onScanRef.current?.(payload);
+      } catch (err) {
+        console.error('[Scanner] onScan handler error:', err);
+      }
 
       // Reset throttle lock after cooldown interval (default 1500ms)
       if (cooldownTimerRef.current) {
@@ -125,9 +155,9 @@ export function MobileCameraScanner({
       }
       cooldownTimerRef.current = setTimeout(() => {
         isThrottledRef.current = false;
-      }, cooldownMs);
+      }, cooldownMsRef.current);
     },
-    [enableAudio, enableHaptics, cooldownMs, onScan]
+    []
   );
 
   // Initialize camera scanner
@@ -142,7 +172,7 @@ export function MobileCameraScanner({
     if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {
       setStatus('UNAVAILABLE');
       setErrorMessage('Camera access is not supported on this device/browser.');
-      onError?.('Camera API unsupported');
+      onErrorRef.current?.('Camera API unsupported');
       return;
     }
 
@@ -215,10 +245,10 @@ export function MobileCameraScanner({
         const parsed = parseCameraError(fallbackErr);
         setStatus(parsed.status);
         setErrorMessage(parsed.message);
-        onError?.(parsed.message);
+        onErrorRef.current?.(parsed.message);
       }
     }
-  }, [containerId, facingMode, enableTorch, handleDecodedText, onError]);
+  }, [containerId, facingMode, enableTorch, handleDecodedText]);
 
   // Toggle hardware torch
   const toggleTorch = async () => {
@@ -277,7 +307,7 @@ export function MobileCameraScanner({
 
   return (
     <div
-      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-black select-none ${className}`}
+      className={`relative w-full h-full overflow-hidden bg-black select-none ${className}`}
       data-testid="mobile-camera-scanner"
       data-scanner-status={status}
       onClick={() => void unlockAudioContext()}
@@ -285,7 +315,7 @@ export function MobileCameraScanner({
       {/* HTML5-QRCode Video Feed Mount Region */}
       <div
         id={containerId}
-        className="absolute inset-0 w-full h-full object-cover [&_video]:w-full [&_video]:h-full [&_video]:object-cover"
+        className="absolute inset-0 w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover"
       />
 
       {/* Target Reticle Viewfinder with Animated Pulse State */}
