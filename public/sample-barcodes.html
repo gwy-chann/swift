@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWIFT - Product Sample Barcodes (Testing Sheet)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 32px 20px;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .header-text h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .header-text p {
+      color: #64748b;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    button.btn-outline {
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    button.btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .instructions {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+
+    .instructions strong {
+      font-weight: 700;
+    }
+
+    /* Badges */
+    .badge-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stock-badge.out-of-stock {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .stock-badge.in-stock {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* Primary Large Display for Instant Scanning */
+    .hero-barcode {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 28px 20px;
+      margin-bottom: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .hero-barcode.hero-out-of-stock {
+      border-color: #fca5a5;
+      background: #fffafa;
+    }
+
+    .hero-meta {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .hero-subtitle {
+      color: #64748b;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .hero-test-note {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+
+    .hero-test-note.note-out-of-stock {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px dashed #ef4444;
+    }
+
+    .hero-test-note.note-in-stock {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px dashed #22c55e;
+    }
+
+    .hero-svg-wrap {
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 100%;
+      margin: 8px 0 16px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .hero-svg-wrap svg {
+      max-width: 100%;
+      height: 180px;
+      display: block;
+    }
+
+    .hero-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* Grid of Barcodes */
+    .grid-header {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .grid-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .grid-subtitle {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .barcode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .barcode-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    .barcode-card:hover {
+      border-color: #2563eb;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .barcode-card.card-out-of-stock {
+      border: 2px solid #fca5a5;
+      background: #fffdfd;
+    }
+
+    .barcode-card.card-out-of-stock:hover {
+      border-color: #ef4444;
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.12);
+    }
+
+    .barcode-card.active {
+      border: 2px solid #2563eb;
+      background: #f8faff;
+    }
+
+    .barcode-card.card-out-of-stock.active {
+      border: 2px solid #dc2626;
+      background: #fff5f5;
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .card-product-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .card-product-brand {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .card-svg-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+      background: #ffffff;
+      padding: 6px;
+      border-radius: 6px;
+    }
+
+    .card-svg-wrap svg {
+      max-width: 100%;
+      height: 110px;
+      display: block;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 12px;
+      color: #64748b;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .card-price {
+      font-weight: 800;
+      color: #059669;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+
+      header, .hero-barcode, .actions, .instructions, .grid-subtitle {
+        display: none !important;
+      }
+
+      .barcode-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px !important;
+      }
+
+      .barcode-card {
+        border: 1px dashed #94a3b8 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        padding: 16px !important;
+      }
+
+      .card-svg-wrap svg {
+        height: 120px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-text">
+        <h1>Product Barcode Samples (8 Test Items)</h1>
+        <p>Curated 8-item testing sheet &mdash; Includes 2 out-of-stock items for validation testing.</p>
+      </div>
+      <div class="actions">
+        <button onclick="window.print()">🖨️ Print Labels</button>
+      </div>
+    </header>
+
+    <div class="instructions">
+      📷 <strong>Testing Instructions:</strong> Point your companion phone scanner or 2D scanner at any barcode.
+      <br />
+      • <strong>Items 1 & 2 (Red Badge):</strong> Out-of-stock items &mdash; test rejection toasts, blocked cart insertion, or manager override.
+      <br />
+      • <strong>Items 3 to 8 (Green Badge):</strong> In-stock items &mdash; test normal barcode scan speed, instant cart additions, and receipt totals.
+    </div>
+
+    <!-- Hero Barcode for Immediate Screen Scanning -->
+    <div class="hero-barcode" id="heroBarcodeCard">
+      <div class="hero-meta">
+        <div class="badge-container">
+          <span class="hero-tag" id="heroCategory">Drivetrain</span>
+          <span class="stock-badge" id="heroStockBadge">🚫 Out of Stock (Testing)</span>
+        </div>
+        <h2 class="hero-title" id="heroTitle">OEM Drive Belt (Gates Bando ADV 160)</h2>
+        <div class="hero-subtitle" id="heroSubtitle">Honda OEM • Honda ADV 160 • ₱850.00</div>
+        <div class="hero-test-note note-out-of-stock" id="heroTestNote">
+          ⚠️ Scan will trigger POS "Cannot add: Item is out of stock" validation rejection.
+        </div>
+      </div>
+
+      <div class="hero-svg-wrap" id="heroSvgContainer">
+        <!-- Inlined SVG -->
+      </div>
+
+      <div class="hero-controls">
+        <button class="btn-outline" onclick="copyCurrentSku()">📋 Copy SKU</button>
+        <button class="btn-outline" onclick="downloadCurrentSvg()">💾 Download SVG</button>
+        <span id="copyNotice" style="display:none; color: #059669; font-size: 13px; font-weight: 600;">Copied!</span>
+      </div>
+    </div>
+
+    <!-- Grid of 8 Curated SKUs -->
+    <div class="grid-header">
+      <div class="grid-title">8 Testing Products (2 Out of Stock + 6 In Stock)</div>
+      <div class="grid-subtitle">Click any card to enlarge at the top</div>
+    </div>
+
+    <div class="barcode-grid" id="barcodeGrid"></div>
+  </div>
+
+  <script>
+    // Self-contained Code 128 Pattern Engine (Works 100% offline and via file:///)
+    const CODE128_PATTERNS = [
+      '212222', '222122', '222221', '121223', '121322', '131222', '122213', '122312', '132212', '221213',
+      '221312', '231212', '112232', '122132', '122231', '113222', '123122', '123221', '223211', '221132',
+      '221231', '213212', '223112', '312131', '311222', '321122', '321221', '312212', '322112', '322211',
+      '212123', '212321', '232121', '111323', '131123', '131321', '112313', '132113', '132311', '211313',
+      '231113', '231311', '112133', '112331', '132131', '113123', '113321', '133121', '313121', '211331',
+      '231131', '213113', '213311', '213131', '311123', '311321', '331121', '312113', '312311', '332111',
+      '314111', '221411', '431111', '111224', '111422', '121124', '121421', '141122', '141221', '112214',
+      '112412', '122114', '122411', '142112', '142211', '241211', '221114', '413111', '241112', '134111',
+      '111242', '121142', '121241', '114212', '124112', '124211', '411212', '421112', '421211', '212141',
+      '214121', '412121', '111143', '111341', '131141', '114113', '114311', '411113', '411311', '113141',
+      '114131', '311141', '411131', '211412', '211214', '211232', '2331112'
+    ];
+
+    function createCode128Svg(text, barHeight = 180, unitWidth = 3, fontSize = 28) {
+      let codes = [104]; // START B
+      let checksum = 104;
+      for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i) - 32;
+        codes.push(code);
+        checksum += code * (i + 1);
+      }
+      codes.push(checksum % 103);
+      codes.push(106); // STOP
+
+      let patternStr = codes.map(c => CODE128_PATTERNS[c]).join('');
+      let bars = [];
+      let isBar = true;
+      let x = 20;
+
+      for (const char of patternStr) {
+        const w = parseInt(char, 10) * unitWidth;
+        if (isBar) {
+          bars.push(`<rect x="${x}" y="12" width="${w}" height="${barHeight}" fill="#000000"/>`);
+        }
+        x += w;
+        isBar = !isBar;
+      }
+
+      const totalWidth = x + 20;
+      const totalHeight = barHeight + fontSize + 24;
+      const textY = barHeight + fontSize + 8;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}" width="${totalWidth}" height="${totalHeight}">
+        <rect width="100%" height="100%" fill="#ffffff"/>
+        ${bars.join('')}
+        <text x="${totalWidth / 2}" y="${textY}" text-anchor="middle" font-family="Arial, -apple-system, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#000000" letter-spacing="2">${text}</text>
+      </svg>`;
+    }
+
+    // Exactly 8 Products: 2 Out-of-Stock (Testing) + 6 In-Stock
+    const ITEMS = [
+      {
+        sku: 'HON-ADV-CVTB',
+        name: 'OEM Drive Belt (Gates Bando ADV 160)',
+        brand: 'Honda OEM • Honda ADV 160',
+        category: 'Drivetrain',
+        retail: 850,
+        location: 'Rack B-04 / Shelf 3',
+        outOfStock: true,
+        testNote: 'Scan will trigger POS "Cannot add: Item is out of stock" rejection toast.'
+      },
+      {
+        sku: 'TST-OEM-1792093213761',
+        name: 'Genuine Drive Belt 155',
+        brand: 'Yamaha Genuine Parts • Yamaha Aerox/NMAX',
+        category: 'Drivetrain',
+        retail: 1080,
+        location: 'Floor Stock',
+        outOfStock: true,
+        testNote: 'Scan will trigger POS "Cannot add: Item is out of stock" rejection toast.'
+      },
+      {
+        sku: 'YAM-NMAX-BL01',
+        name: 'OEM Front Brake Pads',
+        brand: 'Yamaha Genuine Parts • Yamaha NMAX 155',
+        category: 'Brakes',
+        retail: 450,
+        location: 'Rack A-01 / Shelf 2',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      },
+      {
+        sku: 'RCB-NMAX-BP02',
+        name: 'RCB S-Series Ceramic Brake Pads',
+        brand: 'Racing Boy • Yamaha NMAX 155',
+        category: 'Brakes',
+        retail: 580,
+        location: 'Rack A-01 / Shelf 3',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      },
+      {
+        sku: 'HON-CLK-CVTB',
+        name: 'OEM Drive Belt (Gates Bando)',
+        brand: 'Honda OEM • Honda Click 125i/150i',
+        category: 'Drivetrain',
+        retail: 850,
+        location: 'Rack B-04 / Shelf 1',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      },
+      {
+        sku: 'MOT-3100-10W40',
+        name: 'Motul 3100 Gold 4T 10W40 (1L)',
+        brand: 'Motul • Universal 4T',
+        category: 'Fluids',
+        retail: 390,
+        location: 'Aisle 1 / Shelf 1',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      },
+      {
+        sku: 'NGK-CPR8EA9',
+        name: 'NGK Nickel Spark Plug (CPR8EA-9)',
+        brand: 'NGK • Honda Click 125i/150i',
+        category: 'Ignition',
+        retail: 190,
+        location: 'Rack C-02 / Shelf 1',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      },
+      {
+        sku: 'MIC-PILOT-ST',
+        name: 'Michelin Pilot Street 2 (110/80-14)',
+        brand: 'Michelin • Honda ADV 160',
+        category: 'Tires',
+        retail: 2150,
+        location: 'Tire Rack 2',
+        outOfStock: false,
+        testNote: 'Normal item: Adds to POS cart immediately with current retail price.'
+      }
+    ];
+
+    let current = ITEMS[0]; // default to first out-of-stock product
+
+    function selectItem(item) {
+      current = item;
+      document.getElementById('heroCategory').textContent = item.category;
+      document.getElementById('heroTitle').textContent = item.name;
+      document.getElementById('heroSubtitle').textContent = `${item.brand} • ₱${item.retail.toLocaleString()}`;
+      
+      const heroCard = document.getElementById('heroBarcodeCard');
+      const stockBadge = document.getElementById('heroStockBadge');
+      const testNote = document.getElementById('heroTestNote');
+
+      if (item.outOfStock) {
+        heroCard.classList.add('hero-out-of-stock');
+        stockBadge.className = 'stock-badge out-of-stock';
+        stockBadge.textContent = '🚫 Out of Stock (Testing Rejection)';
+        testNote.className = 'hero-test-note note-out-of-stock';
+        testNote.textContent = '⚠️ ' + item.testNote;
+      } else {
+        heroCard.classList.remove('hero-out-of-stock');
+        stockBadge.className = 'stock-badge in-stock';
+        stockBadge.textContent = '✓ In Stock (Testing Normal Sale)';
+        testNote.className = 'hero-test-note note-in-stock';
+        testNote.textContent = '✓ ' + item.testNote;
+      }
+
+      const container = document.getElementById('heroSvgContainer');
+      container.innerHTML = createCode128Svg(item.sku, 170, 3, 30);
+
+      document.querySelectorAll('.barcode-card').forEach(el => {
+        el.classList.toggle('active', el.dataset.sku === item.sku);
+      });
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('barcodeGrid');
+      grid.innerHTML = '';
+
+      ITEMS.forEach((item, index) => {
+        const card = document.createElement('div');
+        const isOutOfStock = Boolean(item.outOfStock);
+        card.className = `barcode-card ${isOutOfStock ? 'card-out-of-stock' : ''} ${item.sku === current.sku ? 'active' : ''}`;
+        card.dataset.sku = item.sku;
+        card.onclick = () => {
+          selectItem(item);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const svgHtml = createCode128Svg(item.sku, 100, 2, 20);
+
+        card.innerHTML = `
+          <div class="card-top-row">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">#${index + 1}</span>
+            <span class="stock-badge ${isOutOfStock ? 'out-of-stock' : 'in-stock'}">
+              ${isOutOfStock ? '🚫 Out of Stock (Test)' : '✓ In Stock'}
+            </span>
+          </div>
+          <div class="card-product-name">${item.name}</div>
+          <div class="card-product-brand">${item.brand}</div>
+          <div class="card-svg-wrap">
+            ${svgHtml}
+          </div>
+          <div class="card-bottom">
+            <span>${item.location}</span>
+            <span class="card-price">₱${item.retail.toLocaleString()}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function copyCurrentSku() {
+      navigator.clipboard.writeText(current.sku).then(() => {
+        const notice = document.getElementById('copyNotice');
+        notice.style.display = 'inline';
+        setTimeout(() => { notice.style.display = 'none'; }, 2000);
+      });
+    }
+
+    function downloadCurrentSvg() {
+      const svgString = createCode128Svg(current.sku, 200, 3.5, 34);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${current.sku}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderGrid();
+      selectItem(ITEMS[0]);
+    });
+  </script>
+</body>
+</html>

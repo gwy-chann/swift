@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 498 300" width="498" height="300">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <rect x="25" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="37" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="49" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="69" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="81" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="101" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="113" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="129" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="149" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="157" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="173" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="181" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="201" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="217" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="229" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="245" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="257" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="277" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="289" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="305" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="321" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="333" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="349" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="361" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="377" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="397" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="413" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="421" y="15" width="8" height="240" fill="#000000"/>
+  <rect x="441" y="15" width="12" height="240" fill="#000000"/>
+  <rect x="457" y="15" width="4" height="240" fill="#000000"/>
+  <rect x="465" y="15" width="8" height="240" fill="#000000"/>
+  <text x="249" y="290" text-anchor="middle" font-family="Arial, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#000000" letter-spacing="2">1234567</text>
+</svg>
