@@ -3,8 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { resolveSession, evaluateRouteAccess } from '@/lib/auth/session-guards'
 
 export async function updateSession(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
   let supabaseResponse = NextResponse.next({
-    request,
+    request: {
+      headers: requestHeaders,
+    },
   })
 
   let user = null

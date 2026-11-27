@@ -40,9 +40,10 @@ describe('Session Route Guards & Access Matrix Engine (SIAA-71)', () => {
       assert.equal(classifyRoute('/icons/wrench.svg'), 'PUBLIC_ASSET');
     });
 
-    it('classifies unmanaged routes as OTHER', () => {
+    it('classifies unmanaged routes and companion scanner as OTHER', () => {
       assert.equal(classifyRoute('/api/health'), 'OTHER');
       assert.equal(classifyRoute('/terms'), 'OTHER');
+      assert.equal(classifyRoute('/staff/pos/scanner'), 'OTHER');
     });
   });
 
@@ -245,6 +246,14 @@ describe('Session Route Guards & Access Matrix Engine (SIAA-71)', () => {
     it('allows public assets through without redirection', () => {
       const assetDecision = evaluateRouteAccess('/_next/static/css/app.css', unauthenticatedSession);
       assert.equal(assetDecision.action, 'ALLOW');
+    });
+
+    it('allows unauthenticated visitors to access companion scanner /staff/pos/scanner', () => {
+      const scannerDecision = evaluateRouteAccess('/staff/pos/scanner', unauthenticatedSession);
+      assert.equal(scannerDecision.action, 'ALLOW');
+
+      const scannerWithQueryDecision = evaluateRouteAccess('/staff/pos/scanner?session=pos-T1-1234', unauthenticatedSession);
+      assert.equal(scannerWithQueryDecision.action, 'ALLOW');
     });
   });
 });
