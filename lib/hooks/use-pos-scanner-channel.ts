@@ -44,9 +44,11 @@ export function usePosScannerChannel({
   onDeviceConnected,
   onDeviceDisconnected
 }: UsePosScannerChannelOptions): UsePosScannerChannelResult {
-  const [connectionState, setConnectionState] = useState<ScannerConnectionState>("DISCONNECTED");
+  const [connectionState, setConnectionState] = useState<ScannerConnectionState>(
+    sessionKey ? "WAITING_FOR_DEVICE" : "DISCONNECTED"
+  );
   const [telemetry, setTelemetry] = useState<ScannerChannelTelemetry>({
-    state: "DISCONNECTED"
+    state: sessionKey ? "WAITING_FOR_DEVICE" : "DISCONNECTED"
   });
   const [reconnectCounter, setReconnectCounter] = useState(0);
 
@@ -63,6 +65,50 @@ export function usePosScannerChannel({
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastHeartbeatTimeRef = useRef<number>(0);
+  const processedScansRef = useRef<Map<string, number>>(new Map());
+  const lastProcessedScanRef = useRef<{ code: string; timestamp: number } | null>(null);
+
+  const handleIncomingBarcode = useCallback((payload: BarcodeScannedPayload) => {
+    if (!payload?.code) return;
+
+    const now = Date.now();
+    lastHeartbeatTimeRef.current = now;
+
+    // Deduplication key across dual-transport (SSE + Supabase Realtime)
+    const scanId = payload.scanId || `${payload.code}-${payload.timestamp || ''}`;
+
+    // Clean up expired scan records older than 10 seconds
+    const expiry = now - 10000;
+    for (const [id, time] of processedScansRef.current.entries()) {
+      if (time < expiry) {
+        processedScansRef.current.delete(id);
+      }
+    }
+
+    // 1. Suppress exact duplicate scanId or code+timestamp payload
+    if (processedScansRef.current.has(scanId)) {
+      return;
+    }
+
+    // 2. Suppress rapid duplicate scans of identical SKU within 600ms
+    if (
+      lastProcessedScanRef.current &&
+      lastProcessedScanRef.current.code === payload.code &&
+      now - lastProcessedScanRef.current.timestamp < 600
+    ) {
+      return;
+    }
+
+    processedScansRef.current.set(scanId, now);
+    lastProcessedScanRef.current = { code: payload.code, timestamp: now };
+
+    setTelemetry((prev) => ({
+      ...prev,
+      lastHeartbeatReceivedAt: now
+    }));
+
+    onBarcodeScannedRef.current?.(payload.code, payload);
+  }, []);
 
   const broadcastValidationResult = useCallback(
     async (payload: PosScanValidationResponse): Promise<void> => {
@@ -101,6 +147,84 @@ export function usePosScannerChannel({
       return;
     }
 
+    // Initialize waiting status asynchronously to prevent synchronous state mutation within effect
+    void Promise.resolve().then(() => {
+      setConnectionState((curr) => (curr === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"));
+      setTelemetry((prev) => ({
+        ...prev,
+        state: prev.state === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"
+      }));
+    });
+
+    // 1. Establish resilient Server-Sent Events bridge
+    const streamUrl = `/api/pos/scanner/stream?sessionKey=${encodeURIComponent(sessionKey)}`;
+    const eventSource = typeof EventSource !== "undefined" ? new EventSource(streamUrl) : null;
+
+    if (eventSource) {
+      eventSource.addEventListener("READY", () => {
+        setConnectionState((curr) => (curr === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"));
+        setTelemetry((prev) => ({
+          ...prev,
+          state: prev.state === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"
+        }));
+      });
+
+      eventSource.addEventListener("CLIENT_JOINED", (e: MessageEvent) => {
+        const now = Date.now();
+        lastHeartbeatTimeRef.current = now;
+        let payload: ClientJoinedPayload = { device: "Mobile Companion", timestamp: now };
+        try {
+          payload = JSON.parse(e.data);
+        } catch {}
+
+        setConnectionState("CONNECTED");
+        setTelemetry({
+          state: "CONNECTED",
+          pairedDeviceName: payload.device || "Mobile Companion",
+          connectedAt: now,
+          lastHeartbeatReceivedAt: now,
+          lastPingLatencyMs: 15
+        });
+
+        onDeviceConnectedRef.current?.(payload);
+      });
+
+      eventSource.addEventListener("HEARTBEAT", (e: MessageEvent) => {
+        const now = Date.now();
+        lastHeartbeatTimeRef.current = now;
+        let payload: HeartbeatPayload = { sender: "companion", timestamp: now };
+        try {
+          payload = JSON.parse(e.data);
+        } catch {}
+        const pingTime = payload?.timestamp || now;
+        const latencyMs = Math.max(1, now - pingTime);
+
+        setConnectionState("CONNECTED");
+        setTelemetry((prev) => ({
+          ...prev,
+          state: "CONNECTED",
+          lastHeartbeatReceivedAt: now,
+          lastPingLatencyMs: latencyMs < 500 ? latencyMs : prev.lastPingLatencyMs || 25
+        }));
+      });
+
+      eventSource.addEventListener("BARCODE_SCANNED", (e: MessageEvent) => {
+        try {
+          const payload: BarcodeScannedPayload = JSON.parse(e.data);
+          if (payload?.code) {
+            handleIncomingBarcode(payload);
+          }
+        } catch {}
+      });
+
+      eventSource.addEventListener("CLIENT_DISCONNECTED", () => {
+        setConnectionState("DISCONNECTED");
+        setTelemetry({ state: "DISCONNECTED" });
+        onDeviceDisconnectedRef.current?.();
+      });
+    }
+
+    // 2. Also subscribe to Supabase Realtime channel
     const supabase = createClient();
     const channelName = getScannerChannelName(sessionKey);
 
@@ -112,7 +236,7 @@ export function usePosScannerChannel({
 
     channelRef.current = channel;
 
-    // Handle initial client joined event
+    // Handle initial client joined event via Supabase
     channel.on(
       "broadcast",
       { event: "CLIENT_JOINED" },
@@ -130,7 +254,6 @@ export function usePosScannerChannel({
           lastPingLatencyMs: 15
         });
 
-        // Send terminal acknowledgement back to phone
         channel
           .send({
             type: "broadcast",
@@ -140,9 +263,7 @@ export function usePosScannerChannel({
               timestamp: now
             }
           })
-          .catch((err) => {
-            console.warn("[usePosScannerChannel] Failed to send TERMINAL_ACK:", err);
-          });
+          .catch(() => {});
 
         onDeviceConnectedRef.current?.(payload);
       }
@@ -164,20 +285,6 @@ export function usePosScannerChannel({
           lastHeartbeatReceivedAt: now,
           lastPingLatencyMs: latencyMs < 500 ? latencyMs : prev.lastPingLatencyMs || 25
         }));
-
-        // Send heartbeat ACK back to companion phone
-        channel
-          .send({
-            type: "broadcast",
-            event: "HEARTBEAT_ACK",
-            payload: {
-              sender: "terminal",
-              pingTimestamp: pingTime,
-              ackTimestamp: now,
-              latencyMs
-            }
-          })
-          .catch(() => {});
       }
     );
 
@@ -187,16 +294,8 @@ export function usePosScannerChannel({
       { event: "BARCODE_SCANNED" },
       (message: { payload: BarcodeScannedPayload }) => {
         const payload = message.payload;
-        const now = Date.now();
-        lastHeartbeatTimeRef.current = now;
-
-        setTelemetry((prev) => ({
-          ...prev,
-          lastHeartbeatReceivedAt: now
-        }));
-
         if (payload?.code) {
-          onBarcodeScannedRef.current?.(payload.code, payload);
+          handleIncomingBarcode(payload);
         }
       }
     );
@@ -213,18 +312,13 @@ export function usePosScannerChannel({
     );
 
     // Subscribe to channel
-    channel.subscribe((status: string) => {
-      if (status === "SUBSCRIBED") {
-        setConnectionState((curr) => (curr === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"));
-        setTelemetry((prev) => ({
-          ...prev,
-          state: prev.state === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"
-        }));
-      } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-        setConnectionState("DISCONNECTED");
-        setTelemetry({ state: "DISCONNECTED" });
-      }
-    });
+    try {
+      channel.subscribe((status: string) => {
+        if (status === "SUBSCRIBED") {
+          setConnectionState((curr) => (curr === "CONNECTED" ? "CONNECTED" : "WAITING_FOR_DEVICE"));
+        }
+      });
+    } catch {}
 
     // Heartbeat timeout watchdog interval
     const watchdogInterval = setInterval(() => {
@@ -247,12 +341,19 @@ export function usePosScannerChannel({
 
     return () => {
       clearInterval(watchdogInterval);
+      if (eventSource) {
+        try {
+          eventSource.close();
+        } catch {}
+      }
       try {
         channel.unsubscribe();
       } catch {}
       channelRef.current = null;
+      setConnectionState("DISCONNECTED");
+      setTelemetry({ state: "DISCONNECTED" });
     };
-  }, [sessionKey, terminalId, reconnectCounter]);
+  }, [sessionKey, terminalId, reconnectCounter, handleIncomingBarcode]);
 
   return {
     connectionState,

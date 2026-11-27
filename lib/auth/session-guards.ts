@@ -76,6 +76,10 @@ export function classifyRoute(pathname: string): RouteClassification {
     return "ADMIN_PORTAL";
   }
 
+  if (normalized === "/staff/pos/scanner" || normalized.startsWith("/staff/pos/scanner")) {
+    return "OTHER";
+  }
+
   if (normalized === "/staff" || normalized.startsWith("/staff/")) {
     return "STAFF_PORTAL";
   }
@@ -292,6 +296,13 @@ export function evaluateRouteAccess(
   pathname: string,
   session: ResolvedSession
 ): GuardDecision {
+  const normalized = normalizePathname(pathname);
+
+  // Companion mobile scanner is authenticated via QR pairing session token, bypass login redirect
+  if (normalized === "/staff/pos/scanner" || normalized.startsWith("/staff/pos/scanner")) {
+    return { action: "ALLOW" };
+  }
+
   if (session.isInactive) {
     return {
       action: "REDIRECT",
@@ -301,7 +312,6 @@ export function evaluateRouteAccess(
   }
 
   const classification = classifyRoute(pathname);
-  const normalized = normalizePathname(pathname);
 
   if (classification === "AUTH_HUB") {
     if (session.hasPendingPinChallenge) {

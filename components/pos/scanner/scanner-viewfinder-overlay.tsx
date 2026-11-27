@@ -35,7 +35,7 @@ export function ScannerViewfinderOverlay({
 
   return (
     <div
-      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-black/40 select-none ${className}`}
+      className={`absolute inset-0 z-10 w-full h-full flex items-center justify-center pointer-events-none select-none ${className}`}
       data-testid="scanner-viewfinder-overlay"
       data-pulse-state={pulseState}
     >

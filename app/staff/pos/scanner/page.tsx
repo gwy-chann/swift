@@ -24,44 +24,72 @@ function MobileScannerContent() {
   const [broadcastStatus, setBroadcastStatus] = useState<'IDLE' | 'CONNECTED' | 'STREAMING'>('IDLE');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize Supabase Realtime channel if paired with a desktop session
+  // Helper to reliably broadcast companion events via server API route and local Supabase client
+  const dispatchEvent = useCallback(async (event: string, payload: unknown) => {
+    if (!sessionKey) return;
+    let deliveredViaApi = false;
+    // 1. Post to Next.js server API endpoint (relays to local SSE hub and Supabase broadcast)
+    try {
+      const res = await fetch('/api/pos/scanner/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionKey, event, payload })
+      });
+      if (res.ok) {
+        deliveredViaApi = true;
+      }
+    } catch (apiErr) {
+      console.debug('[ScannerPage] API broadcast notice:', apiErr);
+    }
+
+    // 2. Only fallback to direct Supabase client broadcast if server API route was unreachable
+    if (!deliveredViaApi) {
+      try {
+        const supabase = createClient();
+        const channelName = sessionKey.startsWith('pos-')
+          ? `pos-channel:${sessionKey}`
+          : `pos-session:${sessionKey}`;
+        const channel = supabase.channel(channelName);
+        await channel.send({
+          type: 'broadcast',
+          event,
+          payload: payload || {}
+        });
+      } catch {
+        // Ignored on mobile when Supabase local host is unreachable directly
+      }
+    }
+  }, [sessionKey]);
+
+  // Maintain pairing lifecycle & keepalive heartbeat with desktop terminal
   useEffect(() => {
     if (!sessionKey) return;
 
-    try {
-      const supabase = createClient();
-      const channelName = sessionKey.startsWith('pos-')
-        ? `pos-channel:${sessionKey}`
-        : `pos-session:${sessionKey}`;
+    void Promise.resolve().then(() => {
+      setBroadcastStatus('CONNECTED');
+    });
 
-      const channel = supabase.channel(channelName, {
-        config: { broadcast: { ack: true } }
+    // Notify desktop that companion mobile scanner joined
+    void dispatchEvent('CLIENT_JOINED', {
+      device: 'Mobile Companion',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Mobile',
+      timestamp: Date.now()
+    });
+
+    // Send keepalive heartbeat every 3 seconds
+    const heartbeatInterval = setInterval(() => {
+      void dispatchEvent('HEARTBEAT', {
+        timestamp: Date.now()
       });
+    }, 3000);
 
-      channel
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setBroadcastStatus('CONNECTED');
-            // Notify desktop that companion mobile scanner joined
-            void channel.send({
-              type: 'broadcast',
-              event: 'CLIENT_JOINED',
-              payload: {
-                device: 'Mobile Companion',
-                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Mobile',
-                timestamp: Date.now()
-              }
-            });
-          }
-        });
-
-      return () => {
-        void supabase.removeChannel(channel);
-      };
-    } catch (err) {
-      console.warn('[ScannerPage] Realtime subscription notice:', err);
-    }
-  }, [sessionKey]);
+    return () => {
+      clearInterval(heartbeatInterval);
+      void dispatchEvent('CLIENT_DISCONNECTED', {
+        timestamp: Date.now()
+      });
+    };
+  }, [sessionKey, dispatchEvent]);
 
   // Handle barcode captured from camera or manual entry
   const handleScan = useCallback(
@@ -86,33 +114,25 @@ function MobileScannerContent() {
 
       // Broadcast to desktop POS terminal if session is active
       if (sessionKey) {
-        try {
-          setBroadcastStatus('STREAMING');
-          const supabase = createClient();
-          const channelName = sessionKey.startsWith('pos-')
-            ? `pos-channel:${sessionKey}`
-            : `pos-session:${sessionKey}`;
-          const channel = supabase.channel(channelName);
-
-          await channel.send({
-            type: 'broadcast',
-            event: 'BARCODE_SCANNED',
-            payload: {
-              code: payload.rawCode,
-              format: payload.format,
-              timestamp: payload.timestamp
-            }
-          });
-
-          setTimeout(() => {
-            setBroadcastStatus('CONNECTED');
-          }, 300);
-        } catch (err) {
-          console.warn('[ScannerPage] Broadcast send warning:', err);
-        }
+        setBroadcastStatus('STREAMING');
+        const scanTimestamp = payload.timestamp || Date.now();
+        const entropy =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID().slice(0, 8)
+            : Date.now().toString(36);
+        const scanId = `${payload.rawCode}-${scanTimestamp}-${entropy}`;
+        await dispatchEvent('BARCODE_SCANNED', {
+          scanId,
+          code: payload.rawCode,
+          format: payload.format,
+          timestamp: scanTimestamp
+        });
+        setTimeout(() => {
+          setBroadcastStatus('CONNECTED');
+        }, 300);
       }
     },
-    [sessionKey]
+    [sessionKey, dispatchEvent]
   );
 
   // Get indicator status dot styling
@@ -179,7 +199,7 @@ function MobileScannerContent() {
       {/* Full-Screen Camera Scanner Viewport */}
       <div className="relative flex-1 w-full h-full overflow-hidden">
         <MobileCameraScanner
-          onScan={(p) => void handleScan(p)}
+          onScan={handleScan}
           cooldownMs={1500}
           enableAudio={true}
           enableHaptics={true}

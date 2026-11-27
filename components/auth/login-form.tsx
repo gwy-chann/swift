@@ -115,6 +115,7 @@ export function LoginForm({
       // Route directly to destination page
       if (result.redirectTo) {
         router.push(result.redirectTo);
+        router.refresh();
       }
     } catch (err) {
       console.error("Login submission error:", err);

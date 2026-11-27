@@ -1,6 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { StaffLayoutShell } from "@/components/staff/staff-layout-shell";
 import { getServerSession, evaluateRouteAccess } from "@/lib/auth/session-guards";
 
@@ -14,6 +15,18 @@ export default async function StaffRootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const pathname =
+    headersList.get("x-pathname") ||
+    headersList.get("x-invoke-path") ||
+    headersList.get("next-url") ||
+    "";
+
+  // If viewing the mobile companion scanner, render directly without staff auth or desktop shell
+  if (pathname.includes("/staff/pos/scanner")) {
+    return <>{children}</>;
+  }
+
   const session = await getServerSession();
   const decision = evaluateRouteAccess("/staff/pos", session);
   if (decision.action === "REDIRECT" && decision.destination) {

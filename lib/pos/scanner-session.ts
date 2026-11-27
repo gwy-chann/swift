@@ -84,9 +84,16 @@ export function validateScannerSessionKey(sessionKey: string | null | undefined)
  * Builds the fully qualified mobile companion URL for QR code encoding.
  */
 export function buildCompanionPairingUrl(sessionKey: string, origin?: string): string {
-  const baseOrigin =
-    origin?.trim() ||
-    (typeof window !== "undefined" && window.location.origin ? window.location.origin : "");
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  let baseOrigin = origin?.trim();
+  if (!baseOrigin || baseOrigin.includes("localhost") || baseOrigin.includes("127.0.0.1")) {
+    if (envUrl && !envUrl.includes("localhost")) {
+      baseOrigin = envUrl.trim();
+    }
+  }
+  if (!baseOrigin) {
+    baseOrigin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "";
+  }
   
   const path = "/staff/pos/scanner";
   const params = `?session=${encodeURIComponent(sessionKey.trim())}`;
